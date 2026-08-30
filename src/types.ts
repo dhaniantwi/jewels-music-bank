@@ -1,46 +1,21 @@
-export type SongCategory = 'All' | 'Worship' | 'Praise' | 'Gospel' | 'Afropraise' | 'Medleys' | 'Choir' | 'Contemporary';
-
-export interface VocalArrangement {
-  lead: string;
-  soprano: string;
-  alto: string;
-  tenor: string;
-}
-
-export interface InstrumentArrangement {
-  keyboard: string;
-  guitar: string;
-  bass: string;
-  drums: string;
-  brass?: string;
-  auxPads?: string;
-}
-
 export interface Song {
   id: number;
   title: string;
   artist: string;
-  category: SongCategory;
   key: string;
-  originalKey?: string;
-  tempo: string;
-  bpm?: number;
-  timeSignature?: string;
   icon: string;
-  audioUrl?: string;
   lyrics: string;
   chords?: string;
-  arrangement: VocalArrangement;
-  instruments: InstrumentArrangement;
-  mdNotes: string;
-  duration?: string;
-  tags?: string[];
-  createdAt?: string;
+
+  // Actual uploaded audio
+  audioFileName?: string;
+  audioFileType?: string;
+  audioFileSize?: number;
 }
 
 export interface SetlistSongItem {
   songId: number;
-  lead: number | null; // TeamMember ID
+  lead: number | null;
   keyOverride?: string;
   orderNote?: string;
   durationMin?: number;
@@ -60,8 +35,24 @@ export interface Ministration {
 }
 
 export type MemberType = 'director' | 'vocal' | 'instrument';
-export type VoicePart = 'Soprano' | 'Alto' | 'Tenor' | 'Lead / Soloist' | 'All Vocal';
-export type InstrumentType = 'Keyboard' | 'Guitar' | 'Bass' | 'Drums' | 'Saxophone' | 'Trumpet' | 'Violin' | 'Percussion' | 'Other';
+
+export type VoicePart =
+  | 'Soprano'
+  | 'Alto'
+  | 'Tenor'
+  | 'Lead / Soloist'
+  | 'All Vocal';
+
+export type InstrumentType =
+  | 'Keyboard'
+  | 'Guitar'
+  | 'Bass'
+  | 'Drums'
+  | 'Saxophone'
+  | 'Trumpet'
+  | 'Violin'
+  | 'Percussion'
+  | 'Other';
 
 export interface TeamMember {
   id: number;
@@ -78,4 +69,9 @@ export interface TeamMember {
 }
 
 export type ActiveTab = 'home' | 'songs' | 'ministrations' | 'team';
-export type ActiveRole = 'admin_md' | 'vocal_member' | 'instrumentalist' | 'guest';
+
+export type ActiveRole =
+  | 'admin_md'
+  | 'vocal_member'
+  | 'instrumentalist'
+  | 'guest';
