@@ -5,6 +5,7 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
+    base: '/jewels-music-bank/',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
