@@ -1,77 +1,124 @@
-export interface Song {
-  id: number;
-  title: string;
-  artist: string;
-  key: string;
-  icon: string;
-  lyrics: string;
-  chords?: string;
+const DB_NAME = 'jewels_music_hub_audio';
+const STORE_NAME = 'songs_audio';
+const DB_VERSION = 1;
 
-  // Actual uploaded audio
-  audioFileName?: string;
-  audioFileType?: string;
-  audioFileSize?: number;
-}
-
-export interface SetlistSongItem {
+interface AudioRecord {
   songId: number;
-  lead: number | null;
-  keyOverride?: string;
-  orderNote?: string;
-  durationMin?: number;
+  file: File;
 }
 
-export interface Ministration {
-  id: number;
-  name: string;
-  date: string;
-  time?: string;
-  venue?: string;
-  theme?: string;
-  status: 'Upcoming' | 'In Rehearsal' | 'Completed';
-  description: string;
-  mdGlobalNotes?: string;
-  songs: SetlistSongItem[];
+function openDatabase(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+    request.onerror = () => {
+      reject(request.error);
+    };
+
+    request.onsuccess = () => {
+      resolve(request.result);
+    };
+
+    request.onupgradeneeded = () => {
+      const db = request.result;
+
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME, {
+          keyPath: 'songId'
+        });
+      }
+    };
+  });
 }
 
-export type MemberType = 'director' | 'vocal' | 'instrument';
+export async function saveAudioFile(
+  songId: number,
+  file: File
+): Promise<void> {
+  const db = await openDatabase();
 
-export type VoicePart =
-  | 'Soprano'
-  | 'Alto'
-  | 'Tenor'
-  | 'Lead / Soloist'
-  | 'All Vocal';
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(
+      STORE_NAME,
+      'readwrite'
+    );
 
-export type InstrumentType =
-  | 'Keyboard'
-  | 'Guitar'
-  | 'Bass'
-  | 'Drums'
-  | 'Saxophone'
-  | 'Trumpet'
-  | 'Violin'
-  | 'Percussion'
-  | 'Other';
+    const store = transaction.objectStore(STORE_NAME);
 
-export interface TeamMember {
-  id: number;
-  name: string;
-  role: string;
-  type: MemberType;
-  voicePart?: VoicePart;
-  instrumentType?: InstrumentType;
-  icon: string;
-  phone?: string;
-  email?: string;
-  isAvailable?: boolean;
-  canEdit?: boolean;
+    const record: AudioRecord = {
+      songId,
+      file
+    };
+
+    store.put(record);
+
+    transaction.oncomplete = () => {
+      db.close();
+      resolve();
+    };
+
+    transaction.onerror = () => {
+      db.close();
+      reject(transaction.error);
+    };
+  });
 }
 
-export type ActiveTab = 'home' | 'songs' | 'ministrations' | 'team';
+export async function getAudioFile(
+  songId: number
+): Promise<File | null> {
+  const db = await openDatabase();
 
-export type ActiveRole =
-  | 'admin_md'
-  | 'vocal_member'
-  | 'instrumentalist'
-  | 'guest';
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(
+      STORE_NAME,
+      'readonly'
+    );
+
+    const store = transaction.objectStore(STORE_NAME);
+
+    const request = store.get(songId);
+
+    request.onsuccess = () => {
+      db.close();
+
+      const record = request.result as
+        | AudioRecord
+        | undefined;
+
+      resolve(record?.file || null);
+    };
+
+    request.onerror = () => {
+      db.close();
+      reject(request.error);
+    };
+  });
+}
+
+export async function deleteAudioFile(
+  songId: number
+): Promise<void> {
+  const db = await openDatabase();
+
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(
+      STORE_NAME,
+      'readwrite'
+    );
+
+    const store = transaction.objectStore(STORE_NAME);
+
+    store.delete(songId);
+
+    transaction.oncomplete = () => {
+      db.close();
+      resolve();
+    };
+
+    transaction.onerror = () => {
+      db.close();
+      reject(transaction.error);
+    };
+  });
+}
