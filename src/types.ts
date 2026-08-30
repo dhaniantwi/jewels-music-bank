@@ -1,124 +1,45 @@
-const DB_NAME = 'jewels_music_hub_audio';
-const STORE_NAME = 'songs_audio';
-const DB_VERSION = 1;
-
-interface AudioRecord {
-  songId: number;
-  file: File;
+export interface Song {
+id: number;
+title: string;
+artist: string;
+key: string;
+bpm?: number;
+category: string;
+lyrics?: string;
+notes?: string;
+audio_url?: string;
+created_at?: string;
+updated_at?: string;
 }
 
-function openDatabase(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-    request.onerror = () => {
-      reject(request.error);
-    };
-
-    request.onsuccess = () => {
-      resolve(request.result);
-    };
-
-    request.onupgradeneeded = () => {
-      const db = request.result;
-
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME, {
-          keyPath: 'songId'
-        });
-      }
-    };
-  });
+export interface AudioRecord {
+songId: number;
+file: File;
 }
 
-export async function saveAudioFile(
-  songId: number,
-  file: File
-): Promise<void> {
-  const db = await openDatabase();
-
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(
-      STORE_NAME,
-      'readwrite'
-    );
-
-    const store = transaction.objectStore(STORE_NAME);
-
-    const record: AudioRecord = {
-      songId,
-      file
-    };
-
-    store.put(record);
-
-    transaction.oncomplete = () => {
-      db.close();
-      resolve();
-    };
-
-    transaction.onerror = () => {
-      db.close();
-      reject(transaction.error);
-    };
-  });
+export interface MinistryEvent {
+id: number;
+name: string;
+date?: string;
+venue?: string;
+description?: string;
+created_at?: string;
 }
 
-export async function getAudioFile(
-  songId: number
-): Promise<File | null> {
-  const db = await openDatabase();
-
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(
-      STORE_NAME,
-      'readonly'
-    );
-
-    const store = transaction.objectStore(STORE_NAME);
-
-    const request = store.get(songId);
-
-    request.onsuccess = () => {
-      db.close();
-
-      const record = request.result as
-        | AudioRecord
-        | undefined;
-
-      resolve(record?.file || null);
-    };
-
-    request.onerror = () => {
-      db.close();
-      reject(request.error);
-    };
-  });
+export interface MusicTeamMember {
+id: number;
+name: string;
+role?: string;
+instrument?: string;
+phone?: string;
+email?: string;
+image_url?: string;
+created_at?: string;
 }
 
-export async function deleteAudioFile(
-  songId: number
-): Promise<void> {
-  const db = await openDatabase();
-
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(
-      STORE_NAME,
-      'readwrite'
-    );
-
-    const store = transaction.objectStore(STORE_NAME);
-
-    store.delete(songId);
-
-    transaction.oncomplete = () => {
-      db.close();
-      resolve();
-    };
-
-    transaction.onerror = () => {
-      db.close();
-      reject(transaction.error);
-    };
-  });
-}
+export type SongCategory =
+| 'Worship'
+| 'Praise'
+| 'Ministration'
+| 'Special'
+| 'Other';
