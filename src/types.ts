@@ -1,6 +1,9 @@
 export type ActiveTab = 'home' | 'songs' | 'ministrations' | 'team';
 
-export type ActiveRole = 'admin_md' | 'vocalist' | 'instrumentalist';
+export type ActiveRole =
+  | 'admin_md'
+  | 'vocalist'
+  | 'instrumentalist';
 
 export type SongCategory =
   | 'Worship'
@@ -49,14 +52,15 @@ export interface Song {
 
 export interface MinistrationSong {
   songId: string;
-  lead: string | null;
+  lead: number | null;
   keyOverride?: string;
   orderNote?: string;
   durationMin?: number;
+  songOrder?: number;
 }
 
 export interface Ministration {
-  id: string;
+  id: number;
   name: string;
   date: string;
   time?: string;
@@ -69,7 +73,7 @@ export interface Ministration {
 }
 
 export interface TeamMember {
-  id: string;
+  id: number;
   name: string;
   role: string;
   type: 'director' | 'vocal' | 'instrument';
