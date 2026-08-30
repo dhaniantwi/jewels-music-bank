@@ -1,0 +1,7 @@
+{
+  "name": "Jewels Music Hub",
+  "description": "iOS-crafted Music Ministry portal for song library management, setlist allocation, vocal arrangements, rehearsal notes, and team coordination.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
