@@ -1,4 +1,8 @@
-export type ActiveTab = 'home' | 'songs' | 'ministrations' | 'team';
+export type ActiveTab =
+  | 'home'
+  | 'songs'
+  | 'ministrations'
+  | 'team';
 
 export type ActiveRole =
   | 'admin_md'
@@ -29,29 +33,43 @@ export interface SongInstruments {
 }
 
 export interface Song {
-  id: string;
+  id: number;
   title: string;
+
   artist?: string;
   category?: SongCategory | string;
+
   key?: string;
   originalKey?: string;
+
   tempo?: string;
   bpm?: number;
+
   timeSignature?: string;
+
   icon?: string;
+
   audioUrl?: string;
+  audioFileName?: string;
+  audioFileType?: string;
+  audioFileSize?: number;
+
   lyrics?: string;
   chords?: string;
+
   arrangement?: SongArrangement;
   instruments?: SongInstruments;
+
   mdNotes?: string;
+
   duration?: string;
   tags?: string[];
+
   createdAt?: string;
 }
 
 export interface MinistrationSong {
-  songId: string;
+  songId: number;
   lead: number | null;
   keyOverride?: string;
   orderNote?: string;
@@ -77,11 +95,15 @@ export interface TeamMember {
   name: string;
   role: string;
   type: 'director' | 'vocal' | 'instrument';
+
   voicePart?: string;
   instrumentType?: string;
+
   icon?: string;
+
   phone?: string;
   email?: string;
+
   isAvailable?: boolean;
   canEdit?: boolean;
 }
