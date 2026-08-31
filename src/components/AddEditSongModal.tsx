@@ -1,3 +1,4 @@
+```tsx
 import React, { useEffect, useState } from 'react';
 import { Song } from '../types';
 import { X, Save, Upload, Music } from 'lucide-react';
@@ -9,7 +10,7 @@ interface AddEditSongModalProps {
   onSave: (
     songData: Omit<Song, 'id'> & { id?: number },
     audioFile?: File
-  ) => void;
+  ) => void | Promise<void>;
   editingSong: Song | null;
 }
 
@@ -29,6 +30,8 @@ export const AddEditSongModal: React.FC<AddEditSongModalProps> = ({
 
   const [audioFile, setAudioFile] = useState<File | undefined>();
   const [audioFileName, setAudioFileName] = useState('');
+
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (editingSong) {
@@ -50,9 +53,12 @@ export const AddEditSongModal: React.FC<AddEditSongModalProps> = ({
 
       setLyrics('');
       setChords('');
+
       setAudioFile(undefined);
       setAudioFileName('');
     }
+
+    setIsSaving(false);
   }, [editingSong, isOpen]);
 
   if (!isOpen) return null;
@@ -73,43 +79,67 @@ export const AddEditSongModal: React.FC<AddEditSongModalProps> = ({
     setAudioFileName(file.name);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (
+    e: React.FormEvent
+  ) => {
     e.preventDefault();
+
+    if (isSaving) return;
 
     if (!title.trim()) {
       alert('Please enter a song title.');
       return;
     }
 
-    onSave(
-      {
-        id: editingSong?.id,
-        title: title.trim(),
-        artist: artist.trim() || 'Unknown Artist',
-        key,
-        icon,
-        lyrics: lyrics.trim(),
-        chords: chords.trim(),
+    setIsSaving(true);
 
-        audioFileName:
-          audioFile?.name ||
-          editingSong?.audioFileName ||
-          undefined,
+    try {
+      await onSave(
+        {
+          id: editingSong?.id,
+          title: title.trim(),
+          artist: artist.trim() || 'Unknown Artist',
+          key,
+          icon,
+          lyrics: lyrics.trim(),
+          chords: chords.trim(),
 
-        audioFileType:
-          audioFile?.type ||
-          editingSong?.audioFileType ||
-          undefined,
+          audioFileName:
+            audioFile?.name ||
+            editingSong?.audioFileName ||
+            undefined,
 
-        audioFileSize:
-          audioFile?.size ||
-          editingSong?.audioFileSize ||
-          undefined
-      },
-      audioFile
-    );
+          audioFileType:
+            audioFile?.type ||
+            editingSong?.audioFileType ||
+            undefined,
 
-    onClose();
+          audioFileSize:
+            audioFile?.size ||
+            editingSong?.audioFileSize ||
+            undefined
+        },
+        audioFile
+      );
+
+      /*
+       * IMPORTANT:
+       * The parent App now controls the modal closing.
+       *
+       * We intentionally DO NOT call onClose() here.
+       */
+    } catch (error) {
+      console.error(
+        'Error submitting song:',
+        error
+      );
+
+      alert(
+        'The song could not be saved. Please try again.'
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const emojiIcons = [
@@ -129,10 +159,13 @@ export const AddEditSongModal: React.FC<AddEditSongModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/40 backdrop-blur-md">
+
       <div className="ios-glass bg-white/95 rounded-[32px] max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-white/80 max-h-[92vh] flex flex-col overflow-hidden">
 
         {/* Header */}
+
         <div className="flex items-center justify-between pb-4 border-b border-black/5">
+
           <div className="flex items-center gap-3">
 
             <div className="w-11 h-11 rounded-2xl bg-[#007aff] flex items-center justify-center text-white text-xl">
@@ -140,37 +173,47 @@ export const AddEditSongModal: React.FC<AddEditSongModalProps> = ({
             </div>
 
             <div>
+
               <span className="text-[11px] font-bold uppercase tracking-wider text-[#007aff]">
                 SONG BANK
               </span>
 
               <h2 className="text-xl font-bold text-[#1d1d1f]">
+
                 {editingSong
                   ? `Edit Song: ${editingSong.title}`
                   : 'Add New Song'}
+
               </h2>
+
             </div>
 
           </div>
 
           <button
+            type="button"
             onClick={onClose}
-            className="w-9 h-9 rounded-full bg-black/5 hover:bg-black/10 flex items-center justify-center"
+            disabled={isSaving}
+            className="w-9 h-9 rounded-full bg-black/5 hover:bg-black/10 flex items-center justify-center disabled:opacity-50"
           >
             <X className="w-5 h-5" />
           </button>
+
         </div>
 
         {/* Form */}
+
         <form
           onSubmit={handleSubmit}
           className="flex-1 overflow-y-auto py-5 space-y-5"
         >
 
           {/* Basic Information */}
+
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
 
             <div className="sm:col-span-6">
+
               <label className="text-xs font-bold block mb-1">
                 Song Title *
               </label>
@@ -181,11 +224,14 @@ export const AddEditSongModal: React.FC<AddEditSongModalProps> = ({
                 placeholder="e.g. Satisfy"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full bg-white border border-black/10 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-[#007aff]"
+                disabled={isSaving}
+                className="w-full bg-white border border-black/10 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-[#007aff] disabled:opacity-60"
               />
+
             </div>
 
             <div className="sm:col-span-4">
+
               <label className="text-xs font-bold block mb-1">
                 Artist / Source
               </label>
@@ -195,11 +241,14 @@ export const AddEditSongModal: React.FC<AddEditSongModalProps> = ({
                 placeholder="e.g. Joe Mettle"
                 value={artist}
                 onChange={(e) => setArtist(e.target.value)}
-                className="w-full bg-white border border-black/10 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-[#007aff]"
+                disabled={isSaving}
+                className="w-full bg-white border border-black/10 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-[#007aff] disabled:opacity-60"
               />
+
             </div>
 
             <div className="sm:col-span-2">
+
               <label className="text-xs font-bold block mb-1">
                 Icon
               </label>
@@ -207,20 +256,26 @@ export const AddEditSongModal: React.FC<AddEditSongModalProps> = ({
               <select
                 value={icon}
                 onChange={(e) => setIcon(e.target.value)}
-                className="w-full bg-white border border-black/10 rounded-xl px-3 py-2.5 text-base outline-none"
+                disabled={isSaving}
+                className="w-full bg-white border border-black/10 rounded-xl px-3 py-2.5 text-base outline-none disabled:opacity-60"
               >
+
                 {emojiIcons.map((ic) => (
                   <option key={ic} value={ic}>
                     {ic}
                   </option>
                 ))}
+
               </select>
+
             </div>
 
           </div>
 
           {/* Musical Key */}
+
           <div>
+
             <label className="text-xs font-bold block mb-1">
               Musical Key
             </label>
@@ -228,8 +283,10 @@ export const AddEditSongModal: React.FC<AddEditSongModalProps> = ({
             <select
               value={key}
               onChange={(e) => setKey(e.target.value)}
-              className="w-full bg-white border border-black/10 rounded-xl px-3 py-2.5 text-sm font-bold text-[#007aff] outline-none"
+              disabled={isSaving}
+              className="w-full bg-white border border-black/10 rounded-xl px-3 py-2.5 text-sm font-bold text-[#007aff] outline-none disabled:opacity-60"
             >
+
               {CHROMATIC_KEYS.map((k) => (
                 <option key={k} value={k}>
                   {k} Major
@@ -237,14 +294,20 @@ export const AddEditSongModal: React.FC<AddEditSongModalProps> = ({
               ))}
 
               {CHROMATIC_KEYS.map((k) => (
-                <option key={`${k}m`} value={`${k}m`}>
+                <option
+                  key={`${k}m`}
+                  value={`${k}m`}
+                >
                   {k} Minor
                 </option>
               ))}
+
             </select>
+
           </div>
 
           {/* Audio Upload */}
+
           <div className="p-5 rounded-2xl bg-[#007aff]/5 border border-[#007aff]/15">
 
             <div className="flex items-center gap-2 mb-3">
@@ -252,6 +315,7 @@ export const AddEditSongModal: React.FC<AddEditSongModalProps> = ({
               <Music className="w-5 h-5 text-[#007aff]" />
 
               <div>
+
                 <h3 className="text-sm font-bold">
                   Song Audio
                 </h3>
@@ -259,6 +323,7 @@ export const AddEditSongModal: React.FC<AddEditSongModalProps> = ({
                 <p className="text-[11px] text-[#6e6e73]">
                   Upload the actual rehearsal or reference recording.
                 </p>
+
               </div>
 
             </div>
@@ -268,9 +333,11 @@ export const AddEditSongModal: React.FC<AddEditSongModalProps> = ({
               <Upload className="w-7 h-7 text-[#007aff] mb-2" />
 
               <span className="text-sm font-bold text-[#007aff]">
+
                 {audioFileName
                   ? 'Choose another audio file'
                   : 'Upload Audio File'}
+
               </span>
 
               <span className="text-[11px] text-[#6e6e73] mt-1">
@@ -281,12 +348,14 @@ export const AddEditSongModal: React.FC<AddEditSongModalProps> = ({
                 type="file"
                 accept="audio/*"
                 onChange={handleAudioChange}
+                disabled={isSaving}
                 className="hidden"
               />
 
             </label>
 
             {audioFileName && (
+
               <div className="mt-3 flex items-center gap-2 bg-white rounded-xl p-3 border border-black/5">
 
                 <Music className="w-4 h-4 text-[#007aff]" />
@@ -296,12 +365,15 @@ export const AddEditSongModal: React.FC<AddEditSongModalProps> = ({
                 </span>
 
               </div>
+
             )}
 
           </div>
 
           {/* Lyrics */}
+
           <div>
+
             <label className="text-xs font-bold block mb-1">
               Song Lyrics
             </label>
@@ -316,12 +388,16 @@ Enter lyrics here...
 Enter chorus here...`}
               value={lyrics}
               onChange={(e) => setLyrics(e.target.value)}
-              className="w-full bg-white border border-black/10 rounded-xl p-3 text-sm outline-none focus:border-[#007aff] leading-relaxed resize-y"
+              disabled={isSaving}
+              className="w-full bg-white border border-black/10 rounded-xl p-3 text-sm outline-none focus:border-[#007aff] leading-relaxed resize-y disabled:opacity-60"
             />
+
           </div>
 
           {/* Chords */}
+
           <div>
+
             <label className="text-xs font-bold block mb-1">
               Chords
             </label>
@@ -338,36 +414,48 @@ G  C  Em  D
 C  D  G`}
               value={chords}
               onChange={(e) => setChords(e.target.value)}
-              className="w-full bg-white border border-black/10 rounded-xl p-3 text-sm font-mono outline-none focus:border-[#007aff] leading-relaxed resize-y"
+              disabled={isSaving}
+              className="w-full bg-white border border-black/10 rounded-xl p-3 text-sm font-mono outline-none focus:border-[#007aff] leading-relaxed resize-y disabled:opacity-60"
             />
+
           </div>
 
           {/* Footer */}
+
           <div className="flex items-center justify-end gap-3 pt-3 border-t border-black/5">
 
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2.5 rounded-xl bg-black/5 hover:bg-black/10 text-xs font-bold"
+              disabled={isSaving}
+              className="px-5 py-2.5 rounded-xl bg-black/5 hover:bg-black/10 text-xs font-bold disabled:opacity-50"
             >
               Cancel
             </button>
 
             <button
               type="submit"
-              className="px-6 py-2.5 rounded-xl bg-[#007aff] hover:bg-[#0062cc] text-white text-xs font-bold flex items-center gap-2"
+              disabled={isSaving}
+              className="px-6 py-2.5 rounded-xl bg-[#007aff] hover:bg-[#0062cc] text-white text-xs font-bold flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
             >
+
               <Save className="w-4 h-4" />
 
-              {editingSong
-                ? 'Save Changes'
-                : 'Add Song to Bank'}
+              {isSaving
+                ? 'Saving...'
+                : editingSong
+                  ? 'Save Changes'
+                  : 'Add Song to Bank'}
+
             </button>
 
           </div>
 
         </form>
+
       </div>
+
     </div>
   );
 };
+```
