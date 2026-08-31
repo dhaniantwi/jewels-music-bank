@@ -3,7 +3,7 @@ const STORE_NAME = 'songs_audio';
 const DB_VERSION = 1;
 
 interface AudioRecord {
-  songId: number;
+  songId: string;
   file: File;
 }
 
@@ -38,17 +38,13 @@ function openDatabase(): Promise<IDBDatabase> {
  * Saves or replaces an audio file for a song.
  */
 export async function saveAudioFile(
-  songId: number,
+  songId: string,
   file: File
 ): Promise<void> {
   const db = await openDatabase();
 
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(
-      STORE_NAME,
-      'readwrite'
-    );
-
+    const transaction = db.transaction(STORE_NAME, 'readwrite');
     const store = transaction.objectStore(STORE_NAME);
 
     const record: AudioRecord = {
@@ -79,23 +75,17 @@ export async function saveAudioFile(
  * Retrieves the audio file belonging to a song.
  */
 export async function getAudioFile(
-  songId: number
+  songId: string
 ): Promise<File | null> {
   const db = await openDatabase();
 
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(
-      STORE_NAME,
-      'readonly'
-    );
-
+    const transaction = db.transaction(STORE_NAME, 'readonly');
     const store = transaction.objectStore(STORE_NAME);
     const request = store.get(songId);
 
     request.onsuccess = () => {
-      const record = request.result as
-        | AudioRecord
-        | undefined;
+      const record = request.result as AudioRecord | undefined;
 
       db.close();
       resolve(record?.file ?? null);
@@ -112,16 +102,12 @@ export async function getAudioFile(
  * Deletes the audio file belonging to a song.
  */
 export async function deleteAudioFile(
-  songId: number
+  songId: string
 ): Promise<void> {
   const db = await openDatabase();
 
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(
-      STORE_NAME,
-      'readwrite'
-    );
-
+    const transaction = db.transaction(STORE_NAME, 'readwrite');
     const store = transaction.objectStore(STORE_NAME);
 
     store.delete(songId);
