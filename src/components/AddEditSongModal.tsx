@@ -22,7 +22,7 @@ interface SongDetailModalProps {
   onClose: () => void;
   activeRole: ActiveRole;
   onEdit: (song: Song) => void;
-  onDelete: (songId: number) => void;
+  onDelete: (songId: string) => void;
 }
 
 export const SongDetailModal: React.FC<SongDetailModalProps> = ({
