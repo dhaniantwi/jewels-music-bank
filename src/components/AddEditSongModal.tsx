@@ -337,3 +337,4 @@ export const SongDetailModal: React.FC<SongDetailModalProps> = ({
     </div>
   );
 };
+export { SongDetailModal as AddEditSongModal };
