@@ -5,13 +5,7 @@
   */
 
 import React, { useState, useEffect } from 'react';
-import {
-Song,
-Ministration,
-TeamMember,
-ActiveTab,
-ActiveRole
-} from './types';
+import { Song, Ministration, TeamMember, ActiveTab, ActiveRole } from './types';
 
 import {
 loadStoredSongs,
@@ -34,16 +28,8 @@ import { AddEditMemberModal } from './components/AddEditMemberModal';
 import { ToolsModal } from './components/ToolsModal';
 import { StageRehearsalModal } from './components/StageRehearsalModal';
 
-import {
-saveAudioFile,
-deleteAudioFile
-} from './utils/audioStorage';
-
 export default function App() {
-// ============================================================
-// PRIMARY APPLICATION STATE
-// ============================================================
-
+// Primary Application State with LocalStorage persistence
 const [songs, setSongs] = useState<Song[]>(() => loadStoredSongs());
 
 const [ministrations, setMinistrations] = useState<Ministration[]>(
@@ -54,20 +40,14 @@ const [team, setTeam] = useState<TeamMember[]>(
 () => loadStoredTeam()
 );
 
-// ============================================================
-// ACTIVE VIEW & ROLE
-// ============================================================
-
+// Active View & Role
 const [activeTab, setActiveTab] =
 useState<ActiveTab>('home');
 
 const [activeRole, setActiveRole] =
 useState<ActiveRole>('admin_md');
 
-// ============================================================
-// SONG MODALS
-// ============================================================
-
+// Song modal state
 const [selectedSong, setSelectedSong] =
 useState<Song | null>(null);
 
@@ -77,41 +57,32 @@ useState<Song | null>(null);
 const [isAddEditSongOpen, setIsAddEditSongOpen] =
 useState(false);
 
-// ============================================================
-// TEAM MODALS
-// ============================================================
-
+// Member modal state
 const [editingMember, setEditingMember] =
 useState<TeamMember | null>(null);
 
 const [isAddEditMemberOpen, setIsAddEditMemberOpen] =
 useState(false);
 
-// ============================================================
-// OTHER MODALS
-// ============================================================
-
+// Other modals
 const [isToolsModalOpen, setIsToolsModalOpen] =
 useState(false);
 
 const [isStageModeOpen, setIsStageModeOpen] =
 useState(false);
 
-// ============================================================
-// SELECTED MINISTRATION
-// ============================================================
-
+// Selected ministration
 const [selectedMinistration, setSelectedMinistration] =
 useState<Ministration | null>(
 () =>
 ministrations.find(
-(m) => m.status === 'Upcoming'
-) || ministrations[0] || null
+m => m.status === 'Upcoming'
+) || ministrations[0]
 );
 
-// ============================================================
-// LOCAL STORAGE SYNCHRONIZATION
-// ============================================================
+// =============================================================
+// STORAGE SYNC
+// =============================================================
 
 useEffect(() => {
 saveStoredSongs(songs);
@@ -125,177 +96,94 @@ useEffect(() => {
 saveStoredTeam(team);
 }, [team]);
 
-// ============================================================
-// KEEP SELECTED MINISTRATION FRESH
-// ============================================================
-
+// Keep selected ministration fresh
 useEffect(() => {
-if (!selectedMinistration) return;
-
-```
+if (selectedMinistration) {
 const refreshed = ministrations.find(
-  (m) => m.id === selectedMinistration.id
+m => m.id === selectedMinistration.id
 );
 
-if (refreshed) {
-  setSelectedMinistration(refreshed);
+```
+  if (refreshed) {
+    setSelectedMinistration(refreshed);
+  }
 }
 ```
 
-}, [ministrations, selectedMinistration]);
+}, [ministrations]);
 
-// ============================================================
+// =============================================================
 // SONG BANK ACTIONS
-// ============================================================
+// =============================================================
 
-/**
+const handleSaveSong = (
+songData: Omit<Song, 'id'> & { id?: string }
+) => {
+if (songData.id) {
+// Edit existing song
+setSongs(prev =>
+prev.map(song =>
+song.id === songData.id
+? (songData as Song)
+: song
+)
+);
 
-* Saves a song and optionally saves its audio file
-* into IndexedDB.
-*
-* The audio file is NOT stored in LocalStorage.
-  */
-  const handleSaveSong = async (
-  songData: Omit<Song, 'id'> & {
-  id?: string;
-  audioFile?: File | null;
-  }
-  ) => {
-  try {
-  const { audioFile, ...songFields } = songData;
-
-  // ----------------------------------------------------------
-  // EDIT EXISTING SONG
-  // ----------------------------------------------------------
-
-  if (songData.id) {
-  const existingSong = songs.find(
-  (s) => s.id === songData.id
-  );
-
-  const updatedSong: Song = {
-  ...(existingSong || {}),
-  ...songFields,
-  id: songData.id
-  } as Song;
-
-  setSongs((prev) =>
-  prev.map((song) =>
-  song.id === songData.id
-  ? updatedSong
-  : song
-  )
-  );
-
-  // Save newly selected audio file if one exists.
-  if (audioFile) {
-  await saveAudioFile(
-  songData.id,
-  audioFile
-  );
-  }
-
-  // Keep currently selected song updated.
+```
   if (selectedSong?.id === songData.id) {
-  setSelectedSong(updatedSong);
+    setSelectedSong(songData as Song);
   }
-
-  return;
-  }
-
-  // ----------------------------------------------------------
-  // ADD NEW SONG
-  // ----------------------------------------------------------
-
+} else {
+  // Add new song
   const newId = crypto.randomUUID();
 
   const newSong: Song = {
-  ...songFields,
-  id: newId,
-  createdAt: new Date().toISOString()
+    ...songData,
+    id: newId,
+    createdAt: new Date().toISOString()
   } as Song;
 
-  setSongs((prev) => [
-  newSong,
-  ...prev
+  setSongs(prev => [
+    newSong,
+    ...prev
   ]);
-
-  // Save audio AFTER the song receives its permanent ID.
-  if (audioFile) {
-  await saveAudioFile(
-  newId,
-  audioFile
-  );
-  }
-
-```
-} catch (error) {
-```
-
-```
-  console.error(
-    'Failed to save song:',
-    error
-  );
-
-  alert(
-    'The song could not be saved. Please try again.'
-  );
-
-  throw error;
 }
 ```
 
 };
 
-// ============================================================
+// =============================================================
 // DELETE SONG
-// ============================================================
+// =============================================================
 
-const handleDeleteSong = async (
+const handleDeleteSong = (
 songId: string
 ) => {
-try {
-// Delete the audio stored in IndexedDB.
-await deleteAudioFile(songId);
-} catch (error) {
-console.warn(
-'Could not delete stored audio:',
-error
+setSongs(prev =>
+prev.filter(song =>
+song.id !== songId
+)
 );
-}
 
 ```
-// Remove song from Song Bank.
-setSongs((prev) =>
-  prev.filter(
-    (song) => song.id !== songId
-  )
-);
-
-// Remove song from all ministrations.
-setMinistrations((prev) =>
-  prev.map((ministration) => ({
+// Remove from ministrations
+setMinistrations(prev =>
+  prev.map(ministration => ({
     ...ministration,
     songs:
       ministration.songs.filter(
-        (item) =>
+        item =>
           item.songId !== songId
       )
   }))
 );
-
-// Close detail modal if necessary.
-if (selectedSong?.id === songId) {
-  setSelectedSong(null);
-}
 ```
 
 };
 
-// ============================================================
+// =============================================================
 // TEAM ACTIONS
-// ============================================================
+// =============================================================
 
 const handleSaveMember = (
 memberData: Omit<TeamMember, 'id'> & {
@@ -303,62 +191,57 @@ id?: number;
 }
 ) => {
 if (memberData.id) {
-setTeam((prev) =>
-prev.map((member) =>
+setTeam(prev =>
+prev.map(member =>
 member.id === memberData.id
 ? (memberData as TeamMember)
 : member
 )
 );
-
-```
-  return;
-}
-
+} else {
 const newId = Date.now();
 
-const newMember: TeamMember = {
-  ...memberData,
-  id: newId
-};
+```
+  const newMember: TeamMember = {
+    ...memberData,
+    id: newId
+  };
 
-setTeam((prev) => [
-  ...prev,
-  newMember
-]);
+  setTeam(prev => [
+    ...prev,
+    newMember
+  ]);
+}
 ```
 
 };
 
-// ============================================================
-// DELETE TEAM MEMBER
-// ============================================================
+// =============================================================
+// DELETE MEMBER
+// =============================================================
 
 const handleDeleteMember = (
 memberId: number
 ) => {
-setTeam((prev) =>
+setTeam(prev =>
 prev.filter(
-(member) =>
+member =>
 member.id !== memberId
 )
 );
 
 ```
-// Remove member as lead vocalist.
-setMinistrations((prev) =>
-  prev.map((ministration) => ({
+setMinistrations(prev =>
+  prev.map(ministration => ({
     ...ministration,
-
     songs:
-      ministration.songs.map(
-        (item) =>
-          item.lead === memberId
-            ? {
-                ...item,
-                lead: null
-              }
-            : item
+      ministration.songs.map(item =>
+        item.lead === memberId
+          ? {
+              ...item,
+              lead: null
+            }
+          : item
       )
   }))
 );
@@ -366,39 +249,39 @@ setMinistrations((prev) =>
 
 };
 
-// ============================================================
+// =============================================================
 // TOGGLE MEMBER PERMISSION
-// ============================================================
+// =============================================================
 
 const handleTogglePermission = (
 memberId: number
 ) => {
-setTeam((prev) =>
-prev.map((member) => {
-if (member.id !== memberId) {
-return member;
+setTeam(prev =>
+prev.map(member => {
+if (member.id === memberId) {
+return {
+...member,
+canEdit: !member.canEdit
+};
 }
 
 ```
-    return {
-      ...member,
-      canEdit: !member.canEdit
-    };
+    return member;
   })
 );
 ```
 
 };
 
-// ============================================================
+// =============================================================
 // MINISTRATION ACTIONS
-// ============================================================
+// =============================================================
 
 const handleUpdateMinistration = (
 updated: Ministration
 ) => {
-setMinistrations((prev) =>
-prev.map((ministration) =>
+setMinistrations(prev =>
+prev.map(ministration =>
 ministration.id === updated.id
 ? updated
 : ministration
@@ -422,7 +305,7 @@ const created: Ministration = {
   id: newId
 };
 
-setMinistrations((prev) => [
+setMinistrations(prev => [
   created,
   ...prev
 ]);
@@ -432,9 +315,9 @@ setSelectedMinistration(created);
 
 };
 
-// ============================================================
+// =============================================================
 // RESET DATA
-// ============================================================
+// =============================================================
 
 const handleResetData = () => {
 if (
@@ -443,27 +326,20 @@ confirm(
 )
 ) {
 resetAllToDefaults();
-
-```
-  window.location.reload();
+window.location.reload();
 }
-```
-
 };
 
-// ============================================================
+// =============================================================
 // RENDER
-// ============================================================
+// =============================================================
 
 return ( <div className="min-h-screen flex flex-col justify-between text-[#1d1d1f] font-sans pb-12 sm:pb-16 selection:bg-[#007aff]/20 selection:text-[#007aff]">
 
 ```
   <div>
 
-    {/* ======================================================
-        NAVIGATION
-        ====================================================== */}
-
+    {/* Navigation Bar */}
     <Navbar
       activeTab={activeTab}
       setActiveTab={setActiveTab}
@@ -479,16 +355,10 @@ return ( <div className="min-h-screen flex flex-col justify-between text-[#1d1d1
       }
     />
 
-    {/* ======================================================
-        MAIN CONTENT
-        ====================================================== */}
-
+    {/* Main Content */}
     <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-2">
 
-      {/* ====================================================
-          HOME
-          ==================================================== */}
-
+      {/* HOME */}
       {activeTab === 'home' && (
         <DashboardView
           songs={songs}
@@ -497,11 +367,11 @@ return ( <div className="min-h-screen flex flex-col justify-between text-[#1d1d1
           activeRole={activeRole}
           setActiveTab={setActiveTab}
 
-          onSelectSong={(song) =>
+          onSelectSong={song =>
             setSelectedSong(song)
           }
 
-          onSelectMinistration={(ministration) => {
+          onSelectMinistration={ministration => {
             setSelectedMinistration(
               ministration
             );
@@ -521,16 +391,13 @@ return ( <div className="min-h-screen flex flex-col justify-between text-[#1d1d1
         />
       )}
 
-      {/* ====================================================
-          SONG BANK
-          ==================================================== */}
-
+      {/* SONG BANK */}
       {activeTab === 'songs' && (
         <SongBankView
           songs={songs}
           activeRole={activeRole}
 
-          onSelectSong={(song) =>
+          onSelectSong={song =>
             setSelectedSong(song)
           }
 
@@ -539,7 +406,7 @@ return ( <div className="min-h-screen flex flex-col justify-between text-[#1d1d1
             setIsAddEditSongOpen(true);
           }}
 
-          onEditSong={(song) => {
+          onEditSong={song => {
             setEditingSong(song);
             setIsAddEditSongOpen(true);
           }}
@@ -550,10 +417,7 @@ return ( <div className="min-h-screen flex flex-col justify-between text-[#1d1d1
         />
       )}
 
-      {/* ====================================================
-          MINISTRATIONS
-          ==================================================== */}
-
+      {/* MINISTRATIONS */}
       {activeTab === 'ministrations' && (
         <MinistrationsView
           ministrations={ministrations}
@@ -564,7 +428,7 @@ return ( <div className="min-h-screen flex flex-col justify-between text-[#1d1d1
             selectedMinistration
           }
 
-          onSelectMinistration={(ministration) =>
+          onSelectMinistration={ministration =>
             setSelectedMinistration(
               ministration
             )
@@ -578,7 +442,7 @@ return ( <div className="min-h-screen flex flex-col justify-between text-[#1d1d1
             handleCreateMinistration
           }
 
-          onSelectSong={(song) =>
+          onSelectSong={song =>
             setSelectedSong(song)
           }
 
@@ -588,10 +452,7 @@ return ( <div className="min-h-screen flex flex-col justify-between text-[#1d1d1
         />
       )}
 
-      {/* ====================================================
-          MUSIC TEAM
-          ==================================================== */}
-
+      {/* MUSIC TEAM */}
       {activeTab === 'team' && (
         <MusicTeamView
           team={team}
@@ -602,7 +463,7 @@ return ( <div className="min-h-screen flex flex-col justify-between text-[#1d1d1
             setIsAddEditMemberOpen(true);
           }}
 
-          onEditMember={(member) => {
+          onEditMember={member => {
             setEditingMember(member);
             setIsAddEditMemberOpen(true);
           }}
@@ -621,7 +482,7 @@ return ( <div className="min-h-screen flex flex-col justify-between text-[#1d1d1
   </div>
 
   {/* =========================================================
-      PRINTABLE MINISTRATION SHEET
+      PRINTABLE SHEET
       ========================================================= */}
 
   {selectedMinistration && (
@@ -658,7 +519,6 @@ return ( <div className="min-h-screen flex flex-col justify-between text-[#1d1d1
       <table className="w-full border-collapse border border-gray-400 text-sm">
 
         <thead>
-
           <tr className="bg-gray-100">
 
             <th className="border border-gray-400 p-2 text-left">
@@ -686,7 +546,6 @@ return ( <div className="min-h-screen flex flex-col justify-between text-[#1d1d1
             </th>
 
           </tr>
-
         </thead>
 
         <tbody>
@@ -695,13 +554,13 @@ return ( <div className="min-h-screen flex flex-col justify-between text-[#1d1d1
             (item, idx) => {
 
               const song = songs.find(
-                (songItem) =>
+                songItem =>
                   songItem.id ===
                   item.songId
               );
 
               const lead = team.find(
-                (member) =>
+                member =>
                   member.id === item.lead
               );
 
@@ -766,8 +625,6 @@ return ( <div className="min-h-screen flex flex-col justify-between text-[#1d1d1
       GLOBAL MODALS
       ========================================================= */}
 
-  {/* Song Details */}
-
   <SongDetailModal
     song={selectedSong}
     isOpen={!!selectedSong}
@@ -776,7 +633,7 @@ return ( <div className="min-h-screen flex flex-col justify-between text-[#1d1d1
     }
     activeRole={activeRole}
 
-    onEdit={(song) => {
+    onEdit={song => {
       setSelectedSong(null);
       setEditingSong(song);
       setIsAddEditSongOpen(true);
@@ -787,8 +644,6 @@ return ( <div className="min-h-screen flex flex-col justify-between text-[#1d1d1
     }
   />
 
-  {/* Add / Edit Song */}
-
   <AddEditSongModal
     isOpen={isAddEditSongOpen}
 
@@ -797,12 +652,14 @@ return ( <div className="min-h-screen flex flex-col justify-between text-[#1d1d1
       setEditingSong(null);
     }}
 
-    onSave={handleSaveSong}
+    onSave={
+      handleSaveSong
+    }
 
-    editingSong={editingSong}
+    editingSong={
+      editingSong
+    }
   />
-
-  {/* Add / Edit Member */}
 
   <AddEditMemberModal
     isOpen={isAddEditMemberOpen}
@@ -812,12 +669,14 @@ return ( <div className="min-h-screen flex flex-col justify-between text-[#1d1d1
       setEditingMember(null);
     }}
 
-    onSave={handleSaveMember}
+    onSave={
+      handleSaveMember
+    }
 
-    editingMember={editingMember}
+    editingMember={
+      editingMember
+    }
   />
-
-  {/* Tools */}
 
   <ToolsModal
     isOpen={isToolsModalOpen}
@@ -825,8 +684,6 @@ return ( <div className="min-h-screen flex flex-col justify-between text-[#1d1d1
       setIsToolsModalOpen(false)
     }
   />
-
-  {/* Stage Rehearsal */}
 
   {selectedMinistration && (
     <StageRehearsalModal
@@ -842,9 +699,7 @@ return ( <div className="min-h-screen flex flex-col justify-between text-[#1d1d1
     />
   )}
 
-  {/* =========================================================
-      FOOTER
-      ========================================================= */}
+  {/* Footer */}
 
   <footer className="mt-16 text-center text-xs text-[#86868b] space-y-2 no-print">
 
