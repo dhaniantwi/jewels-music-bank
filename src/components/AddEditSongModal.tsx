@@ -1,340 +1,373 @@
-import React, { useEffect, useRef, useState } from 'react';
-import {
-  X,
-  Play,
-  Pause,
-  Download,
-  Edit,
-  Trash2,
-  Music
-} from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Song } from '../types';
+import { X, Save, Upload, Music } from 'lucide-react';
+import { CHROMATIC_KEYS } from '../utils/audioUtils';
 
-import { Song, ActiveRole } from '../types';
-import { transposeKey } from '../utils/audioUtils';
-import {
-  getAudioFile,
-  deleteAudioFile
-} from '../utils/audioStorage';
-
-interface SongDetailModalProps {
-  song: Song | null;
+interface AddEditSongModalProps {
   isOpen: boolean;
   onClose: () => void;
-  activeRole: ActiveRole;
-  onEdit: (song: Song) => void;
-  onDelete: (songId: string) => void;
+  onSave: (
+    songData: Omit<Song, 'id'> & { id?: number },
+    audioFile?: File
+  ) => void;
+  editingSong: Song | null;
 }
 
-export const SongDetailModal: React.FC<SongDetailModalProps> = ({
-  song,
+export const AddEditSongModal: React.FC<AddEditSongModalProps> = ({
   isOpen,
   onClose,
-  activeRole,
-  onEdit,
-  onDelete
+  onSave,
+  editingSong
 }) => {
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [transposeOffset, setTransposeOffset] = useState(0);
+  const [title, setTitle] = useState('');
+  const [artist, setArtist] = useState('');
+  const [key, setKey] = useState('G');
+  const [icon, setIcon] = useState('🎵');
 
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [lyrics, setLyrics] = useState('');
+  const [chords, setChords] = useState('');
 
-  const isMD = activeRole === 'admin_md';
+  const [audioFile, setAudioFile] = useState<File | undefined>();
+  const [audioFileName, setAudioFileName] = useState('');
 
   useEffect(() => {
-    let objectUrl: string | null = null;
+    if (editingSong) {
+      setTitle(editingSong.title);
+      setArtist(editingSong.artist);
+      setKey(editingSong.key);
+      setIcon(editingSong.icon || '🎵');
 
-    const loadAudio = async () => {
-      if (!song) {
-        setAudioUrl(null);
-        return;
-      }
+      setLyrics(editingSong.lyrics || '');
+      setChords(editingSong.chords || '');
 
-      const file = await getAudioFile(song.id);
-
-      if (file) {
-        objectUrl = URL.createObjectURL(file);
-        setAudioUrl(objectUrl);
-      } else {
-        setAudioUrl(null);
-      }
-    };
-
-    loadAudio();
-
-    return () => {
-      if (objectUrl) {
-        URL.revokeObjectURL(objectUrl);
-      }
-    };
-  }, [song]);
-
-  if (!isOpen || !song) return null;
-
-  const effectiveKey = transposeKey(song.key, transposeOffset);
-
-  const togglePlay = async () => {
-    if (!audioRef.current) return;
-
-    if (isPlaying) {
-      audioRef.current.pause();
-      setIsPlaying(false);
+      setAudioFile(undefined);
+      setAudioFileName(editingSong.audioFileName || '');
     } else {
-      try {
-        await audioRef.current.play();
-        setIsPlaying(true);
-      } catch (error) {
-        console.error('Unable to play audio:', error);
-      }
+      setTitle('');
+      setArtist('');
+      setKey('G');
+      setIcon('🎵');
+
+      setLyrics('');
+      setChords('');
+      setAudioFile(undefined);
+      setAudioFileName('');
     }
-  };
+  }, [editingSong, isOpen]);
 
-  const handleDownload = () => {
-    if (!audioUrl || !song.audioFileName) return;
+  if (!isOpen) return null;
 
-    const link = document.createElement('a');
+  const handleAudioChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
 
-    link.href = audioUrl;
-    link.download = song.audioFileName;
+    if (!file) return;
 
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const handleDelete = async () => {
-    if (
-      !confirm(
-        `Are you sure you want to delete "${song.title}" from the Song Bank?`
-      )
-    ) {
+    if (!file.type.startsWith('audio/')) {
+      alert('Please select an audio file.');
       return;
     }
 
-    await deleteAudioFile(song.id);
+    setAudioFile(file);
+    setAudioFileName(file.name);
+  };
 
-    onDelete(song.id);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!title.trim()) {
+      alert('Please enter a song title.');
+      return;
+    }
+
+    onSave(
+      {
+        id: editingSong?.id,
+        title: title.trim(),
+        artist: artist.trim() || 'Unknown Artist',
+        key,
+        icon,
+        lyrics: lyrics.trim(),
+        chords: chords.trim(),
+
+        audioFileName:
+          audioFile?.name ||
+          editingSong?.audioFileName ||
+          undefined,
+
+        audioFileType:
+          audioFile?.type ||
+          editingSong?.audioFileType ||
+          undefined,
+
+        audioFileSize:
+          audioFile?.size ||
+          editingSong?.audioFileSize ||
+          undefined
+      },
+      audioFile
+    );
+
     onClose();
   };
 
+  const emojiIcons = [
+    '🎵',
+    '🔥',
+    '🌍',
+    '🎤',
+    '👑',
+    '⚡',
+    '✨',
+    '🕊️',
+    '🎷',
+    '🎹',
+    '🎸',
+    '🥁'
+  ];
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/40 backdrop-blur-md">
-
-      <div className="ios-glass bg-white/95 rounded-[32px] max-w-3xl w-full p-6 sm:p-8 shadow-2xl border border-white/80 max-h-[92vh] flex flex-col overflow-hidden">
+      <div className="ios-glass bg-white/95 rounded-[32px] max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-white/80 max-h-[92vh] flex flex-col overflow-hidden">
 
         {/* Header */}
-        <div className="flex items-start justify-between pb-5 border-b border-black/5">
+        <div className="flex items-center justify-between pb-4 border-b border-black/5">
+          <div className="flex items-center gap-3">
 
-          <div className="flex items-center gap-4 min-w-0">
-
-            <div className="w-14 h-14 rounded-2xl bg-[#007aff]/10 flex items-center justify-center text-3xl border border-[#007aff]/10">
-              {song.icon || '🎵'}
+            <div className="w-11 h-11 rounded-2xl bg-[#007aff] flex items-center justify-center text-white text-xl">
+              {editingSong ? '✏️' : '➕'}
             </div>
 
-            <div className="min-w-0">
+            <div>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#007aff]">
+                SONG BANK
+              </span>
 
-              <h2 className="text-2xl font-extrabold text-[#1d1d1f] truncate">
-                {song.title}
+              <h2 className="text-xl font-bold text-[#1d1d1f]">
+                {editingSong
+                  ? `Edit Song: ${editingSong.title}`
+                  : 'Add New Song'}
               </h2>
-
-              <p className="text-sm font-semibold text-[#6e6e73]">
-                {song.artist}
-              </p>
-
             </div>
 
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <button
+            onClick={onClose}
+            className="w-9 h-9 rounded-full bg-black/5 hover:bg-black/10 flex items-center justify-center"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
-            {isMD && (
-              <>
-                <button
-                  onClick={() => {
-                    onClose();
-                    onEdit(song);
-                  }}
-                  title="Edit Song"
-                  className="w-9 h-9 rounded-full bg-[#007aff]/10 text-[#007aff] flex items-center justify-center"
-                >
-                  <Edit className="w-4 h-4" />
-                </button>
+        {/* Form */}
+        <form
+          onSubmit={handleSubmit}
+          className="flex-1 overflow-y-auto py-5 space-y-5"
+        >
 
-                <button
-                  onClick={handleDelete}
-                  title="Delete Song"
-                  className="w-9 h-9 rounded-full bg-rose-500/10 text-rose-600 flex items-center justify-center"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </>
+          {/* Basic Information */}
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+
+            <div className="sm:col-span-6">
+              <label className="text-xs font-bold block mb-1">
+                Song Title *
+              </label>
+
+              <input
+                type="text"
+                required
+                placeholder="e.g. Satisfy"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full bg-white border border-black/10 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-[#007aff]"
+              />
+            </div>
+
+            <div className="sm:col-span-4">
+              <label className="text-xs font-bold block mb-1">
+                Artist / Source
+              </label>
+
+              <input
+                type="text"
+                placeholder="e.g. Joe Mettle"
+                value={artist}
+                onChange={(e) => setArtist(e.target.value)}
+                className="w-full bg-white border border-black/10 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-[#007aff]"
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="text-xs font-bold block mb-1">
+                Icon
+              </label>
+
+              <select
+                value={icon}
+                onChange={(e) => setIcon(e.target.value)}
+                className="w-full bg-white border border-black/10 rounded-xl px-3 py-2.5 text-base outline-none"
+              >
+                {emojiIcons.map((ic) => (
+                  <option key={ic} value={ic}>
+                    {ic}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+          </div>
+
+          {/* Musical Key */}
+          <div>
+            <label className="text-xs font-bold block mb-1">
+              Musical Key
+            </label>
+
+            <select
+              value={key}
+              onChange={(e) => setKey(e.target.value)}
+              className="w-full bg-white border border-black/10 rounded-xl px-3 py-2.5 text-sm font-bold text-[#007aff] outline-none"
+            >
+              {CHROMATIC_KEYS.map((k) => (
+                <option key={k} value={k}>
+                  {k} Major
+                </option>
+              ))}
+
+              {CHROMATIC_KEYS.map((k) => (
+                <option key={`${k}m`} value={`${k}m`}>
+                  {k} Minor
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Audio Upload */}
+          <div className="p-5 rounded-2xl bg-[#007aff]/5 border border-[#007aff]/15">
+
+            <div className="flex items-center gap-2 mb-3">
+
+              <Music className="w-5 h-5 text-[#007aff]" />
+
+              <div>
+                <h3 className="text-sm font-bold">
+                  Song Audio
+                </h3>
+
+                <p className="text-[11px] text-[#6e6e73]">
+                  Upload the actual rehearsal or reference recording.
+                </p>
+              </div>
+
+            </div>
+
+            <label className="flex flex-col items-center justify-center border-2 border-dashed border-[#007aff]/30 rounded-2xl p-6 cursor-pointer hover:bg-[#007aff]/5 transition-all">
+
+              <Upload className="w-7 h-7 text-[#007aff] mb-2" />
+
+              <span className="text-sm font-bold text-[#007aff]">
+                {audioFileName
+                  ? 'Choose another audio file'
+                  : 'Upload Audio File'}
+              </span>
+
+              <span className="text-[11px] text-[#6e6e73] mt-1">
+                MP3, WAV, M4A, OGG and other audio formats
+              </span>
+
+              <input
+                type="file"
+                accept="audio/*"
+                onChange={handleAudioChange}
+                className="hidden"
+              />
+
+            </label>
+
+            {audioFileName && (
+              <div className="mt-3 flex items-center gap-2 bg-white rounded-xl p-3 border border-black/5">
+
+                <Music className="w-4 h-4 text-[#007aff]" />
+
+                <span className="text-xs font-semibold truncate">
+                  {audioFileName}
+                </span>
+
+              </div>
             )}
 
+          </div>
+
+          {/* Lyrics */}
+          <div>
+            <label className="text-xs font-bold block mb-1">
+              Song Lyrics
+            </label>
+
+            <textarea
+              rows={8}
+              placeholder={`[Verse 1]
+
+Enter lyrics here...
+
+[Chorus]
+Enter chorus here...`}
+              value={lyrics}
+              onChange={(e) => setLyrics(e.target.value)}
+              className="w-full bg-white border border-black/10 rounded-xl p-3 text-sm outline-none focus:border-[#007aff] leading-relaxed resize-y"
+            />
+          </div>
+
+          {/* Chords */}
+          <div>
+            <label className="text-xs font-bold block mb-1">
+              Chords
+            </label>
+
+            <textarea
+              rows={6}
+              placeholder={`[Intro]
+G  C  Em  D
+
+[Verse]
+G  C  Em  D
+
+[Chorus]
+C  D  G`}
+              value={chords}
+              onChange={(e) => setChords(e.target.value)}
+              className="w-full bg-white border border-black/10 rounded-xl p-3 text-sm font-mono outline-none focus:border-[#007aff] leading-relaxed resize-y"
+            />
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-black/5">
+
             <button
+              type="button"
               onClick={onClose}
-              className="w-9 h-9 rounded-full bg-black/5 flex items-center justify-center"
+              className="px-5 py-2.5 rounded-xl bg-black/5 hover:bg-black/10 text-xs font-bold"
             >
-              <X className="w-5 h-5" />
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              className="px-6 py-2.5 rounded-xl bg-[#007aff] hover:bg-[#0062cc] text-white text-xs font-bold flex items-center gap-2"
+            >
+              <Save className="w-4 h-4" />
+
+              {editingSong
+                ? 'Save Changes'
+                : 'Add Song to Bank'}
             </button>
 
           </div>
 
-        </div>
-
-        {/* Song Info */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 py-5">
-
-          {/* Key */}
-          <div className="p-4 rounded-2xl bg-[#007aff]/5 border border-[#007aff]/10">
-
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#86868b]">
-              Musical Key
-            </span>
-
-            <div className="flex items-center justify-between mt-1">
-
-              <span className="text-2xl font-extrabold text-[#007aff]">
-                {effectiveKey}
-              </span>
-
-              <div className="flex items-center gap-1">
-
-                <button
-                  onClick={() =>
-                    setTransposeOffset((prev) => prev - 1)
-                  }
-                  className="w-7 h-7 rounded-lg bg-white border border-black/5 font-bold"
-                >
-                  −
-                </button>
-
-                <button
-                  onClick={() => setTransposeOffset(0)}
-                  className="text-[10px] px-2 font-bold text-[#86868b]"
-                >
-                  {transposeOffset === 0
-                    ? 'Original'
-                    : `${transposeOffset > 0 ? '+' : ''}${transposeOffset}`}
-                </button>
-
-                <button
-                  onClick={() =>
-                    setTransposeOffset((prev) => prev + 1)
-                  }
-                  className="w-7 h-7 rounded-lg bg-white border border-black/5 font-bold"
-                >
-                  +
-                </button>
-
-              </div>
-
-            </div>
-
-          </div>
-
-          {/* Audio */}
-          <div className="p-4 rounded-2xl bg-black/[0.025] border border-black/5">
-
-            <div className="flex items-center justify-between gap-3">
-
-              <div className="min-w-0">
-
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#86868b]">
-                  Audio
-                </span>
-
-                <p className="text-xs font-semibold truncate mt-1">
-                  {song.audioFileName || 'No audio uploaded'}
-                </p>
-
-              </div>
-
-              <div className="flex items-center gap-2">
-
-                {audioUrl && (
-                  <>
-                    <button
-                      onClick={togglePlay}
-                      className="w-10 h-10 rounded-full bg-[#007aff] text-white flex items-center justify-center"
-                    >
-                      {isPlaying ? (
-                        <Pause className="w-4 h-4 fill-current" />
-                      ) : (
-                        <Play className="w-4 h-4 fill-current" />
-                      )}
-                    </button>
-
-                    <button
-                      onClick={handleDownload}
-                      title="Download song"
-                      className="w-10 h-10 rounded-full bg-black/5 text-[#1d1d1f] flex items-center justify-center"
-                    >
-                      <Download className="w-4 h-4" />
-                    </button>
-                  </>
-                )}
-
-              </div>
-
-            </div>
-
-            {audioUrl && (
-              <audio
-                ref={audioRef}
-                src={audioUrl}
-                onEnded={() => setIsPlaying(false)}
-                className="w-full mt-3"
-                controls
-              />
-            )}
-
-          </div>
-
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto space-y-5 pr-1">
-
-          {/* Lyrics */}
-          <section>
-
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-lg">📝</span>
-
-              <h3 className="text-sm font-bold">
-                Lyrics
-              </h3>
-            </div>
-
-            <div className="p-5 rounded-2xl bg-black/[0.025] border border-black/5 text-sm sm:text-base leading-relaxed whitespace-pre-wrap">
-              {song.lyrics || 'No lyrics have been added yet.'}
-            </div>
-
-          </section>
-
-          {/* Chords */}
-          {song.chords && (
-            <section>
-
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-lg">🎼</span>
-
-                <h3 className="text-sm font-bold">
-                  Chords
-                </h3>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-amber-500/5 border border-amber-500/15 font-mono text-sm whitespace-pre-wrap leading-relaxed">
-                {song.chords}
-              </div>
-
-            </section>
-          )}
-
-        </div>
-
+        </form>
       </div>
     </div>
   );
 };
-export { SongDetailModal as AddEditSongModal };
