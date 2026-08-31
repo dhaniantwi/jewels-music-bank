@@ -28,7 +28,7 @@ function openDatabase(): Promise<IDBDatabase> {
 
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         db.createObjectStore(STORE_NAME, {
-          keyPath: 'songId'
+          keyPath: 'songId',
         });
       }
     };
@@ -45,16 +45,12 @@ export async function saveAudioFile(
   const db = await openDatabase();
 
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(
-      STORE_NAME,
-      'readwrite'
-    );
-
+    const transaction = db.transaction(STORE_NAME, 'readwrite');
     const store = transaction.objectStore(STORE_NAME);
 
     const record: AudioRecord = {
       songId,
-      file
+      file,
     };
 
     store.put(record);
@@ -80,18 +76,12 @@ export async function getAudioFile(
   const db = await openDatabase();
 
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(
-      STORE_NAME,
-      'readonly'
-    );
-
+    const transaction = db.transaction(STORE_NAME, 'readonly');
     const store = transaction.objectStore(STORE_NAME);
     const request = store.get(songId);
 
     request.onsuccess = () => {
-      const record = request.result as
-        | AudioRecord
-        | undefined;
+      const record = request.result as AudioRecord | undefined;
 
       db.close();
       resolve(record?.file ?? null);
@@ -113,11 +103,7 @@ export async function deleteAudioFile(
   const db = await openDatabase();
 
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(
-      STORE_NAME,
-      'readwrite'
-    );
-
+    const transaction = db.transaction(STORE_NAME, 'readwrite');
     const store = transaction.objectStore(STORE_NAME);
 
     store.delete(songId);
