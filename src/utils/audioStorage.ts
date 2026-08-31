@@ -4,7 +4,7 @@ const STORE_NAME = 'songs_audio';
 const DB_VERSION = 1;
 
 interface AudioRecord {
-  songId: number;
+  songId: string;
   file: File;
 }
 
@@ -39,7 +39,7 @@ function openDatabase(): Promise<IDBDatabase> {
  * Save or replace an audio file for a song.
  */
 export async function saveAudioFile(
-  songId: number,
+  songId: string,
   file: File
 ): Promise<void> {
   const db = await openDatabase();
@@ -75,7 +75,7 @@ export async function saveAudioFile(
  * Retrieve the audio file belonging to a song.
  */
 export async function getAudioFile(
-  songId: number
+  songId: string
 ): Promise<File | null> {
   const db = await openDatabase();
 
@@ -108,7 +108,7 @@ export async function getAudioFile(
  * Delete the audio file belonging to a song.
  */
 export async function deleteAudioFile(
-  songId: number
+  songId: string
 ): Promise<void> {
   const db = await openDatabase();
 
@@ -134,4 +134,3 @@ export async function deleteAudioFile(
   });
 }
 ```
-
