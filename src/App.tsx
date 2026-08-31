@@ -22,10 +22,7 @@ import {
   resetAllToDefaults
 } from './utils/storage';
 
-import {
-  saveAudioFile,
-  deleteAudioFile
-} from './utils/audioStorage';
+import { saveAudioFile, deleteAudioFile } from './utils/audioStorage';
 
 import { Navbar } from './components/Navbar';
 import { DashboardView } from './components/DashboardView';
@@ -40,21 +37,19 @@ import { StageRehearsalModal } from './components/StageRehearsalModal';
 
 export default function App() {
   // ============================================================
-  // PRIMARY APPLICATION STATE
+  // MAIN DATA
   // ============================================================
 
   const [songs, setSongs] = useState<Song[]>(() => loadStoredSongs());
 
-  const [ministrations, setMinistrations] = useState<Ministration[]>(
-    () => loadStoredMinistrations()
-  );
+  const [ministrations, setMinistrations] =
+    useState<Ministration[]>(() => loadStoredMinistrations());
 
-  const [team, setTeam] = useState<TeamMember[]>(
-    () => loadStoredTeam()
-  );
+  const [team, setTeam] =
+    useState<TeamMember[]>(() => loadStoredTeam());
 
   // ============================================================
-  // ACTIVE VIEW & ROLE
+  // NAVIGATION
   // ============================================================
 
   const [activeTab, setActiveTab] =
@@ -77,7 +72,7 @@ export default function App() {
     useState(false);
 
   // ============================================================
-  // TEAM MODALS
+  // MEMBER MODALS
   // ============================================================
 
   const [editingMember, setEditingMember] =
@@ -109,7 +104,7 @@ export default function App() {
     );
 
   // ============================================================
-  // STORAGE SYNCHRONIZATION
+  // SAVE DATA TO LOCAL STORAGE
   // ============================================================
 
   useEffect(() => {
@@ -125,7 +120,7 @@ export default function App() {
   }, [team]);
 
   // ============================================================
-  // KEEP SELECTED MINISTRATION FRESH
+  // KEEP SELECTED MINISTRATION UPDATED
   // ============================================================
 
   useEffect(() => {
@@ -138,10 +133,10 @@ export default function App() {
     if (refreshed) {
       setSelectedMinistration(refreshed);
     }
-  }, [ministrations, selectedMinistration?.id]);
+  }, [ministrations]);
 
   // ============================================================
-  // SONG BANK ACTIONS
+  // SONG BANK
   // ============================================================
 
   const handleSaveSong = async (
@@ -151,64 +146,63 @@ export default function App() {
     try {
       let songId: number;
 
-      // ----------------------------------------------------------
+      // --------------------------------------------------------
       // EDIT EXISTING SONG
-      // ----------------------------------------------------------
+      // --------------------------------------------------------
 
       if (songData.id) {
         songId = songData.id;
 
-        const updatedSong = songData as Song;
+        const updatedSong: Song = {
+          ...songData,
+          id: songId
+        } as Song;
 
         setSongs((prev) =>
           prev.map((song) =>
-            song.id === songId
-              ? updatedSong
-              : song
+            song.id === songId ? updatedSong : song
           )
         );
 
+        // Save newly selected audio if there is one.
+        if (audioFile) {
+          await saveAudioFile(songId, audioFile);
+        }
+
+        // Refresh selected song if currently open.
         if (selectedSong?.id === songId) {
           setSelectedSong(updatedSong);
         }
+
+        return;
       }
 
-      // ----------------------------------------------------------
+      // --------------------------------------------------------
       // ADD NEW SONG
-      // ----------------------------------------------------------
+      // --------------------------------------------------------
 
-      else {
-        songId = Date.now();
+      songId = Date.now();
 
-        const newSong: Song = {
-          ...songData,
-          id: songId,
-          createdAt: new Date().toISOString()
-        };
+      const newSong: Song = {
+        ...songData,
+        id: songId,
+        createdAt: new Date().toISOString()
+      } as Song;
 
-        setSongs((prev) => [
-          newSong,
-          ...prev
-        ]);
-      }
-
-      // ----------------------------------------------------------
-      // SAVE AUDIO FILE
-      // ----------------------------------------------------------
-
+      // IMPORTANT:
+      // Save the audio first.
+      //
+      // If IndexedDB fails, we don't add a broken song to
+      // the Song Bank.
       if (audioFile) {
         await saveAudioFile(songId, audioFile);
       }
 
-      // ----------------------------------------------------------
-      // SUCCESS MESSAGE
-      // ----------------------------------------------------------
-
-      console.log(
-        audioFile
-          ? 'Song and audio saved successfully.'
-          : 'Song saved successfully.'
-      );
+      // Now save the song information.
+      setSongs((prev) => [
+        newSong,
+        ...prev
+      ]);
 
     } catch (error) {
       console.error(
@@ -230,46 +224,40 @@ export default function App() {
     songId: number
   ) => {
     try {
-      // Delete audio associated with song
+      // Delete associated audio.
       await deleteAudioFile(songId);
-
-      // Remove song
-      setSongs((prev) =>
-        prev.filter(
-          (song) => song.id !== songId
-        )
-      );
-
-      // Remove song from ministrations
-      setMinistrations((prev) =>
-        prev.map((ministration) => ({
-          ...ministration,
-          songs: ministration.songs.filter(
-            (item) =>
-              item.songId !== songId
-          )
-        }))
-      );
-
-      // Close selected song if necessary
-      if (selectedSong?.id === songId) {
-        setSelectedSong(null);
-      }
-
     } catch (error) {
-      console.error(
-        'Error deleting song:',
+      console.warn(
+        'Audio file could not be deleted:',
         error
       );
+    }
 
-      alert(
-        'There was a problem deleting the song.'
-      );
+    // Delete song.
+    setSongs((prev) =>
+      prev.filter(
+        (song) => song.id !== songId
+      )
+    );
+
+    // Remove song from ministrations.
+    setMinistrations((prev) =>
+      prev.map((ministration) => ({
+        ...ministration,
+        songs: ministration.songs.filter(
+          (item) => item.songId !== songId
+        )
+      }))
+    );
+
+    // Close selected song if necessary.
+    if (selectedSong?.id === songId) {
+      setSelectedSong(null);
     }
   };
 
   // ============================================================
-  // TEAM ACTIONS
+  // TEAM
   // ============================================================
 
   const handleSaveMember = (
@@ -278,7 +266,6 @@ export default function App() {
     }
   ) => {
     if (memberData.id) {
-      // Update existing member
       setTeam((prev) =>
         prev.map((member) =>
           member.id === memberData.id
@@ -287,7 +274,6 @@ export default function App() {
         )
       );
     } else {
-      // Add new member
       const newId = Date.now();
 
       const newMember: TeamMember = {
@@ -303,7 +289,7 @@ export default function App() {
   };
 
   // ============================================================
-  // DELETE TEAM MEMBER
+  // DELETE MEMBER
   // ============================================================
 
   const handleDeleteMember = (
@@ -311,16 +297,13 @@ export default function App() {
   ) => {
     setTeam((prev) =>
       prev.filter(
-        (member) =>
-          member.id !== memberId
+        (member) => member.id !== memberId
       )
     );
 
-    // Remove member as lead from ministrations
     setMinistrations((prev) =>
       prev.map((ministration) => ({
         ...ministration,
-
         songs: ministration.songs.map(
           (item) =>
             item.lead === memberId
@@ -335,28 +318,26 @@ export default function App() {
   };
 
   // ============================================================
-  // TOGGLE MEMBER PERMISSION
+  // MEMBER PERMISSIONS
   // ============================================================
 
   const handleTogglePermission = (
     memberId: number
   ) => {
     setTeam((prev) =>
-      prev.map((member) => {
-        if (member.id === memberId) {
-          return {
-            ...member,
-            canEdit: !member.canEdit
-          };
-        }
-
-        return member;
-      })
+      prev.map((member) =>
+        member.id === memberId
+          ? {
+              ...member,
+              canEdit: !member.canEdit
+            }
+          : member
+      )
     );
   };
 
   // ============================================================
-  // MINISTRATION ACTIONS
+  // MINISTRATIONS
   // ============================================================
 
   const handleUpdateMinistration = (
@@ -396,11 +377,11 @@ export default function App() {
   };
 
   // ============================================================
-  // RESET ALL DATA
+  // RESET
   // ============================================================
 
   const handleResetData = () => {
-    const confirmed = confirm(
+    const confirmed = window.confirm(
       'Reset all songs, ministrations, and team roster to initial church defaults?'
     );
 
@@ -412,59 +393,18 @@ export default function App() {
   };
 
   // ============================================================
-  // OPEN ADD SONG MODAL
-  // ============================================================
-
-  const openAddSong = () => {
-    setEditingSong(null);
-    setIsAddEditSongOpen(true);
-  };
-
-  // ============================================================
-  // OPEN EDIT SONG MODAL
-  // ============================================================
-
-  const openEditSong = (
-    song: Song
-  ) => {
-    setEditingSong(song);
-    setIsAddEditSongOpen(true);
-  };
-
-  // ============================================================
-  // OPEN ADD MEMBER MODAL
-  // ============================================================
-
-  const openAddMember = () => {
-    setEditingMember(null);
-    setIsAddEditMemberOpen(true);
-  };
-
-  // ============================================================
-  // OPEN EDIT MEMBER MODAL
-  // ============================================================
-
-  const openEditMember = (
-    member: TeamMember
-  ) => {
-    setEditingMember(member);
-    setIsAddEditMemberOpen(true);
-  };
-
-  // ============================================================
-  // APPLICATION UI
+  // RENDER
   // ============================================================
 
   return (
     <div className="min-h-screen flex flex-col justify-between text-[#1d1d1f] font-sans pb-12 sm:pb-16 selection:bg-[#007aff]/20 selection:text-[#007aff]">
 
-      {/* ========================================================
-          MAIN APPLICATION
-          ======================================================== */}
-
       <div>
 
-        {/* NAVIGATION */}
+        {/* ======================================================
+            NAVBAR
+        ====================================================== */}
+
         <Navbar
           activeTab={activeTab}
           setActiveTab={setActiveTab}
@@ -480,12 +420,13 @@ export default function App() {
           }
         />
 
-        {/* MAIN CONTENT */}
+        {/* ======================================================
+            MAIN CONTENT
+        ====================================================== */}
+
         <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-2">
 
-          {/* ====================================================
-              HOME
-              ==================================================== */}
+          {/* HOME */}
 
           {activeTab === 'home' && (
             <DashboardView
@@ -494,11 +435,9 @@ export default function App() {
               team={team}
               activeRole={activeRole}
               setActiveTab={setActiveTab}
-
               onSelectSong={(song) =>
                 setSelectedSong(song)
               }
-
               onSelectMinistration={(ministration) => {
                 setSelectedMinistration(
                   ministration
@@ -508,41 +447,37 @@ export default function App() {
                   'ministrations'
                 );
               }}
-
               openToolsModal={() =>
                 setIsToolsModalOpen(true)
               }
-
               openStageMode={() =>
                 setIsStageModeOpen(true)
               }
             />
           )}
 
-          {/* ====================================================
-              SONG BANK
-              ==================================================== */}
+          {/* SONG BANK */}
 
           {activeTab === 'songs' && (
             <SongBankView
               songs={songs}
               activeRole={activeRole}
-
               onSelectSong={(song) =>
                 setSelectedSong(song)
               }
-
-              onAddNewSong={openAddSong}
-
-              onEditSong={openEditSong}
-
+              onAddNewSong={() => {
+                setEditingSong(null);
+                setIsAddEditSongOpen(true);
+              }}
+              onEditSong={(song) => {
+                setEditingSong(song);
+                setIsAddEditSongOpen(true);
+              }}
               onDeleteSong={handleDeleteSong}
             />
           )}
 
-          {/* ====================================================
-              MINISTRATIONS
-              ==================================================== */}
+          {/* MINISTRATIONS */}
 
           {activeTab === 'ministrations' && (
             <MinistrationsView
@@ -553,54 +488,43 @@ export default function App() {
               selectedMinistration={
                 selectedMinistration
               }
-
-              onSelectMinistration={(
-                ministration
-              ) =>
+              onSelectMinistration={(ministration) =>
                 setSelectedMinistration(
                   ministration
                 )
               }
-
               onUpdateMinistration={
                 handleUpdateMinistration
               }
-
               onCreateMinistration={
                 handleCreateMinistration
               }
-
               onSelectSong={(song) =>
                 setSelectedSong(song)
               }
-
               openStageMode={() =>
                 setIsStageModeOpen(true)
               }
             />
           )}
 
-          {/* ====================================================
-              MUSIC TEAM
-              ==================================================== */}
+          {/* MUSIC TEAM */}
 
           {activeTab === 'team' && (
             <MusicTeamView
               team={team}
               activeRole={activeRole}
-
-              onAddNewMember={
-                openAddMember
-              }
-
-              onEditMember={
-                openEditMember
-              }
-
+              onAddNewMember={() => {
+                setEditingMember(null);
+                setIsAddEditMemberOpen(true);
+              }}
+              onEditMember={(member) => {
+                setEditingMember(member);
+                setIsAddEditMemberOpen(true);
+              }}
               onDeleteMember={
                 handleDeleteMember
               }
-
               onTogglePermission={
                 handleTogglePermission
               }
@@ -611,8 +535,8 @@ export default function App() {
       </div>
 
       {/* ========================================================
-          PRINTABLE MINISTRATION SHEET
-          ======================================================== */}
+          PRINTABLE SERVICE SHEET
+      ======================================================== */}
 
       {selectedMinistration && (
         <div className="hidden print-only p-8 text-black bg-white">
@@ -625,17 +549,15 @@ export default function App() {
 
             <p className="text-base text-gray-700 mt-1">
               Jewels Music Ministry • Date:{' '}
-              {selectedMinistration.date}
-
+              {selectedMinistration.date}{' '}
               {selectedMinistration.time
-                ? ` • ${selectedMinistration.time}`
+                ? `• ${selectedMinistration.time}`
                 : ''}
             </p>
 
             {selectedMinistration.venue && (
               <p className="text-sm text-gray-600">
-                Venue:{' '}
-                {selectedMinistration.venue}
+                Venue: {selectedMinistration.venue}
               </p>
             )}
 
@@ -682,7 +604,7 @@ export default function App() {
             <tbody>
 
               {selectedMinistration.songs.map(
-                (item, index) => {
+                (item, idx) => {
 
                   const song = songs.find(
                     (s) =>
@@ -695,28 +617,23 @@ export default function App() {
                   );
 
                   return (
-                    <tr
-                      key={`${item.songId}-${index}`}
-                    >
+                    <tr key={item.songId}>
 
                       <td className="border border-gray-400 p-2 font-bold">
-                        {index + 1}
+                        {idx + 1}
                       </td>
 
                       <td className="border border-gray-400 p-2 font-bold">
-                        {song?.title ||
-                          'Unknown Song'}
+                        {song?.title}
                       </td>
 
                       <td className="border border-gray-400 p-2">
-                        {song?.artist ||
-                          'Unknown Artist'}
+                        {song?.artist}
                       </td>
 
                       <td className="border border-gray-400 p-2 font-bold">
                         {item.keyOverride ||
-                          song?.key ||
-                          '—'}
+                          song?.key}
                       </td>
 
                       <td className="border border-gray-400 p-2 font-bold">
@@ -726,8 +643,7 @@ export default function App() {
                       </td>
 
                       <td className="border border-gray-400 p-2">
-                        {item.orderNote ||
-                          '—'}
+                        {item.orderNote || '—'}
                       </td>
 
                     </tr>
@@ -747,9 +663,7 @@ export default function App() {
               </h3>
 
               <p className="text-xs mt-1">
-                {
-                  selectedMinistration.mdGlobalNotes
-                }
+                {selectedMinistration.mdGlobalNotes}
               </p>
 
             </div>
@@ -760,9 +674,9 @@ export default function App() {
 
       {/* ========================================================
           GLOBAL MODALS
-          ======================================================== */}
+      ======================================================== */}
 
-      {/* SONG DETAIL */}
+      {/* SONG DETAILS */}
 
       <SongDetailModal
         song={selectedSong}
@@ -771,12 +685,11 @@ export default function App() {
           setSelectedSong(null)
         }
         activeRole={activeRole}
-
         onEdit={(song) => {
           setSelectedSong(null);
-          openEditSong(song);
+          setEditingSong(song);
+          setIsAddEditSongOpen(true);
         }}
-
         onDelete={handleDeleteSong}
       />
 
@@ -784,13 +697,10 @@ export default function App() {
 
       <AddEditSongModal
         isOpen={isAddEditSongOpen}
-
         onClose={() =>
           setIsAddEditSongOpen(false)
         }
-
         onSave={handleSaveSong}
-
         editingSong={editingSong}
       />
 
@@ -798,57 +708,47 @@ export default function App() {
 
       <AddEditMemberModal
         isOpen={isAddEditMemberOpen}
-
         onClose={() =>
           setIsAddEditMemberOpen(false)
         }
-
         onSave={handleSaveMember}
-
         editingMember={editingMember}
       />
 
-      {/* MUSIC DIRECTOR TOOLS */}
+      {/* TOOLS */}
 
       <ToolsModal
         isOpen={isToolsModalOpen}
-
         onClose={() =>
           setIsToolsModalOpen(false)
         }
       />
 
-      {/* STAGE REHEARSAL */}
+      {/* STAGE MODE */}
 
       {selectedMinistration && (
         <StageRehearsalModal
           isOpen={isStageModeOpen}
-
           onClose={() =>
             setIsStageModeOpen(false)
           }
-
           ministration={
             selectedMinistration
           }
-
           songs={songs}
-
           team={team}
         />
       )}
 
       {/* ========================================================
           FOOTER
-          ======================================================== */}
+      ======================================================== */}
 
       <footer className="mt-16 text-center text-xs text-[#86868b] space-y-2 no-print">
 
         <div className="flex items-center justify-center gap-1 font-semibold">
 
-          <span>
-            Jewels Music Hub
-          </span>
+          <span>Jewels Music Hub</span>
 
           <span>•</span>
 
@@ -862,7 +762,6 @@ export default function App() {
 
           <span>
             Logged in as:{' '}
-
             <strong className="text-[#1d1d1f]">
               {activeRole === 'admin_md'
                 ? 'Daniel Antwi (MD & Admin)'
