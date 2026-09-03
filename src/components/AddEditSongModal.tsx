@@ -180,9 +180,9 @@ export const AddEditSongModal: React.FC<AddEditSongModalProps> = ({
 
               <h2 className="text-xl font-bold text-[#1d1d1f]">
 
-                {editingSong
-                  ? `Edit Song: ${editingSong.title}`
-                  : 'Add New Song'}
+             {editingSong
+  ? <>Edit Song: {editingSong.title}</>
+  : 'Add New Song'}
 
               </h2>
 
