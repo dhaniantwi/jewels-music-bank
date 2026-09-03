@@ -295,9 +295,9 @@ export const AddEditSongModal: React.FC<AddEditSongModalProps> = ({
 
               {CHROMATIC_KEYS.map((k) => (
                 <option
-                  key={`${k}m`}
-                  value={`${k}m`}
-                >
+  key={`${k}m`}
+  value={`${k}m`}
+>
                   {k} Minor
                 </option>
               ))}
