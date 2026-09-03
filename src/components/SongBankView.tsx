@@ -319,16 +319,10 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
             const songKey =
               (song.key || '').toLowerCase()
 
-            const songTempo =
-             
+            const tempoDisplay =
   typeof song.tempo === 'string'
-    ? song.tempo
+    ? song.tempo.split(' ')[0]
     : 'Tempo N/A';
-
-const tempoDisplay =
-  songTempo.includes(' ')
-    ? songTempo.split(' ')[0]
-    : songTempo;
 
             return (
 
