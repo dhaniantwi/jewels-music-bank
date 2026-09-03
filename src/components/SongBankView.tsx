@@ -313,13 +313,13 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
             const songArtist =
               (song.artist || '').toLowerCase()
 
-            const songCategory =
-              song.category || 'Other';
+           const songCategory =
+  song.category || 'Other';
 
-            const songKey =
-              (song.key || '').toLowerCase()
+const songKey =
+  (song.key || '').toLowerCase();
 
-            const tempoDisplay =
+const tempoDisplay =
   typeof song.tempo === 'string'
     ? song.tempo.split(' ')[0]
     : 'Tempo N/A';
