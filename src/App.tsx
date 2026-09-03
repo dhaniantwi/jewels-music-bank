@@ -658,9 +658,9 @@ export default function App() {
               Jewels Music Ministry • Date:{' '}
               {selectedMinistration.date}
 
-              {selectedMinistration.time
-                ? ` • ${selectedMinistration.time}`
-                : ''}
+          {selectedMinistration.time && (
+  <span> • {selectedMinistration.time}</span>
+)}
 
             </p>
 
