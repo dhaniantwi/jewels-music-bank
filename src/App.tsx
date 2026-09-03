@@ -652,16 +652,12 @@ export default function App() {
               {selectedMinistration.name}
             </h1>
 
-            <p className="text-base text-gray-700 mt-1">
-
-              Jewels Music Ministry • Date:{' '}
-              {selectedMinistration.date}
-
-          {selectedMinistration.time && (
-  <span> • {selectedMinistration.time}</span>
-)}
-
-            </p>
+           <p className="text-base text-gray-700 mt-1">
+  Jewels Music Ministry • Date: {selectedMinistration.date}
+  {selectedMinistration.time ? (
+    <> • {selectedMinistration.time}</>
+  ) : null}
+</p>
 
             {selectedMinistration.venue && (
               <p className="text-sm text-gray-600">
