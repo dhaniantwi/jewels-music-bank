@@ -1,4 +1,4 @@
-```tsx
+
 import React, { useEffect, useState } from 'react';
 import { Song } from '../types';
 import { X, Save, Upload, Music } from 'lucide-react';
@@ -458,4 +458,3 @@ C  D  G`}
     </div>
   );
 };
-```
