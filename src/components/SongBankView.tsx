@@ -323,7 +323,7 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
               song.tempo || 'Tempo N/A';
 
             const tempoDisplay =
-              {(song.tempo || 'Tempo N/A').split(' ')[0]}
+  (song.tempo || 'Tempo N/A').split(' ')[0]
 
             return (
 
