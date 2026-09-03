@@ -311,19 +311,19 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
               song.title || 'Untitled Song';
 
             const songArtist =
-              song.artist || 'Unknown Artist';
+              (song.artist || '').toLowerCase()
 
             const songCategory =
               song.category || 'Other';
 
             const songKey =
-              song.key || 'Not Set';
+              (song.key || '').toLowerCase()
 
             const songTempo =
               song.tempo || 'Tempo N/A';
 
             const tempoDisplay =
-              songTempo.split(' ')[0];
+              {(song.tempo || 'Tempo N/A').split(' ')[0]}
 
             return (
 
