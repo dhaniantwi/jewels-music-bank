@@ -205,30 +205,36 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </div>
 
                 <div className="space-y-1">
-                  {roleOptions.map((opt) => (
-                    <button
-                      key={opt.id}
-                      onClick={() => {
-                        setActiveRole(opt.id);
-                        setRoleDropdownOpen(false);
-                      }}
-                      className={`w-full text-left p-2.5 rounded-xl text-xs flex items-center justify-between transition-colors ${
-                        activeRole === opt.id
-                          ? 'bg-[#007aff]/10 text-[#007aff] font-bold'
-                          : 'text-[#1d1d1f] hover:bg-black/5 font-medium'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-base">{opt.icon}</span>
-                        <div>
-                          <p className="leading-tight">{opt.label}</p>
-                          <p className="text-[10px] text-[#86868b] font-normal">{opt.desc}</p>
-                        </div>
-                      </div>
-                      {activeRole === opt.id && <Check className="w-4 h-4 text-[#007aff]" />}
-                    </button>
-                  ))}
-                </div>
+  <button
+    onClick={() => {
+      setRoleDropdownOpen(false);
+    }}
+    className="w-full text-left p-2.5 rounded-xl text-xs flex items-center gap-2.5 text-[#1d1d1f] hover:bg-black/5 font-medium"
+  >
+    <span className="text-base">🌐</span>
+    <div>
+      <p className="leading-tight">General Music Hub</p>
+      <p className="text-[10px] text-[#86868b] font-normal">
+        Browse, listen & rehearse
+      </p>
+    </div>
+  </button>
+
+  <button
+    onClick={() => {
+      setRoleDropdownOpen(false);
+    }}
+    className="w-full text-left p-2.5 rounded-xl text-xs flex items-center gap-2.5 text-[#1d1d1f] hover:bg-black/5 font-medium"
+  >
+    <span className="text-base">🔐</span>
+    <div>
+      <p className="leading-tight">MD Admin Portal</p>
+      <p className="text-[10px] text-[#86868b] font-normal">
+        Authorized MD access only
+      </p>
+    </div>
+  </button>
+</div>
               </div>
             )}
           </div>
