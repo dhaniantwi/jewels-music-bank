@@ -38,6 +38,7 @@ export const SongDetailModal: React.FC<SongDetailModalProps> = ({
   const [showChords, setShowChords] = useState(true);
   const [transposeOffset, setTransposeOffset] = useState(0);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
