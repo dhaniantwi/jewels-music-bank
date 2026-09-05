@@ -541,7 +541,14 @@ const [isMDPortalOpen, setIsMDPortalOpen] =
         className="mt-8 px-5 py-3 rounded-xl bg-[#1d1d1f] text-white text-sm font-bold hover:bg-black transition"
       >
         ← Return to General Music Hub
-      </button>
+      </button><button
+  onClick={async () => {
+    await supabase.auth.signOut();
+  }}
+  className="mt-8 px-5 py-3 rounded-xl bg-[#1d1d1f] text-white text-sm font-bold hover:bg-black transition"
+>
+  ← Return to General Music Hub
+</button>
     </div>
   </div>
 ) : (
