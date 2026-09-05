@@ -220,10 +220,11 @@ export const Navbar: React.FC<NavbarProps> = ({
     </div>
   </button>
 
-  <button
-    onClick={() => {
-      setRoleDropdownOpen(false);
-    }}
+<button
+  onClick={() => {
+    setRoleDropdownOpen(false);
+    onOpenMDLogin();
+  }}
     className="w-full text-left p-2.5 rounded-xl text-xs flex items-center gap-2.5 text-[#1d1d1f] hover:bg-black/5 font-medium"
   >
     <span className="text-base">🔐</span>
