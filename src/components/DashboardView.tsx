@@ -405,8 +405,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   Key: {song.key}
                 </span>
                 <span className="text-[10px] text-[#86868b] font-medium">
-                  {song.tempo.split(' ')[0]}
-                </span>
+  {typeof song.tempo === 'string'
+    ? song.tempo.split(' ')[0]
+    : 'Tempo N/A'}
+</span>
               </div>
             </div>
           ))}
