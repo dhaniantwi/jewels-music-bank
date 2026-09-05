@@ -65,7 +65,7 @@ export default function App() {
     useState<ActiveTab>('home');
 
   const [activeRole, setActiveRole] =
-    useState<ActiveRole>('admin_md');
+    useState<ActiveRole>('vocalist');
 
   // ============================================================
   // SONG MODALS
