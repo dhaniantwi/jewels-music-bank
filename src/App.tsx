@@ -495,11 +495,10 @@ export default function App() {
         ====================================================== */}
 
         <Navbar
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          activeRole={activeRole}
-          setActiveRole={setActiveRole}
-          team={team}
+  activeTab={activeTab}
+  setActiveTab={setActiveTab}
+  activeRole={activeRole}
+  team={team}
           songsCount={songs.length}
           openToolsModal={() =>
             setIsToolsModalOpen(true)
