@@ -501,6 +501,7 @@ const [showMDLogin, setShowMDLogin] =
   activeTab={activeTab}
   setActiveTab={setActiveTab}
   activeRole={activeRole}
+  onOpenMDLogin={() => setShowMDLogin(true)}
   team={team}
           songsCount={songs.length}
           openToolsModal={() =>
