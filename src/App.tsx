@@ -502,6 +502,19 @@ const [isMDPortalOpen, setIsMDPortalOpen] =
     
   />
 )} 
+      {isMDPortalOpen && (
+  <div className="min-h-screen flex items-center justify-center px-4">
+    <div className="text-center">
+      <div className="text-5xl mb-4">🔐</div>
+      <h1 className="text-3xl font-extrabold">
+        MD Admin Portal
+      </h1>
+      <p className="text-gray-500 mt-2">
+        Welcome, Music Director.
+      </p>
+    </div>
+  </div>
+)}
       <div>
 
         {/* ======================================================
