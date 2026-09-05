@@ -27,7 +27,7 @@ import {
   saveAudioFile,
   deleteAudioFile
 } from './utils/audioStorage';
-
+import { supabase } from './supabaseClient';
 import { Navbar } from './components/Navbar';
 import { MDLogin } from './components/MDLogin';
 import { DashboardView } from './components/DashboardView';
