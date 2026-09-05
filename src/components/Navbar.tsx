@@ -6,7 +6,7 @@ interface NavbarProps {
   activeTab: ActiveTab;
   setActiveTab: (tab: ActiveTab) => void;
   activeRole: ActiveRole;
-  setActiveRole: (role: ActiveRole) => void;
+  
   team: TeamMember[];
   songsCount: number;
   openToolsModal: () => void;
