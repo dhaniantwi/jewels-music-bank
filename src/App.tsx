@@ -502,20 +502,30 @@ const [isMDPortalOpen, setIsMDPortalOpen] =
     
   />
 )} 
-      {isMDPortalOpen && (
+      {isMDPortalOpen ? (
   <div className="min-h-screen flex items-center justify-center px-4">
     <div className="text-center">
       <div className="text-5xl mb-4">🔐</div>
+
       <h1 className="text-3xl font-extrabold">
         MD Admin Portal
       </h1>
+
       <p className="text-gray-500 mt-2">
         Welcome, Music Director.
       </p>
+
+      <button
+        onClick={() => setIsMDPortalOpen(false)}
+        className="mt-8 px-5 py-3 rounded-xl bg-[#1d1d1f] text-white text-sm font-bold hover:bg-black transition"
+      >
+        ← Return to General Music Hub
+      </button>
     </div>
   </div>
-)}
-      <div>
+) : (
+  <div>
+    
 
         {/* ======================================================
             NAVIGATION
@@ -664,7 +674,7 @@ const [isMDPortalOpen, setIsMDPortalOpen] =
           )}
 
         </main>
-      </div>
+      
 
       {/* ========================================================
           PRINTABLE MINISTRATION SHEET
