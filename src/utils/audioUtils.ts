@@ -86,6 +86,105 @@ export function playPitchTone(note: string, durationSeconds = 2.5): () => void {
     return () => {};
   }
 }
+/**
+ * Play a musical key reference chord
+ * Major = root + major third + fifth
+ * Minor = root + minor third + fifth
+ */
+export function playKeyChord(
+  key: string,
+  durationSeconds = 2.5
+): () => void {
+  try {
+    const ctx = getAudioContext();
+
+    const cleanKey = key.trim();
+    const isMinor = cleanKey.toLowerCase().includes('m');
+    const rootKey = cleanKey.replace(/m/gi, '');
+
+    const rootFreq =
+      NOTE_FREQUENCIES[`${rootKey}4`] ||
+      NOTE_FREQUENCIES[rootKey] ||
+      440;
+
+    const intervals = isMinor
+      ? [0, 3, 7]
+      : [0, 4, 7];
+
+    const oscillators: OscillatorNode[] = [];
+    const gains: GainNode[] = [];
+
+    const now = ctx.currentTime;
+
+    intervals.forEach((interval, index) => {
+      const oscillator = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      const frequency =
+        rootFreq * Math.pow(2, interval / 12);
+
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(
+        frequency,
+        now
+      );
+
+      gain.gain.setValueAtTime(0.0001, now);
+
+      gain.gain.exponentialRampToValueAtTime(
+        index === 0 ? 0.22 : 0.14,
+        now + 0.05
+      );
+
+      gain.gain.exponentialRampToValueAtTime(
+        0.0001,
+        now + durationSeconds
+      );
+
+      oscillator.connect(gain);
+      gain.connect(ctx.destination);
+
+      oscillator.start(now);
+      oscillator.stop(now + durationSeconds);
+
+      oscillators.push(oscillator);
+      gains.push(gain);
+    });
+
+    return () => {
+      try {
+        const stopTime = ctx.currentTime;
+
+        gains.forEach((gain) => {
+          gain.gain.cancelScheduledValues(stopTime);
+          gain.gain.setValueAtTime(
+            Math.max(gain.gain.value, 0.0001),
+            stopTime
+          );
+          gain.gain.exponentialRampToValueAtTime(
+            0.0001,
+            stopTime + 0.05
+          );
+        });
+
+        setTimeout(() => {
+          oscillators.forEach((oscillator) => {
+            try {
+              oscillator.stop();
+            } catch {
+              // ignore
+            }
+          });
+        }, 60);
+      } catch {
+        // ignore
+      }
+    };
+  } catch (err) {
+    console.warn('Key chord playback error:', err);
+    return () => {};
+  }
+}
 
 /**
  * Play a metronome click sound
