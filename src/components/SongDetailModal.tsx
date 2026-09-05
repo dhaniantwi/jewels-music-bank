@@ -367,16 +367,14 @@ export const SongDetailModal: React.FC<SongDetailModalProps> = ({
 
             </div>
 
-            {song.audioUrl && (
-              <audio
-                ref={audioRef}
-                src={song.audioUrl}
-                onEnded={() =>
-                  setIsPlayingAudio(false)
-                }
-                className="hidden"
-              />
-            )}
+            {audioUrl && (
+  <audio
+    ref={audioRef}
+    src={audioUrl}
+    onEnded={() => setIsPlayingAudio(false)}
+    className="hidden"
+  />
+)}
 
             <button
               onClick={handleTogglePlay}
