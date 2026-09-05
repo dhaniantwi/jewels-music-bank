@@ -171,7 +171,8 @@ export const SongDetailModal: React.FC<SongDetailModalProps> = ({
     setTimeout(() => {
       setIsPlayingAudio(false);
     }, 3000);
-  };const handleDownloadAudio = async () => {
+  };
+  const handleDownloadAudio = async () => {
   if (!song) return;
 
   try {
