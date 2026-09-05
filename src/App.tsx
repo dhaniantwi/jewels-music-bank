@@ -62,10 +62,13 @@ export default function App() {
   // ============================================================
 
   const [activeTab, setActiveTab] =
-    useState<ActiveTab>('home');
+  useState<ActiveTab>('home');
 
-  const [activeRole, setActiveRole] =
-    useState<ActiveRole>('vocalist');
+const [activeRole, setActiveRole] =
+  useState<ActiveRole>('vocalist');
+
+const [showMDLogin, setShowMDLogin] =
+  useState(false);
 
   // ============================================================
   // SONG MODALS
