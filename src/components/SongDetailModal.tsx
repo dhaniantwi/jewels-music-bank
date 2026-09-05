@@ -165,10 +165,7 @@ export const SongDetailModal: React.FC<SongDetailModalProps> = ({
      */
     setIsPlayingAudio(true);
 
-    playPitchTone(
-      `${effectiveKey.replace('m', '')}4`,
-      3
-    );
+    playKeyChord(effectiveKey, 3);;
 
     setTimeout(() => {
       setIsPlayingAudio(false);
