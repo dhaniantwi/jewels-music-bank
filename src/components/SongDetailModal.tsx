@@ -137,7 +137,7 @@ export const SongDetailModal: React.FC<SongDetailModalProps> = ({
     /*
      * Play uploaded audio if available.
      */
-    if (audioRef.current && song.audioUrl) {
+    if (audioRef.current && audioUrl) {
       if (isPlayingAudio) {
         audioRef.current.pause();
         setIsPlayingAudio(false);
