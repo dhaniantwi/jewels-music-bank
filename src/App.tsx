@@ -496,9 +496,10 @@ const [isMDPortalOpen, setIsMDPortalOpen] =
 {showMDLogin && (
   <MDLogin
     onLoginSuccess={() => {
-      setShowMDLogin(false);
-      setActiveRole('admin_md');
-    }}
+  setShowMDLogin(false);
+  setIsMDPortalOpen(true);
+}}
+    
   />
 )} 
       <div>
