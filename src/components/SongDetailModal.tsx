@@ -420,6 +420,12 @@ export const SongDetailModal: React.FC<SongDetailModalProps> = ({
               )}
 
             </button>
+            <button
+  onClick={() => playKeyChord(effectiveKey, 3)}
+  className="px-3.5 py-1.5 rounded-xl bg-gray-100 text-gray-700 text-xs font-bold flex items-center gap-1.5 flex-shrink-0"
+>
+  🎹 Key Tone
+</button>
             {audioUrl && (
   <button
     onClick={handleDownloadAudio}
