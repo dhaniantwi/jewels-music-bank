@@ -70,7 +70,9 @@ const [activeRole, setActiveRole] =
 
 const [showMDLogin, setShowMDLogin] =
   useState(false);
-
+const [isMDPortalOpen, setIsMDPortalOpen] =
+  useState(false);
+  
   // ============================================================
   // SONG MODALS
   // ============================================================
