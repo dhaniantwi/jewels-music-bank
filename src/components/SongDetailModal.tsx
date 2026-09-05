@@ -12,7 +12,8 @@ import {
 } from 'lucide-react';
 import {
   transposeKey,
-  playPitchTone
+  playPitchTone,
+  playKeyChord
 } from '../utils/audioUtils';
 
 interface SongDetailModalProps {
