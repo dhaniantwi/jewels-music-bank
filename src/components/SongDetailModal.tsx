@@ -171,7 +171,33 @@ export const SongDetailModal: React.FC<SongDetailModalProps> = ({
     setTimeout(() => {
       setIsPlayingAudio(false);
     }, 3000);
-  };
+  };const handleDownloadAudio = async () => {
+  if (!song) return;
+
+  try {
+    const storedAudio = await getAudioFile(song.id);
+
+    if (!storedAudio) {
+      alert('No uploaded recording was found for this song.');
+      return;
+    }
+
+    const url = URL.createObjectURL(storedAudio.file);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = storedAudio.fileName || `${song.title}.mp3`;
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Could not download song audio:', error);
+    alert('Unable to download the recording.');
+  }
+};
 
   const handleDelete = () => {
     const confirmed = window.confirm(
