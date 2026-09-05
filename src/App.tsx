@@ -29,6 +29,7 @@ import {
 } from './utils/audioStorage';
 
 import { Navbar } from './components/Navbar';
+import { MDLogin } from './components/MDLogin';
 import { DashboardView } from './components/DashboardView';
 import { SongBankView } from './components/SongBankView';
 import { MinistrationsView } from './components/MinistrationsView';
