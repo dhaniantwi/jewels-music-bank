@@ -937,16 +937,8 @@ const [isMDPortalOpen, setIsMDPortalOpen] =
         <div className="flex items-center justify-center gap-3 text-[11px]">
 
           <span>
-            Logged in as:{' '}
-
-            <strong className="text-[#1d1d1f]">
-
-              {activeRole === 'admin_md'
-                ? 'Daniel Antwi (MD & Admin)'
-                : activeRole}
-
-            </strong>
-          </span>
+  Jewels Music Ministry Portal
+</span>
 
           <span>•</span>
 
