@@ -1,13 +1,11 @@
 
-import React, { useEffect, useRef, useState } from 'react';
-import { getAudioFile, getAudioUrl } from '../utils/audioStorage';
-import { Song, ActiveRole } from '../types';
 import {
   X,
   Play,
   Pause,
   Edit,
-  Trash2
+  Trash2,
+  Download
 } from 'lucide-react';
 import {
   transposeKey,
