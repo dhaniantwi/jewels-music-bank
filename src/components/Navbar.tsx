@@ -17,6 +17,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   activeTab,
   setActiveTab,
   activeRole,
+  onOpenMDLogin,
   team,
   songsCount,
   openToolsModal,
