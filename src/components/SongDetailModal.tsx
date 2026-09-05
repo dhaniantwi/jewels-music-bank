@@ -46,6 +46,44 @@ export const SongDetailModal: React.FC<SongDetailModalProps> = ({
    * IMPORTANT:
    * If there is no song, do not try to read its properties.
    */
+  useEffect(() => {
+  let objectUrl: string | null = null;
+  let cancelled = false;
+
+  const loadAudio = async () => {
+    if (!isOpen || !song) {
+      setAudioUrl(null);
+      return;
+    }
+
+    try {
+      const url = await getAudioUrl(song.id);
+
+      if (cancelled) {
+        if (url) URL.revokeObjectURL(url);
+        return;
+      }
+
+      objectUrl = url;
+      setAudioUrl(url);
+    } catch (error) {
+      console.error('Could not load stored song audio:', error);
+      setAudioUrl(null);
+    }
+  };
+
+  loadAudio();
+
+  return () => {
+    cancelled = true;
+
+    if (objectUrl) {
+      URL.revokeObjectURL(objectUrl);
+    }
+
+    setAudioUrl(null);
+  };
+}, [isOpen, song?.id]);
   if (!isOpen || !song) {
     return null;
   }
