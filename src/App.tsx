@@ -673,13 +673,13 @@ const [isMDPortalOpen, setIsMDPortalOpen] =
             />
           )}
 
-        </main>
-      
+                </main>
+      </div>
+    )}
 
       {/* ========================================================
           PRINTABLE MINISTRATION SHEET
       ======================================================== */}
-
       {selectedMinistration && (
         <div className="hidden print-only p-8 text-black bg-white">
 
