@@ -72,6 +72,17 @@ const [showMDLogin, setShowMDLogin] =
   useState(false);
 const [isMDPortalOpen, setIsMDPortalOpen] =
   useState(false);
+  useEffect(() => {
+  const checkSession = async () => {
+    const { data } = await supabase.auth.getSession();
+
+    if (data.session) {
+      setIsMDPortalOpen(true);
+    }
+  };
+
+  checkSession();
+}, []);
   
   // ============================================================
   // SONG MODALS
