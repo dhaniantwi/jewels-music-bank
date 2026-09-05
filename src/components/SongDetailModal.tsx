@@ -359,9 +359,9 @@ export const SongDetailModal: React.FC<SongDetailModalProps> = ({
 
               <p className="text-xs font-semibold truncate">
 
-                {song.audioUrl
-                  ? 'Ministry Practice Recording'
-                  : `Key Tone Guide (${effectiveKey})`}
+                {audioUrl
+  ? 'Ministry Practice Recording'
+  : `Key Tone Guide (${effectiveKey})`}
 
               </p>
 
