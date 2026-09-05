@@ -83,7 +83,17 @@ const [isMDPortalOpen, setIsMDPortalOpen] =
 
   checkSession();
 }, []);
-  
+  useEffect(() => {
+  const {
+    data: { subscription },
+  } = supabase.auth.onAuthStateChange((_event, session) => {
+    setIsMDPortalOpen(!!session);
+  });
+
+  return () => {
+    subscription.unsubscribe();
+  };
+}, []);
   // ============================================================
   // SONG MODALS
   // ============================================================
