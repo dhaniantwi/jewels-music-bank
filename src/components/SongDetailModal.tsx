@@ -421,6 +421,15 @@ export const SongDetailModal: React.FC<SongDetailModalProps> = ({
               )}
 
             </button>
+            {audioUrl && (
+  <button
+    onClick={handleDownloadAudio}
+    className="flex items-center justify-center gap-2 rounded-xl bg-gray-100 px-4 py-3 font-semibold text-gray-700 transition hover:bg-gray-200"
+  >
+    <Download size={18} />
+    Download
+  </button>
+)}
 
           </div>
 
