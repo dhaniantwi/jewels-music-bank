@@ -12,25 +12,29 @@ export function MDLogin({ onLoginSuccess }: MDLoginProps) {
   const [error, setError] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    setError('');
-    setLoading(true);
+  setError('');
+  setLoading(true);
 
+  try {
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    setLoading(false);
-
     if (error) {
-      setError('Invalid email or password. Please try again.');
+      setError(error.message);
       return;
     }
 
     onLoginSuccess();
-  };
+  } catch (err) {
+    setError('Unable to sign in. Please check your connection and try again.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-[70vh] flex items-center justify-center px-4">
