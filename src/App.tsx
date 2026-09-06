@@ -540,15 +540,10 @@ useEffect(() => {
       <p className="text-gray-500 mt-2">
         Welcome, Music Director.
       </p>
-
-      <button
-        onClick={() => setIsMDPortalOpen(false)}
-        className="mt-8 px-5 py-3 rounded-xl bg-[#1d1d1f] text-white text-sm font-bold hover:bg-black transition"
-      >
-        ← Return to General Music Hub
-      </button><button
+<button
   onClick={async () => {
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: 'local' });
+    setIsMDPortalOpen(false);
   }}
   className="mt-8 px-5 py-3 rounded-xl bg-[#1d1d1f] text-white text-sm font-bold hover:bg-black transition"
 >
