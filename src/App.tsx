@@ -519,16 +519,7 @@ useEffect(() => {
 
   return (
     <div className="min-h-screen flex flex-col justify-between text-[#1d1d1f] font-sans pb-12 sm:pb-16 selection:bg-[#007aff]/20 selection:text-[#007aff]">
-{showMDLogin && (
-  <MDLogin
-    onLoginSuccess={() => {
-  setShowMDLogin(false);
-  setIsMDPortalOpen(true);
-}}
-    
-  />
-)} 
-      {isMDPortalOpen ? (
+{isMDPortalOpen ? (
   <div className="min-h-screen flex items-center justify-center px-4">
     <div className="text-center">
       <div className="text-5xl mb-4">🔐</div>
