@@ -73,16 +73,35 @@ const [showMDLogin, setShowMDLogin] =
 const [isMDPortalOpen, setIsMDPortalOpen] =
   useState(false);
   useEffect(() => {
-  const checkSession = async () => {
+  const checkMDSession = async () => {
     const { data } = await supabase.auth.getSession();
 
-    if (data.session) {
-      setIsMDPortalOpen(true);
+    if (!data.session) {
+      setIsMDPortalOpen(false);
+      setActiveRole('vocalist');
+      return;
     }
+
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', data.session.user.id)
+      .single();
+
+    if (error || profile?.role !== 'admin_md') {
+      await supabase.auth.signOut({ scope: 'local' });
+      setIsMDPortalOpen(false);
+      setActiveRole('vocalist');
+      return;
+    }
+
+    setActiveRole('admin_md');
+    setIsMDPortalOpen(true);
   };
 
-  checkSession();
+  checkMDSession();
 }, []);
+  
 useEffect(() => {
   const {
     data: { subscription },
