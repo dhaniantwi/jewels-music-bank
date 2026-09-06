@@ -557,9 +557,8 @@ useEffect(() => {
 ) : showMDLogin ? (
   <MDLogin
     onLoginSuccess={() => {
-      setShowMDLogin(false);
-      setIsMDPortalOpen(true);
-    }}
+  setShowMDLogin(false);
+}}
   />
 ) : (
   <div>
