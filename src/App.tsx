@@ -553,27 +553,181 @@ useEffect(() => {
   return (
     <div className="min-h-screen flex flex-col justify-between text-[#1d1d1f] font-sans pb-12 sm:pb-16 selection:bg-[#007aff]/20 selection:text-[#007aff]">
 {isMDPortalOpen ? (
-  <div className="min-h-screen flex items-center justify-center px-4">
-    <div className="text-center">
-      <div className="text-5xl mb-4">🔐</div>
+  <div>
+    {/* ======================================================
+        MD ADMIN PORTAL
+    ====================================================== */}
 
-      <h1 className="text-3xl font-extrabold">
-        MD Admin Portal
-      </h1>
+    <div className="bg-[#1d1d1f] text-white px-4 py-3 flex items-center justify-between">
+      <div>
+        <p className="text-xs uppercase tracking-wider text-gray-400">
+          Jewels Music Ministry
+        </p>
 
-      <p className="text-gray-500 mt-2">
-        Welcome, Music Director.
-      </p>
-<button
-  onClick={async () => {
-    await supabase.auth.signOut({ scope: 'local' });
-    setIsMDPortalOpen(false);
-  }}
-  className="mt-8 px-5 py-3 rounded-xl bg-[#1d1d1f] text-white text-sm font-bold hover:bg-black transition"
->
-  ← Return to General Music Hub
-</button>
+        <h1 className="text-lg font-extrabold">
+          🔐 MD Admin Portal
+        </h1>
+      </div>
+
+      <button
+        onClick={async () => {
+          await supabase.auth.signOut({ scope: 'local' });
+          setIsMDPortalOpen(false);
+          setActiveRole('vocalist');
+        }}
+        className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-sm font-bold transition"
+      >
+        Logout
+      </button>
     </div>
+
+    {/* ======================================================
+        MD ADMIN MUSIC HUB
+    ====================================================== */}
+
+    <Navbar
+      activeTab={activeTab}
+      setActiveTab={setActiveTab}
+      activeRole="admin_md"
+      onOpenMDLogin={() => setShowMDLogin(true)}
+      team={team}
+      songsCount={songs.length}
+      openToolsModal={() =>
+        setIsToolsModalOpen(true)
+      }
+      openStageMode={() =>
+        setIsStageModeOpen(true)
+      }
+    />
+
+    {/* ======================================================
+        MAIN CONTENT
+    ====================================================== */}
+
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-2">
+
+      {/* ====================================================
+          HOME
+      ==================================================== */}
+
+      {activeTab === 'home' && (
+        <DashboardView
+          songs={songs}
+          ministrations={ministrations}
+          team={team}
+          activeRole="admin_md"
+          setActiveTab={setActiveTab}
+
+          onSelectSong={song =>
+            setSelectedSong(song)
+          }
+
+          onSelectMinistration={ministration => {
+            setSelectedMinistration(ministration);
+            setActiveTab('ministrations');
+          }}
+
+          openToolsModal={() =>
+            setIsToolsModalOpen(true)
+          }
+
+          openStageMode={() =>
+            setIsStageModeOpen(true)
+          }
+        />
+      )}
+
+      {/* ====================================================
+          SONG BANK
+      ==================================================== */}
+
+      {activeTab === 'songs' && (
+        <SongBankView
+          songs={songs}
+          activeRole="admin_md"
+
+          onSelectSong={song =>
+            setSelectedSong(song)
+          }
+
+          onAddNewSong={() => {
+            setEditingSong(null);
+            setIsAddEditSongOpen(true);
+          }}
+
+          onEditSong={song => {
+            setEditingSong(song);
+            setIsAddEditSongOpen(true);
+          }}
+
+          onDeleteSong={handleDeleteSong}
+        />
+      )}
+
+      {/* ====================================================
+          MINISTRATIONS
+      ==================================================== */}
+
+      {activeTab === 'ministrations' && (
+        <MinistrationsView
+          ministrations={ministrations}
+          songs={songs}
+          team={team}
+          activeRole="admin_md"
+          selectedMinistration={selectedMinistration}
+
+          onSelectMinistration={ministration =>
+            setSelectedMinistration(ministration)
+          }
+
+          onUpdateMinistration={
+            handleUpdateMinistration
+          }
+
+          onCreateMinistration={
+            handleCreateMinistration
+          }
+
+          onSelectSong={song =>
+            setSelectedSong(song)
+          }
+
+          openStageMode={() =>
+            setIsStageModeOpen(true)
+          }
+        />
+      )}
+
+      {/* ====================================================
+          MUSIC TEAM
+      ==================================================== */}
+
+      {activeTab === 'team' && (
+        <MusicTeamView
+          team={team}
+          activeRole="admin_md"
+
+          onAddNewMember={() => {
+            setEditingMember(null);
+            setIsAddEditMemberOpen(true);
+          }}
+
+          onEditMember={member => {
+            setEditingMember(member);
+            setIsAddEditMemberOpen(true);
+          }}
+
+          onDeleteMember={
+            handleDeleteMember
+          }
+
+          onTogglePermission={
+            handleTogglePermission
+          }
+        />
+      )}
+
+    </main>
   </div>
 ) : showMDLogin ? (
   <MDLogin
