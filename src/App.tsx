@@ -86,25 +86,27 @@ const [isMDPortalOpen, setIsMDPortalOpen] =
 useEffect(() => {
   const {
     data: { subscription },
-  } = supabase.auth.onAuthStateChange(async (event, session) => {
+  } = supabase.auth.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_OUT' || !session) {
       setIsMDPortalOpen(false);
       return;
     }
 
-    const { data: profile, error } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', session.user.id)
-      .single();
+    setTimeout(async () => {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .single();
 
-    if (error || profile?.role !== 'admin_md') {
-      await supabase.auth.signOut({ scope: 'local' });
-      setIsMDPortalOpen(false);
-      return;
-    }
+      if (error || profile?.role !== 'admin_md') {
+        await supabase.auth.signOut({ scope: 'local' });
+        setIsMDPortalOpen(false);
+        return;
+      }
 
-    setIsMDPortalOpen(true);
+      setIsMDPortalOpen(true);
+    }, 0);
   });
 
   return () => {
