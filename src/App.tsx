@@ -542,6 +542,13 @@ useEffect(() => {
 </button>
     </div>
   </div>
+) : showMDLogin ? (
+  <MDLogin
+    onLoginSuccess={() => {
+      setShowMDLogin(false);
+      setIsMDPortalOpen(true);
+    }}
+  />
 ) : (
   <div>
     
