@@ -87,6 +87,11 @@ const [isMDPortalOpen, setIsMDPortalOpen] =
       .select('role')
       .eq('id', data.session.user.id)
       .single();
+    console.log('MD AUTH CHECK:', {
+  userId: session.user.id,
+  profile,
+  error,
+});
 
     if (error || profile?.role !== 'admin_md') {
       await supabase.auth.signOut({ scope: 'local' });
