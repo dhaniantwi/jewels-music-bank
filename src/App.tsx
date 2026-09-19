@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -14,7 +15,6 @@ import {
 } from './types';
 
 import {
-  
   loadStoredMinistrations,
   saveStoredMinistrations,
   loadStoredTeam,
@@ -26,6 +26,7 @@ import {
   saveAudioFile,
   deleteAudioFile
 } from './utils/audioStorage';
+
 import { supabase } from './supabaseClient';
 import { Navbar } from './components/Navbar';
 import { MDLogin } from './components/MDLogin';
@@ -60,80 +61,90 @@ export default function App() {
   // ============================================================
 
   const [activeTab, setActiveTab] =
-  useState<ActiveTab>('home');
+    useState<ActiveTab>('home');
 
-const [activeRole, setActiveRole] =
-  useState<ActiveRole>('vocalist');
+  const [activeRole, setActiveRole] =
+    useState<ActiveRole>('vocalist');
 
-const [showMDLogin, setShowMDLogin] =
-  useState(false);
-const [isMDPortalOpen, setIsMDPortalOpen] =
-  useState(false);
+  const [showMDLogin, setShowMDLogin] =
+    useState(false);
+
+  const [isMDPortalOpen, setIsMDPortalOpen] =
+    useState(false);
+
   useEffect(() => {
-  const checkMDSession = async () => {
-    const { data } = await supabase.auth.getSession();
+    const checkMDSession = async () => {
+      const { data } = await supabase.auth.getSession();
 
-    if (!data.session) {
-      setIsMDPortalOpen(false);
-      setActiveRole('vocalist');
-      return;
-    }
+      if (!data.session) {
+        setIsMDPortalOpen(false);
+        setActiveRole('vocalist');
+        return;
+      }
 
-    const { data: profile, error } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', data.session.user.id)
-      .single();
-   console.log('MD AUTH CHECK:', {
-  userId: data.session.user.id,
-  profile,
-  error,
-});
-
-    if (error || profile?.role !== 'admin_md') {
-      await supabase.auth.signOut({ scope: 'local' });
-      setIsMDPortalOpen(false);
-      setActiveRole('vocalist');
-      return;
-    }
-
-    setActiveRole('admin_md');
-    setIsMDPortalOpen(true);
-  };
-
-  checkMDSession();
-}, []);
-  
-useEffect(() => {
-  const {
-    data: { subscription },
-  } = supabase.auth.onAuthStateChange((event, session) => {
-    if (event === 'SIGNED_OUT' || !session) {
-      setIsMDPortalOpen(false);
-      return;
-    }
-
-    setTimeout(async () => {
       const { data: profile, error } = await supabase
         .from('profiles')
         .select('role')
-        .eq('id', session.user.id)
+        .eq('id', data.session.user.id)
         .single();
+
+      console.log('MD AUTH CHECK:', {
+        userId: data.session.user.id,
+        profile,
+        error,
+      });
 
       if (error || profile?.role !== 'admin_md') {
         await supabase.auth.signOut({ scope: 'local' });
         setIsMDPortalOpen(false);
+        setActiveRole('vocalist');
         return;
       }
 
+      setActiveRole('admin_md');
       setIsMDPortalOpen(true);
-    }, 0);
-  });
+    };
 
-  return () => {
-    subscription.unsubscribe();
-  };
-}, []);
+    checkMDSession();
+  }, []);
+
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+
+      if (event === 'SIGNED_OUT' || !session) {
+        setIsMDPortalOpen(false);
+        setActiveRole('vocalist');
+        return;
+      }
+
+      setTimeout(async () => {
+
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+
+        if (error || profile?.role !== 'admin_md') {
+          await supabase.auth.signOut({ scope: 'local' });
+          setIsMDPortalOpen(false);
+          setActiveRole('vocalist');
+          return;
+        }
+
+        setActiveRole('admin_md');
+        setIsMDPortalOpen(true);
+
+      }, 0);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
   // ============================================================
   // SONG MODALS
   // ============================================================
@@ -177,65 +188,72 @@ useEffect(() => {
         m => m.status === 'Upcoming'
       ) || ministrations[0] || null
     );
-useEffect(() => {
-  const loadSongsFromSupabase = async () => {
-    const { data, error } = await supabase
-      .from('songs')
-      .select('*')
-      .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Could not load songs from Supabase:', error);
-      return;
-    }
-
-    if (!data) {
-      setSongs([]);
-      return;
-    }
-
-    const mappedSongs: Song[] = data.map((song) => ({
-      id: song.id,
-      title: song.title,
-      artist: song.artist,
-      category: song.category,
-
-      key: song.song_key,
-      originalKey: song.original_key,
-
-      tempo: song.tempo,
-      bpm: song.bpm,
-
-      timeSignature: song.time_signature,
-
-      icon: song.icon,
-
-      audioUrl: song.audio_url,
-
-      lyrics: song.lyrics,
-      chords: song.chords,
-
-      arrangement: song.arrangment,
-      instruments: song.instrument,
-
-      mdNotes: song.md_notes,
-
-      duration: song.duration,
-      tags: song.tags,
-
-      createdAt: song.created_at
-    }));
-
-    setSongs(mappedSongs);
-  };
-
-  loadSongsFromSupabase();
-}, []);
   // ============================================================
-  // SAVE SONGS
+  // LOAD SONGS FROM SUPABASE
   // ============================================================
 
-  
+  useEffect(() => {
+
+    const loadSongsFromSupabase = async () => {
+
+      const { data, error } = await supabase
+        .from('songs')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error(
+          'Could not load songs from Supabase:',
+          error
+        );
+        return;
+      }
+
+      if (!data) {
+        setSongs([]);
+        return;
+      }
+
+      const mappedSongs: Song[] = data.map((song) => ({
+        id: song.id,
+        title: song.title,
+        artist: song.artist,
+        category: song.category,
+
+        key: song.song_key,
+        originalKey: song.original_key,
+
+        tempo: song.tempo,
+        bpm: song.bpm,
+
+        timeSignature: song.time_signature,
+
+        icon: song.icon,
+
+        audioUrl: song.audio_url,
+
+        lyrics: song.lyrics,
+        chords: song.chords,
+
+        arrangement: song.arrangment,
+        instruments: song.instrument,
+
+        mdNotes: song.md_notes,
+
+        duration: song.duration,
+        tags: song.tags,
+
+        createdAt: song.created_at
+      }));
+
+      setSongs(mappedSongs);
+    };
+
+    loadSongsFromSupabase();
+
+  }, []);
+
   // ============================================================
   // SAVE MINISTRATIONS
   // ============================================================
@@ -257,6 +275,7 @@ useEffect(() => {
   // ============================================================
 
   useEffect(() => {
+
     if (!selectedMinistration) return;
 
     const refreshed = ministrations.find(
@@ -266,6 +285,7 @@ useEffect(() => {
     if (refreshed) {
       setSelectedMinistration(refreshed);
     }
+
   }, [ministrations, selectedMinistration]);
 
   // ============================================================
@@ -273,7 +293,7 @@ useEffect(() => {
   // ============================================================
 
   const handleSaveSong = async (
-    songData: Omit<Song, 'id'> & { id?: number },
+    songData: Omit<Song, 'id'> & { id?: string },
     audioFile?: File
   ): Promise<void> => {
 
@@ -285,12 +305,77 @@ useEffect(() => {
 
       if (songData.id !== undefined) {
 
+        const { data, error } = await supabase
+          .from('songs')
+          .update({
+            title: songData.title,
+            artist: songData.artist,
+            category: songData.category,
+            song_key: songData.key,
+            original_key: songData.originalKey,
+            tempo: songData.tempo,
+            bpm: songData.bpm,
+            time_signature: songData.timeSignature,
+            icon: songData.icon,
+            lyrics: songData.lyrics,
+            chords: songData.chords,
+            arrangment: songData.arrangement,
+            instrument: songData.instruments,
+            md_notes: songData.mdNotes,
+            duration: songData.duration,
+            tags: songData.tags
+          })
+          .eq('id', songData.id)
+          .select()
+          .single();
+
+        if (error) {
+
+          console.error(
+            'Error updating song:',
+            error
+          );
+
+          alert(
+            'The song could not be updated. Please try again.'
+          );
+
+          return;
+        }
+
         const updatedSong: Song = {
-          ...songData,
-          id: songData.id
+          id: data.id,
+          title: data.title,
+          artist: data.artist,
+          category: data.category,
+
+          key: data.song_key,
+          originalKey: data.original_key,
+
+          tempo: data.tempo,
+          bpm: data.bpm,
+
+          timeSignature: data.time_signature,
+
+          icon: data.icon,
+
+          audioUrl: data.audio_url,
+
+          lyrics: data.lyrics,
+          chords: data.chords,
+
+          arrangement: data.arrangment,
+          instruments: data.instrument,
+
+          mdNotes: data.md_notes,
+
+          duration: data.duration,
+          tags: data.tags,
+
+          createdAt: data.created_at
         };
 
-        // Update React state first.
+        // Update React state.
         setSongs(prev =>
           prev.map(song =>
             song.id === updatedSong.id
@@ -306,12 +391,25 @@ useEffect(() => {
             : prev
         );
 
-        // Save replacement audio if supplied.
+        // Audio is still handled by the existing
+        // IndexedDB system for now.
         if (audioFile) {
-          await saveAudioFile(
-            updatedSong.id,
-            audioFile
-          );
+
+          try {
+
+            await saveAudioFile(
+              Number(updatedSong.id),
+              audioFile
+            );
+
+          } catch (audioError) {
+
+            console.error(
+              'Error saving replacement audio:',
+              audioError
+            );
+
+          }
         }
 
         console.log(
@@ -326,33 +424,88 @@ useEffect(() => {
       // ADD NEW SONG
       // ----------------------------------------------------------
 
-      const newId = Date.now();
+      const { data, error } = await supabase
+        .from('songs')
+        .insert({
+          title: songData.title,
+          artist: songData.artist,
+          category: songData.category,
+          song_key: songData.key,
+          original_key: songData.originalKey,
+          tempo: songData.tempo,
+          bpm: songData.bpm,
+          time_signature: songData.timeSignature,
+          icon: songData.icon,
+          lyrics: songData.lyrics,
+          chords: songData.chords,
+          arrangment: songData.arrangement,
+          instrument: songData.instruments,
+          md_notes: songData.mdNotes,
+          duration: songData.duration,
+          tags: songData.tags
+        })
+        .select()
+        .single();
+
+      if (error) {
+
+        console.error(
+          'Error adding song:',
+          error
+        );
+
+        alert(
+          'The song could not be added. Please try again.'
+        );
+
+        return;
+      }
 
       const newSong: Song = {
-        ...songData,
-        id: newId,
-        createdAt: new Date().toISOString()
+        id: data.id,
+        title: data.title,
+        artist: data.artist,
+        category: data.category,
+
+        key: data.song_key,
+        originalKey: data.original_key,
+
+        tempo: data.tempo,
+        bpm: data.bpm,
+
+        timeSignature: data.time_signature,
+
+        icon: data.icon,
+
+        audioUrl: data.audio_url,
+
+        lyrics: data.lyrics,
+        chords: data.chords,
+
+        arrangement: data.arrangment,
+        instruments: data.instrument,
+
+        mdNotes: data.md_notes,
+
+        duration: data.duration,
+        tags: data.tags,
+
+        createdAt: data.created_at
       };
 
-      // ----------------------------------------------------------
-      // ADD SONG TO STATE
-      // ----------------------------------------------------------
-
+      // Add the newly-created Supabase song to React state.
       setSongs(prev => [
         newSong,
         ...prev
       ]);
 
-      // ----------------------------------------------------------
-      // SAVE AUDIO SEPARATELY
-      // ----------------------------------------------------------
-
+      // Audio remains in IndexedDB temporarily.
       if (audioFile) {
 
         try {
 
           await saveAudioFile(
-            newId,
+            Number(newSong.id),
             audioFile
           );
 
@@ -367,15 +520,6 @@ useEffect(() => {
             'Audio could not be saved:',
             audioError
           );
-
-          /*
-           * IMPORTANT:
-           * Do not throw here.
-           *
-           * The song itself has already been saved.
-           * If IndexedDB fails, we keep the song instead
-           * of making the entire application crash.
-           */
 
           alert(
             'The song was added, but the audio file could not be stored. You can try adding the audio again by editing the song.'
@@ -406,12 +550,14 @@ useEffect(() => {
   // ============================================================
 
   const handleDeleteSong = async (
-    songId: number
+    songId: string
   ): Promise<void> => {
 
     try {
 
-      await deleteAudioFile(songId);
+      await deleteAudioFile(
+        Number(songId)
+      );
 
     } catch (error) {
 
@@ -433,6 +579,7 @@ useEffect(() => {
       setMinistrations(prev =>
         prev.map(ministration => ({
           ...ministration,
+
           songs:
             ministration.songs.filter(
               item =>
@@ -604,347 +751,371 @@ useEffect(() => {
 
   return (
     <div className="min-h-screen flex flex-col justify-between text-[#1d1d1f] font-sans pb-12 sm:pb-16 selection:bg-[#007aff]/20 selection:text-[#007aff]">
-{isMDPortalOpen ? (
-  <div>
-    {/* ======================================================
-        MD ADMIN PORTAL
-    ====================================================== */}
 
-    <div className="bg-[#1d1d1f] text-white px-4 py-3 flex items-center justify-between">
-      <div>
-        <p className="text-xs uppercase tracking-wider text-gray-400">
-          Jewels Music Ministry
-        </p>
+      {isMDPortalOpen ? (
 
-        <h1 className="text-lg font-extrabold">
-          🔐 MD Admin Portal
-        </h1>
-      </div>
+        <div>
 
-      <button
-        onClick={async () => {
-          await supabase.auth.signOut({ scope: 'local' });
-          setIsMDPortalOpen(false);
-          setActiveRole('vocalist');
-        }}
-        className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-sm font-bold transition"
-      >
-        Logout
-      </button>
-    </div>
+          {/* ======================================================
+              MD ADMIN PORTAL
+          ====================================================== */}
 
-    {/* ======================================================
-        MD ADMIN MUSIC HUB
-    ====================================================== */}
+          <div className="bg-[#1d1d1f] text-white px-4 py-3 flex items-center justify-between">
 
-    <Navbar
-      activeTab={activeTab}
-      setActiveTab={setActiveTab}
-      activeRole="admin_md"
-      onOpenMDLogin={() => setShowMDLogin(true)}
-      team={team}
-      songsCount={songs.length}
-      openToolsModal={() =>
-        setIsToolsModalOpen(true)
-      }
-      openStageMode={() =>
-        setIsStageModeOpen(true)
-      }
-    />
+            <div>
 
-    {/* ======================================================
-        MAIN CONTENT
-    ====================================================== */}
+              <p className="text-xs uppercase tracking-wider text-gray-400">
+                Jewels Music Ministry
+              </p>
 
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-2">
+              <h1 className="text-lg font-extrabold">
+                🔐 MD Admin Portal
+              </h1>
 
-      {/* ====================================================
-          HOME
-      ==================================================== */}
+            </div>
 
-      {activeTab === 'home' && (
-        <DashboardView
-          songs={songs}
-          ministrations={ministrations}
-          team={team}
-          activeRole="admin_md"
-          setActiveTab={setActiveTab}
+            <button
+              onClick={async () => {
 
-          onSelectSong={song =>
-            setSelectedSong(song)
-          }
+                await supabase.auth.signOut({
+                  scope: 'local'
+                });
 
-          onSelectMinistration={ministration => {
-            setSelectedMinistration(ministration);
-            setActiveTab('ministrations');
+                setIsMDPortalOpen(false);
+                setActiveRole('vocalist');
+
+              }}
+              className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-sm font-bold transition"
+            >
+              Logout
+            </button>
+
+          </div>
+
+          {/* ======================================================
+              MD ADMIN MUSIC HUB
+          ====================================================== */}
+
+          <Navbar
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            activeRole="admin_md"
+            onOpenMDLogin={() =>
+              setShowMDLogin(true)
+            }
+            team={team}
+            songsCount={songs.length}
+            openToolsModal={() =>
+              setIsToolsModalOpen(true)
+            }
+            openStageMode={() =>
+              setIsStageModeOpen(true)
+            }
+          />
+
+          {/* ======================================================
+              MAIN CONTENT
+          ====================================================== */}
+
+          <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-2">
+
+            {/* HOME */}
+
+            {activeTab === 'home' && (
+
+              <DashboardView
+                songs={songs}
+                ministrations={ministrations}
+                team={team}
+                activeRole="admin_md"
+                setActiveTab={setActiveTab}
+
+                onSelectSong={song =>
+                  setSelectedSong(song)
+                }
+
+                onSelectMinistration={ministration => {
+                  setSelectedMinistration(ministration);
+                  setActiveTab('ministrations');
+                }}
+
+                openToolsModal={() =>
+                  setIsToolsModalOpen(true)
+                }
+
+                openStageMode={() =>
+                  setIsStageModeOpen(true)
+                }
+              />
+
+            )}
+
+            {/* SONG BANK */}
+
+            {activeTab === 'songs' && (
+
+              <SongBankView
+                songs={songs}
+                activeRole="admin_md"
+
+                onSelectSong={song =>
+                  setSelectedSong(song)
+                }
+
+                onAddNewSong={() => {
+                  setEditingSong(null);
+                  setIsAddEditSongOpen(true);
+                }}
+
+                onEditSong={song => {
+                  setEditingSong(song);
+                  setIsAddEditSongOpen(true);
+                }}
+
+                onDeleteSong={handleDeleteSong}
+              />
+
+            )}
+
+            {/* MINISTRATIONS */}
+
+            {activeTab === 'ministrations' && (
+
+              <MinistrationsView
+                ministrations={ministrations}
+                songs={songs}
+                team={team}
+                activeRole="admin_md"
+                selectedMinistration={selectedMinistration}
+
+                onSelectMinistration={ministration =>
+                  setSelectedMinistration(ministration)
+                }
+
+                onUpdateMinistration={
+                  handleUpdateMinistration
+                }
+
+                onCreateMinistration={
+                  handleCreateMinistration
+                }
+
+                onSelectSong={song =>
+                  setSelectedSong(song)
+                }
+
+                openStageMode={() =>
+                  setIsStageModeOpen(true)
+                }
+              />
+
+            )}
+
+            {/* MUSIC TEAM */}
+
+            {activeTab === 'team' && (
+
+              <MusicTeamView
+                team={team}
+                activeRole="admin_md"
+
+                onAddNewMember={() => {
+                  setEditingMember(null);
+                  setIsAddEditMemberOpen(true);
+                }}
+
+                onEditMember={member => {
+                  setEditingMember(member);
+                  setIsAddEditMemberOpen(true);
+                }}
+
+                onDeleteMember={
+                  handleDeleteMember
+                }
+
+                onTogglePermission={
+                  handleTogglePermission
+                }
+              />
+
+            )}
+
+          </main>
+
+        </div>
+
+      ) : showMDLogin ? (
+
+        <MDLogin
+          onLoginSuccess={() => {
+            setShowMDLogin(false);
           }}
-
-          openToolsModal={() =>
-            setIsToolsModalOpen(true)
-          }
-
-          openStageMode={() =>
-            setIsStageModeOpen(true)
-          }
         />
+
+      ) : (
+
+        <div>
+
+          {/* ======================================================
+              NAVIGATION
+          ====================================================== */}
+
+          <Navbar
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            activeRole={activeRole}
+            onOpenMDLogin={() =>
+              setShowMDLogin(true)
+            }
+            team={team}
+            songsCount={songs.length}
+            openToolsModal={() =>
+              setIsToolsModalOpen(true)
+            }
+            openStageMode={() =>
+              setIsStageModeOpen(true)
+            }
+          />
+
+          {/* ======================================================
+              MAIN CONTENT
+          ====================================================== */}
+
+          <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-2">
+
+            {/* HOME */}
+
+            {activeTab === 'home' && (
+
+              <DashboardView
+                songs={songs}
+                ministrations={ministrations}
+                team={team}
+                activeRole={activeRole}
+                setActiveTab={setActiveTab}
+
+                onSelectSong={song =>
+                  setSelectedSong(song)
+                }
+
+                onSelectMinistration={ministration => {
+                  setSelectedMinistration(ministration);
+                  setActiveTab('ministrations');
+                }}
+
+                openToolsModal={() =>
+                  setIsToolsModalOpen(true)
+                }
+
+                openStageMode={() =>
+                  setIsStageModeOpen(true)
+                }
+              />
+
+            )}
+
+            {/* SONG BANK */}
+
+            {activeTab === 'songs' && (
+
+              <SongBankView
+                songs={songs}
+                activeRole={activeRole}
+
+                onSelectSong={song =>
+                  setSelectedSong(song)
+                }
+
+                onAddNewSong={() => {
+                  setEditingSong(null);
+                  setIsAddEditSongOpen(true);
+                }}
+
+                onEditSong={song => {
+                  setEditingSong(song);
+                  setIsAddEditSongOpen(true);
+                }}
+
+                onDeleteSong={handleDeleteSong}
+              />
+
+            )}
+
+            {/* MINISTRATIONS */}
+
+            {activeTab === 'ministrations' && (
+
+              <MinistrationsView
+                ministrations={ministrations}
+                songs={songs}
+                team={team}
+                activeRole={activeRole}
+                selectedMinistration={selectedMinistration}
+
+                onSelectMinistration={ministration =>
+                  setSelectedMinistration(ministration)
+                }
+
+                onUpdateMinistration={
+                  handleUpdateMinistration
+                }
+
+                onCreateMinistration={
+                  handleCreateMinistration
+                }
+
+                onSelectSong={song =>
+                  setSelectedSong(song)
+                }
+
+                openStageMode={() =>
+                  setIsStageModeOpen(true)
+                }
+              />
+
+            )}
+
+            {/* MUSIC TEAM */}
+
+            {activeTab === 'team' && (
+
+              <MusicTeamView
+                team={team}
+                activeRole={activeRole}
+
+                onAddNewMember={() => {
+                  setEditingMember(null);
+                  setIsAddEditMemberOpen(true);
+                }}
+
+                onEditMember={member => {
+                  setEditingMember(member);
+                  setIsAddEditMemberOpen(true);
+                }}
+
+                onDeleteMember={
+                  handleDeleteMember
+                }
+
+                onTogglePermission={
+                  handleTogglePermission
+                }
+              />
+
+            )}
+
+          </main>
+
+        </div>
+
       )}
-
-      {/* ====================================================
-          SONG BANK
-      ==================================================== */}
-
-      {activeTab === 'songs' && (
-        <SongBankView
-          songs={songs}
-          activeRole="admin_md"
-
-          onSelectSong={song =>
-            setSelectedSong(song)
-          }
-
-          onAddNewSong={() => {
-            setEditingSong(null);
-            setIsAddEditSongOpen(true);
-          }}
-
-          onEditSong={song => {
-            setEditingSong(song);
-            setIsAddEditSongOpen(true);
-          }}
-
-          onDeleteSong={handleDeleteSong}
-        />
-      )}
-
-      {/* ====================================================
-          MINISTRATIONS
-      ==================================================== */}
-
-      {activeTab === 'ministrations' && (
-        <MinistrationsView
-          ministrations={ministrations}
-          songs={songs}
-          team={team}
-          activeRole="admin_md"
-          selectedMinistration={selectedMinistration}
-
-          onSelectMinistration={ministration =>
-            setSelectedMinistration(ministration)
-          }
-
-          onUpdateMinistration={
-            handleUpdateMinistration
-          }
-
-          onCreateMinistration={
-            handleCreateMinistration
-          }
-
-          onSelectSong={song =>
-            setSelectedSong(song)
-          }
-
-          openStageMode={() =>
-            setIsStageModeOpen(true)
-          }
-        />
-      )}
-
-      {/* ====================================================
-          MUSIC TEAM
-      ==================================================== */}
-
-      {activeTab === 'team' && (
-        <MusicTeamView
-          team={team}
-          activeRole="admin_md"
-
-          onAddNewMember={() => {
-            setEditingMember(null);
-            setIsAddEditMemberOpen(true);
-          }}
-
-          onEditMember={member => {
-            setEditingMember(member);
-            setIsAddEditMemberOpen(true);
-          }}
-
-          onDeleteMember={
-            handleDeleteMember
-          }
-
-          onTogglePermission={
-            handleTogglePermission
-          }
-        />
-      )}
-
-    </main>
-  </div>
-) : showMDLogin ? (
-  <MDLogin
-    onLoginSuccess={() => {
-  setShowMDLogin(false);
-}}
-  />
-) : (
-  <div>
-    
-
-        {/* ======================================================
-            NAVIGATION
-        ====================================================== */}
-
-        <Navbar
-  activeTab={activeTab}
-  setActiveTab={setActiveTab}
-  activeRole={activeRole}
-  onOpenMDLogin={() => setShowMDLogin(true)}
-  team={team}
-          songsCount={songs.length}
-          openToolsModal={() =>
-            setIsToolsModalOpen(true)
-          }
-          openStageMode={() =>
-            setIsStageModeOpen(true)
-          }
-        />
-
-        {/* ======================================================
-            MAIN CONTENT
-        ====================================================== */}
-
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-2">
-
-          {/* ====================================================
-              HOME
-          ==================================================== */}
-
-          {activeTab === 'home' && (
-            <DashboardView
-              songs={songs}
-              ministrations={ministrations}
-              team={team}
-              activeRole={activeRole}
-              setActiveTab={setActiveTab}
-
-              onSelectSong={song =>
-                setSelectedSong(song)
-              }
-
-              onSelectMinistration={ministration => {
-                setSelectedMinistration(ministration);
-                setActiveTab('ministrations');
-              }}
-
-              openToolsModal={() =>
-                setIsToolsModalOpen(true)
-              }
-
-              openStageMode={() =>
-                setIsStageModeOpen(true)
-              }
-            />
-          )}
-
-          {/* ====================================================
-              SONG BANK
-          ==================================================== */}
-
-          {activeTab === 'songs' && (
-            <SongBankView
-              songs={songs}
-              activeRole={activeRole}
-
-              onSelectSong={song =>
-                setSelectedSong(song)
-              }
-
-              onAddNewSong={() => {
-                setEditingSong(null);
-                setIsAddEditSongOpen(true);
-              }}
-
-              onEditSong={song => {
-                setEditingSong(song);
-                setIsAddEditSongOpen(true);
-              }}
-
-              onDeleteSong={handleDeleteSong}
-            />
-          )}
-
-          {/* ====================================================
-              MINISTRATIONS
-          ==================================================== */}
-
-          {activeTab === 'ministrations' && (
-            <MinistrationsView
-              ministrations={ministrations}
-              songs={songs}
-              team={team}
-              activeRole={activeRole}
-              selectedMinistration={selectedMinistration}
-
-              onSelectMinistration={ministration =>
-                setSelectedMinistration(ministration)
-              }
-
-              onUpdateMinistration={
-                handleUpdateMinistration
-              }
-
-              onCreateMinistration={
-                handleCreateMinistration
-              }
-
-              onSelectSong={song =>
-                setSelectedSong(song)
-              }
-
-              openStageMode={() =>
-                setIsStageModeOpen(true)
-              }
-            />
-          )}
-
-          {/* ====================================================
-              MUSIC TEAM
-          ==================================================== */}
-
-          {activeTab === 'team' && (
-            <MusicTeamView
-              team={team}
-              activeRole={activeRole}
-
-              onAddNewMember={() => {
-                setEditingMember(null);
-                setIsAddEditMemberOpen(true);
-              }}
-
-              onEditMember={member => {
-                setEditingMember(member);
-                setIsAddEditMemberOpen(true);
-              }}
-
-              onDeleteMember={
-                handleDeleteMember
-              }
-
-              onTogglePermission={
-                handleTogglePermission
-              }
-            />
-          )}
-
-                </main>
-      </div>
-    )}
 
       {/* ========================================================
           PRINTABLE MINISTRATION SHEET
       ======================================================== */}
+
       {selectedMinistration && (
+
         <div className="hidden print-only p-8 text-black bg-white">
 
           <div className="border-b-2 border-black pb-4 mb-6">
@@ -953,17 +1124,21 @@ useEffect(() => {
               {selectedMinistration.name}
             </h1>
 
-           <p className="text-base text-gray-700 mt-1">
-  Jewels Music Ministry • Date: {selectedMinistration.date}
-  {selectedMinistration.time ? (
-    <> • {selectedMinistration.time}</>
-  ) : null}
-</p>
+            <p className="text-base text-gray-700 mt-1">
+              Jewels Music Ministry • Date: {selectedMinistration.date}
+
+              {selectedMinistration.time ? (
+                <> • {selectedMinistration.time}</>
+              ) : null}
+
+            </p>
 
             {selectedMinistration.venue && (
+
               <p className="text-sm text-gray-600">
                 Venue: {selectedMinistration.venue}
               </p>
+
             )}
 
           </div>
@@ -975,6 +1150,7 @@ useEffect(() => {
           <table className="w-full border-collapse border border-gray-400 text-sm">
 
             <thead>
+
               <tr className="bg-gray-100">
 
                 <th className="border border-gray-400 p-2 text-left">
@@ -1002,6 +1178,7 @@ useEffect(() => {
                 </th>
 
               </tr>
+
             </thead>
 
             <tbody>
@@ -1022,6 +1199,7 @@ useEffect(() => {
                     );
 
                   return (
+
                     <tr key={item.songId}>
 
                       <td className="border border-gray-400 p-2 font-bold">
@@ -1041,9 +1219,11 @@ useEffect(() => {
                       </td>
 
                       <td className="border border-gray-400 p-2 font-bold">
+
                         {lead
                           ? lead.name
                           : 'Unassigned'}
+
                       </td>
 
                       <td className="border border-gray-400 p-2">
@@ -1051,14 +1231,18 @@ useEffect(() => {
                       </td>
 
                     </tr>
+
                   );
+
                 }
               )}
 
             </tbody>
+
           </table>
 
           {selectedMinistration.mdGlobalNotes && (
+
             <div className="mt-6 p-4 border border-gray-400">
 
               <h3 className="font-bold text-sm">
@@ -1070,9 +1254,11 @@ useEffect(() => {
               </p>
 
             </div>
+
           )}
 
         </div>
+
       )}
 
       {/* ========================================================
@@ -1122,6 +1308,7 @@ useEffect(() => {
 
           setIsAddEditSongOpen(false);
           setEditingSong(null);
+
         }}
 
         editingSong={editingSong}
@@ -1161,6 +1348,7 @@ useEffect(() => {
       ======================================================== */}
 
       {selectedMinistration && (
+
         <StageRehearsalModal
           isOpen={isStageModeOpen}
 
@@ -1176,6 +1364,7 @@ useEffect(() => {
 
           team={team}
         />
+
       )}
 
       {/* ========================================================
@@ -1201,8 +1390,8 @@ useEffect(() => {
         <div className="flex items-center justify-center gap-3 text-[11px]">
 
           <span>
-  Jewels Music Ministry Portal
-</span>
+            Jewels Music Ministry Portal
+          </span>
 
           <span>•</span>
 
@@ -1220,3 +1409,4 @@ useEffect(() => {
     </div>
   );
 }
+
