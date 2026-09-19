@@ -45,7 +45,7 @@ export default function App() {
   // MAIN APPLICATION STATE
   // ============================================================
 
-  const [songs, setSongs] = useState<Song[]>(() =>
+  const [songs, setSongs] = useState<Song[]>([]);
     loadStoredSongs()
   );
 
