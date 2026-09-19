@@ -33,7 +33,7 @@ export interface SongInstruments {
 }
 
 export interface Song {
-  id: number;
+  id: string;
   title: string;
 
   artist?: string;
