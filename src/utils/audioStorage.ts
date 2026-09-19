@@ -59,7 +59,7 @@ export const saveAudioFile = async (
     .from(BUCKET_NAME)
     .upload(filePath, file, {
       contentType: file.type || 'audio/mpeg',
-      upsert: true
+      upsert: false
     });
 
   if (uploadError) {
