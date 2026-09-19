@@ -305,7 +305,7 @@ useEffect(() => {
   loadTeamFromSupabase();
 
 }, []);
-  }, []);
+ 
 
   // ============================================================
   // SAVE MINISTRATIONS
