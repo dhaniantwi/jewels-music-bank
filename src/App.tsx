@@ -52,9 +52,7 @@ export default function App() {
     loadStoredMinistrations()
   );
 
-  const [team, setTeam] = useState<TeamMember[]>(() =>
-    loadStoredTeam()
-  );
+ const [team, setTeam] = useState<TeamMember[]>([]);
 
   // ============================================================
   // ACTIVE VIEW & ROLE
