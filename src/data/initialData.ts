@@ -284,7 +284,7 @@ You are an Awesome God, faithful in all Your ways!`,
 
 export const INITIAL_MINISTRATIONS: Ministration[] = [
   {
-    id: 1,
+    id: '1',
     name: "BaselFest 2026",
     date: "Saturday, 12th September 2026",
     time: "4:00 PM GMT",
@@ -295,28 +295,28 @@ export const INITIAL_MINISTRATIONS: Ministration[] = [
     mdGlobalNotes: "All vocalists and band members must arrive 1 hour before sound check (2:30 PM). Dress code is White and Royal Blue. Ensure wireless mics are tested and in-ear monitors paired.",
     songs: [
       {
-        songId: 3, // Afropraise Medley
+        songId: '3', // Afropraise Medley
         lead: 1, // Daniel Antwi (MD)
         keyOverride: "C",
         orderNote: "Opening praise explosion. High energy to warm up the congregation.",
         durationMin: 8
       },
       {
-        songId: 2, // Ogya Fire
+        songId: '2', // Ogya Fire
         lead: 2, // Priscilla Mensah
         keyOverride: "F",
         orderNote: "Follows seamlessly from Afropraise. Drum transition without pause.",
         durationMin: 6
       },
       {
-        songId: 1, // Satisfy
+        songId: '1', // Satisfy
         lead: 5, // Samuel Appiah
         keyOverride: "G",
         orderNote: "Bring the room down into deep worship and reflection. Soft piano entrance.",
         durationMin: 7
       },
       {
-        songId: 4, // Wo Ne Nyame
+        songId: '4', // Wo Ne Nyame
         lead: 4, // Grace Adomako
         keyOverride: "Bb",
         orderNote: "Congregational climax and prayer transition.",
@@ -343,7 +343,7 @@ export const INITIAL_MINISTRATIONS: Ministration[] = [
         durationMin: 6
       },
       {
-        songId: 1, // Satisfy
+        songId: '1', // Satisfy
         lead: 3,
         keyOverride: "G",
         orderNote: "Main worship session",
@@ -352,7 +352,7 @@ export const INITIAL_MINISTRATIONS: Ministration[] = [
     ]
   },
   {
-    id: 3,
+    id: '3',
     name: "Praise Overflow Night",
     date: "Friday, 15th August 2026",
     time: "7:00 PM GMT",
@@ -494,7 +494,7 @@ export const INITIAL_TEAM_MEMBERS: TeamMember[] = [
     canEdit: false
   },
   {
-    id: 10,
+    id: '10',
     name: "Benjamin Darko",
     role: "Saxophonist & Horns",
     type: "instrument",
