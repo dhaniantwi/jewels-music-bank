@@ -2,7 +2,7 @@ import { Song, Ministration, TeamMember } from '../types';
 
 export const INITIAL_SONGS: Song[] = [
   {
-    id: 1,
+    id: '1',
     title: "Satisfy",
     artist: "Joe Mettle",
     category: "Worship",
