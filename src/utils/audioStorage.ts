@@ -87,6 +87,11 @@ export const saveAudioFile = async (
  *
  * This uses the audio URL stored in the songs table.
  */
+export const getAudioFile = async (
+  songId: string
+): Promise<null> => {
+  return null;
+};
 export const getAudioUrl = (
   audioUrl?: string
 ): string | null => {
