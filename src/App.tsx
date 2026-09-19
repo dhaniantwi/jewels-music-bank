@@ -249,7 +249,62 @@ export default function App() {
     };
 
     loadSongsFromSupabase();
+// ============================================================
+// LOAD TEAM FROM SUPABASE
+// ============================================================
 
+useEffect(() => {
+
+  const loadTeamFromSupabase = async () => {
+
+    const { data, error } = await supabase
+      .from('team_members')
+      .select('*')
+      .order('id', { ascending: true });
+
+    if (error) {
+      console.error(
+        'Could not load team from Supabase:',
+        error
+      );
+      return;
+    }
+
+    if (!data) {
+      setTeam([]);
+      return;
+    }
+
+    const mappedTeam: TeamMember[] = data.map((member) => ({
+      id: member.id,
+      name: member.name,
+      role: member.role || '',
+      type:
+        member.role === 'Vocalist'
+          ? 'vocal'
+          : member.role === 'Instrumentalist'
+            ? 'instrument'
+            : 'director',
+      voicePart:
+        member.role === 'Vocalist'
+          ? member.instrument || undefined
+          : undefined,
+      instrumentType:
+        member.role === 'Instrumentalist'
+          ? member.instrument || undefined
+          : undefined,
+      phone: member.phone || undefined,
+      email: member.email || undefined,
+      isAvailable: true,
+      canEdit: member.name === 'Daniel Antwi'
+    }));
+
+    setTeam(mappedTeam);
+  };
+
+  loadTeamFromSupabase();
+
+}, []);
   }, []);
 
   // ============================================================
