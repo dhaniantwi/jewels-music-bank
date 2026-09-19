@@ -87,8 +87,8 @@ const [isMDPortalOpen, setIsMDPortalOpen] =
       .select('role')
       .eq('id', data.session.user.id)
       .single();
-    console.log('MD AUTH CHECK:', {
-  userId: session.user.id,
+   console.log('MD AUTH CHECK:', {
+  userId: data.session.user.id,
   profile,
   error,
 });
