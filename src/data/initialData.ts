@@ -1,3 +1,4 @@
+```ts
 import { Song, Ministration, TeamMember } from '../types';
 
 export const INITIAL_SONGS: Song[] = [
@@ -56,7 +57,7 @@ Only You can satisfy`,
     tags: ["Worship", "Intimacy", "Holy Spirit"]
   },
   {
-    id: 2,
+    id: '2',
     title: "Ogya Fire",
     artist: "Carl Clottey / Empraise Inc.",
     category: "Praise",
@@ -107,7 +108,7 @@ We will testify of Your mighty grace!`,
     tags: ["Praise", "Holy Ghost", "High Energy"]
   },
   {
-    id: 3,
+    id: '3',
     title: "Afropraise Medley",
     artist: "Siisi Baidoo",
     category: "Afropraise",
@@ -155,7 +156,7 @@ Jump for Jesus, shout for joy!`,
     tags: ["Afropraise", "Medley", "Celebration"]
   },
   {
-    id: 4,
+    id: '4',
     title: "Wo Ne Nyame",
     artist: "Gospel Collection",
     category: "Gospel",
@@ -198,7 +199,7 @@ Today and forevermore`,
     tags: ["Gospel", "Worship", "Twi"]
   },
   {
-    id: 5,
+    id: '5',
     title: "You Are Great",
     artist: "Steve Crown",
     category: "Worship",
@@ -240,7 +241,7 @@ Everything written about You is great`,
     tags: ["Worship", "Majesty", "Congregational"]
   },
   {
-    id: 6,
+    id: '6',
     title: "Awesome God",
     artist: "Sinach / Live Praise",
     category: "Contemporary",
@@ -284,7 +285,7 @@ You are an Awesome God, faithful in all Your ways!`,
 
 export const INITIAL_MINISTRATIONS: Ministration[] = [
   {
-    id: '1',
+    id: 1,
     name: "BaselFest 2026",
     date: "Saturday, 12th September 2026",
     time: "4:00 PM GMT",
@@ -295,29 +296,29 @@ export const INITIAL_MINISTRATIONS: Ministration[] = [
     mdGlobalNotes: "All vocalists and band members must arrive 1 hour before sound check (2:30 PM). Dress code is White and Royal Blue. Ensure wireless mics are tested and in-ear monitors paired.",
     songs: [
       {
-        songId: '3', // Afropraise Medley
-        lead: 1, // Daniel Antwi (MD)
+        songId: '3',
+        lead: 1,
         keyOverride: "C",
         orderNote: "Opening praise explosion. High energy to warm up the congregation.",
         durationMin: 8
       },
       {
-        songId: '2', // Ogya Fire
-        lead: 2, // Priscilla Mensah
+        songId: '2',
+        lead: 2,
         keyOverride: "F",
         orderNote: "Follows seamlessly from Afropraise. Drum transition without pause.",
         durationMin: 6
       },
       {
-        songId: '1', // Satisfy
-        lead: 5, // Samuel Appiah
+        songId: '1',
+        lead: 5,
         keyOverride: "G",
         orderNote: "Bring the room down into deep worship and reflection. Soft piano entrance.",
         durationMin: 7
       },
       {
-        songId: '4', // Wo Ne Nyame
-        lead: 4, // Grace Adomako
+        songId: '4',
+        lead: 4,
         keyOverride: "Bb",
         orderNote: "Congregational climax and prayer transition.",
         durationMin: 6
@@ -336,14 +337,14 @@ export const INITIAL_MINISTRATIONS: Ministration[] = [
     mdGlobalNotes: "Focus on congregational flow. Keep vocal harmonies clean and balanced.",
     songs: [
       {
-        songId: 5, // You Are Great
+        songId: '5',
         lead: 2,
         keyOverride: "E",
         orderNote: "Call to worship",
         durationMin: 6
       },
       {
-        songId: '1', // Satisfy
+        songId: '1',
         lead: 3,
         keyOverride: "G",
         orderNote: "Main worship session",
@@ -352,7 +353,7 @@ export const INITIAL_MINISTRATIONS: Ministration[] = [
     ]
   },
   {
-    id: '3',
+    id: 3,
     name: "Praise Overflow Night",
     date: "Friday, 15th August 2026",
     time: "7:00 PM GMT",
@@ -363,19 +364,19 @@ export const INITIAL_MINISTRATIONS: Ministration[] = [
     mdGlobalNotes: "Great job to the band and vocalists! Tight transitions throughout.",
     songs: [
       {
-        songId: 2,
+        songId: '2',
         lead: 2,
         keyOverride: "F",
         durationMin: 6
       },
       {
-        songId: 3,
+        songId: '3',
         lead: 1,
         keyOverride: "C",
         durationMin: 8
       },
       {
-        songId: 6,
+        songId: '6',
         lead: 5,
         keyOverride: "D",
         durationMin: 5
@@ -494,7 +495,7 @@ export const INITIAL_TEAM_MEMBERS: TeamMember[] = [
     canEdit: false
   },
   {
-    id: '10',
+    id: 10,
     name: "Benjamin Darko",
     role: "Saxophonist & Horns",
     type: "instrument",
@@ -506,3 +507,4 @@ export const INITIAL_TEAM_MEMBERS: TeamMember[] = [
     canEdit: false
   }
 ];
+```
