@@ -293,140 +293,25 @@ export default function App() {
   // ============================================================
 
   const handleSaveSong = async (
-    songData: Omit<Song, 'id'> & { id?: string },
-    audioFile?: File
-  ): Promise<void> => {
+  songData: Omit<Song, 'id'> & { id?: string },
+  audioFile?: File
+): Promise<void> => {
 
-    try {
+  try {
 
-      // ----------------------------------------------------------
-      // EDIT EXISTING SONG
-      // ----------------------------------------------------------
+    // ============================================================
+    // EDIT EXISTING SONG
+    // ============================================================
 
-      if (songData.id !== undefined) {
-
-        const { data, error } = await supabase
-          .from('songs')
-          .update({
-            title: songData.title,
-            artist: songData.artist,
-            category: songData.category,
-            song_key: songData.key,
-            original_key: songData.originalKey,
-            tempo: songData.tempo,
-            bpm: songData.bpm,
-            time_signature: songData.timeSignature,
-            icon: songData.icon,
-            lyrics: songData.lyrics,
-            chords: songData.chords,
-            arrangment: songData.arrangement,
-            instrument: songData.instruments,
-            md_notes: songData.mdNotes,
-            duration: songData.duration,
-            tags: songData.tags
-          })
-          .eq('id', songData.id)
-          .select()
-          .single();
-
-        if (error) {
-
-          console.error(
-            'Error updating song:',
-            error
-          );
-
-          alert(
-            'The song could not be updated. Please try again.'
-          );
-
-          return;
-        }
-
-        const updatedSong: Song = {
-          id: data.id,
-          title: data.title,
-          artist: data.artist,
-          category: data.category,
-
-          key: data.song_key,
-          originalKey: data.original_key,
-
-          tempo: data.tempo,
-          bpm: data.bpm,
-
-          timeSignature: data.time_signature,
-
-          icon: data.icon,
-
-          audioUrl: data.audio_url,
-
-          lyrics: data.lyrics,
-          chords: data.chords,
-
-          arrangement: data.arrangment,
-          instruments: data.instrument,
-
-          mdNotes: data.md_notes,
-
-          duration: data.duration,
-          tags: data.tags,
-
-          createdAt: data.created_at
-        };
-
-        // Update React state.
-        setSongs(prev =>
-          prev.map(song =>
-            song.id === updatedSong.id
-              ? updatedSong
-              : song
-          )
-        );
-
-        // Update currently selected song.
-        setSelectedSong(prev =>
-          prev && prev.id === updatedSong.id
-            ? updatedSong
-            : prev
-        );
-
-        // Audio is still handled by the existing
-        // IndexedDB system for now.
-        if (audioFile) {
-
-          try {
-
-            await saveAudioFile(
-              Number(updatedSong.id),
-              audioFile
-            );
-
-          } catch (audioError) {
-
-            console.error(
-              'Error saving replacement audio:',
-              audioError
-            );
-
-          }
-        }
-
-        console.log(
-          'Song updated successfully:',
-          updatedSong.title
-        );
-
-        return;
-      }
+    if (songData.id !== undefined) {
 
       // ----------------------------------------------------------
-      // ADD NEW SONG
+      // 1. Update song metadata
       // ----------------------------------------------------------
 
       const { data, error } = await supabase
         .from('songs')
-        .insert({
+        .update({
           title: songData.title,
           artist: songData.artist,
           category: songData.category,
@@ -444,24 +329,79 @@ export default function App() {
           duration: songData.duration,
           tags: songData.tags
         })
+        .eq('id', songData.id)
         .select()
         .single();
 
       if (error) {
 
         console.error(
-          'Error adding song:',
+          'Error updating song:',
           error
         );
 
         alert(
-          'The song could not be added. Please try again.'
+          'The song could not be updated. Please try again.'
         );
 
         return;
       }
 
-      const newSong: Song = {
+      let finalAudioUrl = data.audio_url;
+
+      // ----------------------------------------------------------
+      // 2. Upload replacement audio if provided
+      // ----------------------------------------------------------
+
+      if (audioFile) {
+
+        try {
+
+          finalAudioUrl = await saveAudioFile(
+            data.id,
+            audioFile
+          );
+
+          // Save the new public URL in Supabase.
+          const {
+            error: audioUrlError
+          } = await supabase
+            .from('songs')
+            .update({
+              audio_url: finalAudioUrl
+            })
+            .eq('id', data.id);
+
+          if (audioUrlError) {
+
+            console.error(
+              'Error saving audio URL:',
+              audioUrlError
+            );
+
+            alert(
+              'The song was updated, but the audio URL could not be saved.'
+            );
+          }
+
+        } catch (audioError) {
+
+          console.error(
+            'Error uploading replacement audio:',
+            audioError
+          );
+
+          alert(
+            'The song was updated, but the new audio file could not be uploaded.'
+          );
+        }
+      }
+
+      // ----------------------------------------------------------
+      // 3. Build final song object
+      // ----------------------------------------------------------
+
+      const updatedSong: Song = {
         id: data.id,
         title: data.title,
         artist: data.artist,
@@ -477,7 +417,7 @@ export default function App() {
 
         icon: data.icon,
 
-        audioUrl: data.audio_url,
+        audioUrl: finalAudioUrl,
 
         lyrics: data.lyrics,
         chords: data.chords,
@@ -493,58 +433,190 @@ export default function App() {
         createdAt: data.created_at
       };
 
-      // Add the newly-created Supabase song to React state.
-      setSongs(prev => [
-        newSong,
-        ...prev
-      ]);
+      // ----------------------------------------------------------
+      // 4. Update React state
+      // ----------------------------------------------------------
 
-      // Audio remains in IndexedDB temporarily.
-      if (audioFile) {
-
-        try {
-
-          await saveAudioFile(
-            Number(newSong.id),
-            audioFile
-          );
-
-          console.log(
-            'Audio saved successfully:',
-            audioFile.name
-          );
-
-        } catch (audioError) {
-
-          console.error(
-            'Audio could not be saved:',
-            audioError
-          );
-
-          alert(
-            'The song was added, but the audio file could not be stored. You can try adding the audio again by editing the song.'
-          );
-        }
-      }
-
-      console.log(
-        'Song added successfully:',
-        newSong.title
+      setSongs(prev =>
+        prev.map(song =>
+          song.id === updatedSong.id
+            ? updatedSong
+            : song
+        )
       );
 
-    } catch (error) {
+      setSelectedSong(prev =>
+        prev && prev.id === updatedSong.id
+          ? updatedSong
+          : prev
+      );
+
+      console.log(
+        'Song updated successfully:',
+        updatedSong.title
+      );
+
+      return;
+    }
+
+    // ============================================================
+    // ADD NEW SONG
+    // ============================================================
+
+    // ------------------------------------------------------------
+    // 1. Create song metadata first.
+    // Supabase generates the UUID.
+    // ------------------------------------------------------------
+
+    const { data, error } = await supabase
+      .from('songs')
+      .insert({
+        title: songData.title,
+        artist: songData.artist,
+        category: songData.category,
+        song_key: songData.key,
+        original_key: songData.originalKey,
+        tempo: songData.tempo,
+        bpm: songData.bpm,
+        time_signature: songData.timeSignature,
+        icon: songData.icon,
+        lyrics: songData.lyrics,
+        chords: songData.chords,
+        arrangment: songData.arrangement,
+        instrument: songData.instruments,
+        md_notes: songData.mdNotes,
+        duration: songData.duration,
+        tags: songData.tags
+      })
+      .select()
+      .single();
+
+    if (error) {
 
       console.error(
-        'Unexpected error while saving song:',
+        'Error adding song:',
         error
       );
 
       alert(
-        'The song could not be saved. Please try again.'
+        'The song could not be added. Please try again.'
       );
-    }
-  };
 
+      return;
+    }
+
+    // ------------------------------------------------------------
+    // 2. Upload audio using the new Supabase UUID.
+    // ------------------------------------------------------------
+
+    let finalAudioUrl = data.audio_url;
+
+    if (audioFile) {
+
+      try {
+
+        finalAudioUrl = await saveAudioFile(
+          data.id,
+          audioFile
+        );
+
+        // Save the public URL to the song record.
+        const {
+          error: audioUrlError
+        } = await supabase
+          .from('songs')
+          .update({
+            audio_url: finalAudioUrl
+          })
+          .eq('id', data.id);
+
+        if (audioUrlError) {
+
+          console.error(
+            'Error saving audio URL:',
+            audioUrlError
+          );
+
+          alert(
+            'The song was added, but its audio URL could not be saved.'
+          );
+        }
+
+      } catch (audioError) {
+
+        console.error(
+          'Audio could not be uploaded:',
+          audioError
+        );
+
+        alert(
+          'The song was added, but the audio file could not be uploaded.'
+        );
+      }
+    }
+
+    // ------------------------------------------------------------
+    // 3. Build final song object
+    // ------------------------------------------------------------
+
+    const newSong: Song = {
+      id: data.id,
+      title: data.title,
+      artist: data.artist,
+      category: data.category,
+
+      key: data.song_key,
+      originalKey: data.original_key,
+
+      tempo: data.tempo,
+      bpm: data.bpm,
+
+      timeSignature: data.time_signature,
+
+      icon: data.icon,
+
+      audioUrl: finalAudioUrl,
+
+      lyrics: data.lyrics,
+      chords: data.chords,
+
+      arrangement: data.arrangment,
+      instruments: data.instrument,
+
+      mdNotes: data.md_notes,
+
+      duration: data.duration,
+      tags: data.tags,
+
+      createdAt: data.created_at
+    };
+
+    // ------------------------------------------------------------
+    // 4. Add final song to React state
+    // ------------------------------------------------------------
+
+    setSongs(prev => [
+      newSong,
+      ...prev
+    ]);
+
+    console.log(
+      'Song added successfully:',
+      newSong.title
+    );
+
+  } catch (error) {
+
+    console.error(
+      'Unexpected error while saving song:',
+      error
+    );
+
+    alert(
+      'The song could not be saved. Please try again.'
+    );
+  }
+};
   // ============================================================
   // DELETE SONG
   // ============================================================
