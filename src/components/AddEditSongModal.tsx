@@ -8,9 +8,9 @@ interface AddEditSongModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (
-    songData: Omit<Song, 'id'> & { id?: number },
-    audioFile?: File
-  ) => void | Promise<void>;
+  songData: Omit<Song, 'id'> & { id?: string },
+  audioFile?: File
+) => void | Promise<void>;
   editingSong: Song | null;
 }
 
