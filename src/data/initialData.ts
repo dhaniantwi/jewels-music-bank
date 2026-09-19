@@ -1,4 +1,4 @@
-```ts
+
 import { Song, Ministration, TeamMember } from '../types';
 
 export const INITIAL_SONGS: Song[] = [
@@ -507,4 +507,4 @@ export const INITIAL_TEAM_MEMBERS: TeamMember[] = [
     canEdit: false
   }
 ];
-```
+
