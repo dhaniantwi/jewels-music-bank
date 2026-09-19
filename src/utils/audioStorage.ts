@@ -4,274 +4,207 @@
  *
  * Audio storage utility for Jewels Music Hub.
  *
- * Audio files are stored locally in the browser using IndexedDB.
- * No server or paid storage service is required.
+ * Audio files are stored in Supabase Storage so they can be
+ * accessed across devices and by all authorized users.
  */
 
-const DB_NAME = 'JewelsMusicHubAudio';
-const DB_VERSION = 1;
-const STORE_NAME = 'audioFiles';
+import { supabase } from '../supabaseClient';
 
-interface StoredAudio {
-  songId: number;
-  file: Blob;
-  fileName: string;
-  fileType: string;
-  fileSize: number;
-  savedAt: string;
-}
+const BUCKET_NAME = 'songs';
+const AUDIO_FOLDER = 'audio';
 
 /**
- * Open the IndexedDB database.
+ * Create a safe filename for Supabase Storage.
  */
-const openDatabase = (): Promise<IDBDatabase> => {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(
-      DB_NAME,
-      DB_VERSION
-    );
-
-    request.onupgradeneeded = () => {
-      const db = request.result;
-
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(
-          STORE_NAME,
-          { keyPath: 'songId' }
-        );
-      }
-    };
-
-    request.onsuccess = () => {
-      resolve(request.result);
-    };
-
-    request.onerror = () => {
-      reject(
-        request.error ||
-        new Error('Could not open audio database.')
-      );
-    };
-  });
+const sanitizeFileName = (fileName: string): string => {
+  return fileName
+    .trim()
+    .replace(/[^a-zA-Z0-9._-]/g, '_');
 };
 
 /**
- * Save an audio file for a song.
+ * Build the storage path for a song's audio file.
+ */
+const getAudioPath = (
+  songId: string,
+  fileName: string
+): string => {
+  return `${AUDIO_FOLDER}/${songId}-${sanitizeFileName(fileName)}`;
+};
+
+/**
+ * Upload an audio file for a song.
+ *
+ * Returns the public URL of the uploaded file.
  */
 export const saveAudioFile = async (
-  songId: number,
+  songId: string,
   file: File
-): Promise<void> => {
+): Promise<string> => {
   if (!file) {
     throw new Error('No audio file was provided.');
   }
 
-  const db = await openDatabase();
+  if (!songId) {
+    throw new Error('A valid song ID is required.');
+  }
 
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(
-      STORE_NAME,
-      'readwrite'
-    );
-
-    const store = transaction.objectStore(
-      STORE_NAME
-    );
-
-    const audioData: StoredAudio = {
-      songId,
-      file,
-      fileName: file.name,
-      fileType: file.type || 'audio/mpeg',
-      fileSize: file.size,
-      savedAt: new Date().toISOString()
-    };
-
-    store.put(audioData);
-
-    transaction.oncomplete = () => {
-      db.close();
-      resolve();
-    };
-
-    transaction.onerror = () => {
-      db.close();
-
-      reject(
-        transaction.error ||
-        new Error('Could not save audio file.')
-      );
-    };
-
-    transaction.onabort = () => {
-      db.close();
-
-      reject(
-        transaction.error ||
-        new Error('Audio save operation was aborted.')
-      );
-    };
-  });
-};
-
-/**
- * Retrieve the stored audio file for a song.
- */
-export const getAudioFile = async (
-  songId: number
-): Promise<StoredAudio | null> => {
-  const db = await openDatabase();
-
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(
-      STORE_NAME,
-      'readonly'
-    );
-
-    const store = transaction.objectStore(
-      STORE_NAME
-    );
-
-    const request = store.get(songId);
-
-    request.onsuccess = () => {
-      db.close();
-
-      resolve(
-        request.result || null
-      );
-    };
-
-    request.onerror = () => {
-      db.close();
-
-      reject(
-        request.error ||
-        new Error('Could not retrieve audio file.')
-      );
-    };
-  });
-};
-
-/**
- * Create a temporary URL for playing a song's audio.
- *
- * Remember to call URL.revokeObjectURL(url)
- * when the audio element is no longer using it.
- */
-export const getAudioUrl = async (
-  songId: number
-): Promise<string | null> => {
-  const storedAudio = await getAudioFile(
-    songId
+  const filePath = getAudioPath(
+    songId,
+    file.name
   );
 
-  if (!storedAudio) {
+  const { error: uploadError } = await supabase
+    .storage
+    .from(BUCKET_NAME)
+    .upload(filePath, file, {
+      contentType: file.type || 'audio/mpeg',
+      upsert: true
+    });
+
+  if (uploadError) {
+    throw uploadError;
+  }
+
+  const {
+    data: publicUrlData
+  } = supabase
+    .storage
+    .from(BUCKET_NAME)
+    .getPublicUrl(filePath);
+
+  if (!publicUrlData?.publicUrl) {
+    throw new Error(
+      'Could not generate the public audio URL.'
+    );
+  }
+
+  return publicUrlData.publicUrl;
+};
+
+/**
+ * Get the public audio URL for a song.
+ *
+ * This uses the audio URL stored in the songs table.
+ */
+export const getAudioUrl = (
+  audioUrl?: string
+): string | null => {
+  if (!audioUrl) {
     return null;
   }
 
-  return URL.createObjectURL(
-    storedAudio.file
-  );
+  return audioUrl;
 };
 
 /**
- * Delete the stored audio file for a song.
+ * Delete a song's audio file from Supabase Storage.
+ *
+ * The song ID is used to locate files belonging to that song.
  */
 export const deleteAudioFile = async (
-  songId: number
+  songId: string,
+  fileName?: string
 ): Promise<void> => {
-  const db = await openDatabase();
+  if (!songId) {
+    return;
+  }
 
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(
-      STORE_NAME,
-      'readwrite'
+  if (fileName) {
+    const filePath = getAudioPath(
+      songId,
+      fileName
     );
 
-    const store = transaction.objectStore(
-      STORE_NAME
+    const { error } = await supabase
+      .storage
+      .from(BUCKET_NAME)
+      .remove([filePath]);
+
+    if (error) {
+      throw error;
+    }
+
+    return;
+  }
+
+  /*
+   * If the exact filename is unknown, find all files
+   * belonging to this song and remove them.
+   */
+  const { data: files, error: listError } =
+    await supabase
+      .storage
+      .from(BUCKET_NAME)
+      .list(AUDIO_FOLDER);
+
+  if (listError) {
+    throw listError;
+  }
+
+  const matchingFiles = (files || [])
+    .filter(file =>
+      file.name.startsWith(`${songId}-`)
+    )
+    .map(file =>
+      `${AUDIO_FOLDER}/${file.name}`
     );
 
-    store.delete(songId);
+  if (matchingFiles.length === 0) {
+    return;
+  }
 
-    transaction.oncomplete = () => {
-      db.close();
-      resolve();
-    };
+  const { error: removeError } =
+    await supabase
+      .storage
+      .from(BUCKET_NAME)
+      .remove(matchingFiles);
 
-    transaction.onerror = () => {
-      db.close();
-
-      reject(
-        transaction.error ||
-        new Error('Could not delete audio file.')
-      );
-    };
-
-    transaction.onabort = () => {
-      db.close();
-
-      reject(
-        transaction.error ||
-        new Error('Audio deletion was aborted.')
-      );
-    };
-  });
+  if (removeError) {
+    throw removeError;
+  }
 };
 
 /**
- * Check whether a song has an audio file stored.
+ * Check whether a song has an audio URL.
  */
-export const hasAudioFile = async (
-  songId: number
-): Promise<boolean> => {
-  const storedAudio = await getAudioFile(
-    songId
-  );
-
-  return storedAudio !== null;
+export const hasAudioFile = (
+  audioUrl?: string
+): boolean => {
+  return Boolean(audioUrl);
 };
 
 /**
- * Delete every stored audio file.
+ * Remove all audio files from the audio folder.
+ *
+ * This should only be used by an administrator.
  */
 export const clearAllAudioFiles = async (): Promise<void> => {
-  const db = await openDatabase();
+  const { data: files, error: listError } =
+    await supabase
+      .storage
+      .from(BUCKET_NAME)
+      .list(AUDIO_FOLDER);
 
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(
-      STORE_NAME,
-      'readwrite'
-    );
+  if (listError) {
+    throw listError;
+  }
 
-    const store = transaction.objectStore(
-      STORE_NAME
-    );
+  if (!files || files.length === 0) {
+    return;
+  }
 
-    store.clear();
+  const filePaths = files.map(file =>
+    `${AUDIO_FOLDER}/${file.name}`
+  );
 
-    transaction.oncomplete = () => {
-      db.close();
-      resolve();
-    };
+  const { error: removeError } =
+    await supabase
+      .storage
+      .from(BUCKET_NAME)
+      .remove(filePaths);
 
-    transaction.onerror = () => {
-      db.close();
-
-      reject(
-        transaction.error ||
-        new Error('Could not clear audio storage.')
-      );
-    };
-
-    transaction.onabort = () => {
-      db.close();
-
-      reject(
-        transaction.error ||
-        new Error('Audio storage clearing was aborted.')
-      );
-    };
-  });
+  if (removeError) {
+    throw removeError;
+  }
 };
