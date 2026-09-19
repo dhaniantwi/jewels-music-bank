@@ -179,15 +179,65 @@ useEffect(() => {
         m => m.status === 'Upcoming'
       ) || ministrations[0] || null
     );
+useEffect(() => {
+  const loadSongsFromSupabase = async () => {
+    const { data, error } = await supabase
+      .from('songs')
+      .select('*')
+      .order('created_at', { ascending: false });
 
+    if (error) {
+      console.error('Could not load songs from Supabase:', error);
+      return;
+    }
+
+    if (!data) {
+      setSongs([]);
+      return;
+    }
+
+    const mappedSongs: Song[] = data.map((song) => ({
+      id: song.id,
+      title: song.title,
+      artist: song.artist,
+      category: song.category,
+
+      key: song.song_key,
+      originalKey: song.original_key,
+
+      tempo: song.tempo,
+      bpm: song.bpm,
+
+      timeSignature: song.time_signature,
+
+      icon: song.icon,
+
+      audioUrl: song.audio_url,
+
+      lyrics: song.lyrics,
+      chords: song.chords,
+
+      arrangement: song.arrangment,
+      instruments: song.instrument,
+
+      mdNotes: song.md_notes,
+
+      duration: song.duration,
+      tags: song.tags,
+
+      createdAt: song.created_at
+    }));
+
+    setSongs(mappedSongs);
+  };
+
+  loadSongsFromSupabase();
+}, []);
   // ============================================================
   // SAVE SONGS
   // ============================================================
 
-  useEffect(() => {
-    saveStoredSongs(songs);
-  }, [songs]);
-
+  
   // ============================================================
   // SAVE MINISTRATIONS
   // ============================================================
