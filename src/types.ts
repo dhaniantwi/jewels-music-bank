@@ -69,7 +69,7 @@ export interface Song {
 }
 
 export interface MinistrationSong {
-  songId: number;
+  songId: string;
   lead: number | null;
   keyOverride?: string;
   orderNote?: string;
