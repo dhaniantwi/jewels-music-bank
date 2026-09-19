@@ -245,10 +245,13 @@ export default function App() {
         createdAt: song.created_at
       }));
 
-      setSongs(mappedSongs);
-    };
+          setSongs(mappedSongs);
+  };
 
-    loadSongsFromSupabase();
+  loadSongsFromSupabase();
+
+}, []);
+
 // ============================================================
 // LOAD TEAM FROM SUPABASE
 // ============================================================
