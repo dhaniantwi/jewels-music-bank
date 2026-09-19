@@ -622,52 +622,106 @@ export default function App() {
   // ============================================================
 
   const handleDeleteSong = async (
-    songId: string
-  ): Promise<void> => {
+  songId: string
+): Promise<void> => {
+
+  try {
+
+    // ----------------------------------------------------------
+    // 1. Delete the song's audio from Supabase Storage
+    // ----------------------------------------------------------
 
     try {
 
-      await deleteAudioFile(
-        Number(songId)
-      );
+      await deleteAudioFile(songId);
 
-    } catch (error) {
+    } catch (audioError) {
 
       console.error(
-        'Error deleting audio file:',
+        'Error deleting song audio:',
+        audioError
+      );
+
+      // Continue with song deletion even if the
+      // audio file could not be removed.
+    }
+
+    // ----------------------------------------------------------
+    // 2. Delete the song record from Supabase
+    // ----------------------------------------------------------
+
+    const { error } = await supabase
+      .from('songs')
+      .delete()
+      .eq('id', songId);
+
+    if (error) {
+
+      console.error(
+        'Error deleting song:',
         error
       );
 
-    } finally {
-
-      // Remove song.
-      setSongs(prev =>
-        prev.filter(song =>
-          song.id !== songId
-        )
+      alert(
+        'The song could not be deleted. Please try again.'
       );
 
-      // Remove song from ministrations.
-      setMinistrations(prev =>
-        prev.map(ministration => ({
-          ...ministration,
-
-          songs:
-            ministration.songs.filter(
-              item =>
-                item.songId !== songId
-            )
-        }))
-      );
-
-      // Close selected song.
-      setSelectedSong(prev =>
-        prev && prev.id === songId
-          ? null
-          : prev
-      );
+      return;
     }
-  };
+
+    // ----------------------------------------------------------
+    // 3. Remove song from React state
+    // ----------------------------------------------------------
+
+    setSongs(prev =>
+      prev.filter(song =>
+        song.id !== songId
+      )
+    );
+
+    // ----------------------------------------------------------
+    // 4. Remove song from local ministration data
+    // ----------------------------------------------------------
+
+    setMinistrations(prev =>
+      prev.map(ministration => ({
+        ...ministration,
+
+        songs:
+          ministration.songs.filter(
+            item =>
+              item.songId !== songId
+          )
+      }))
+    );
+
+    // ----------------------------------------------------------
+    // 5. Close selected song if necessary
+    // ----------------------------------------------------------
+
+    setSelectedSong(prev =>
+      prev && prev.id === songId
+        ? null
+        : prev
+    );
+
+    console.log(
+      'Song deleted successfully:',
+      songId
+    );
+
+  } catch (error) {
+
+    console.error(
+      'Unexpected error while deleting song:',
+      error
+    );
+
+    alert(
+      'The song could not be deleted. Please try again.'
+    );
+  }
+};
 
   // ============================================================
   // TEAM - SAVE MEMBER
