@@ -203,9 +203,11 @@ export default function App() {
 useEffect(() => {
   console.log(
     'STAGE MODE STATE:',
-    isStageModeOpen
+    isStageModeOpen,
+    'SELECTED MINISTRATION:',
+    selectedMinistration
   );
-}, [isStageModeOpen]);
+}, [isStageModeOpen, selectedMinistration]);
   // ============================================================
   // SELECTED MINISTRATION
   // ============================================================
