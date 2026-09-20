@@ -324,7 +324,8 @@ useEffect(() => {
       phone: member.phone || undefined,
       email: member.email || undefined,
       isAvailable: true,
-      canEdit: member.name === 'Daniel Antwi'
+      photoUrl: member.photo_url || undefined,
+canEdit: member.name === 'Daniel Antwi'
     }));
 
     setTeam(mappedTeam);
