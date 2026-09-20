@@ -23,8 +23,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   songsCount,
   openToolsModal,
   openStageMode,
-  darkMode,
-  setDarkMode
+  
 }) => {
   const [roleDropdownOpen, setRoleDropdownOpen] = React.useState(false);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
