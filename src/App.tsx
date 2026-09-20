@@ -1743,8 +1743,14 @@ const handlePhotoSelected = async (
       ======================================================== */}
 
       {selectedMinistration && (
+  <>
+    {console.log(
+      'STAGE MODAL RENDER:',
+      isStageModeOpen,
+      selectedMinistration.name
+    )}
 
-        <StageRehearsalModal
+    <StageRehearsalModal
           isOpen={isStageModeOpen}
 
           onClose={() =>
