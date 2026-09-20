@@ -200,7 +200,12 @@ export default function App() {
 
   const [isStageModeOpen, setIsStageModeOpen] =
     useState(false);
-
+useEffect(() => {
+  console.log(
+    'STAGE MODE STATE:',
+    isStageModeOpen
+  );
+}, [isStageModeOpen]);
   // ============================================================
   // SELECTED MINISTRATION
   // ============================================================
