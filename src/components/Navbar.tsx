@@ -11,8 +11,7 @@ interface NavbarProps {
   songsCount: number;
   openToolsModal: () => void;
   openStageMode: () => void;
-    darkMode: boolean;
-  setDarkMode: (value: boolean) => void;
+    
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
