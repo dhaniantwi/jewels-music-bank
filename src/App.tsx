@@ -53,7 +53,32 @@ export default function App() {
   );
 
  const [team, setTeam] = useState<TeamMember[]>([]);
+  // ============================================================
+  // THEME
+  // ============================================================
 
+  const [darkMode, setDarkMode] = useState(() => {
+    const savedTheme = localStorage.getItem('jewels-theme');
+
+    if (savedTheme) {
+      return savedTheme === 'dark';
+    }
+
+    // First-time visitors get Dark Mode by default.
+    return true;
+  });
+
+  useEffect(() => {
+    localStorage.setItem(
+      'jewels-theme',
+      darkMode ? 'dark' : 'light'
+    );
+
+    document.documentElement.classList.toggle(
+      'dark',
+      darkMode
+    );
+  }, [darkMode]);
   // ============================================================
   // ACTIVE VIEW & ROLE
   // ============================================================
