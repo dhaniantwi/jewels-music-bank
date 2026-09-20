@@ -1661,7 +1661,7 @@ const handlePhotoSelected = async (
       {selectedMinistration && (
 
         <StageRehearsalModal
-          isOpen={true}
+          isOpen={isStageModeOpen}
 
           onClose={() =>
             setIsStageModeOpen(false)
