@@ -272,6 +272,15 @@ export default function App() {
       }));
 
           setSongs(mappedSongs);
+
+setMinistrations(currentMinistrations => {
+  const migrated = migrateMinistrationsToCurrentSongs(
+    currentMinistrations,
+    mappedSongs
+  );
+
+  return migrated;
+});
   };
 
   loadSongsFromSupabase();
