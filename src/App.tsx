@@ -265,16 +265,16 @@ export default function App() {
 
         mdNotes: song.md_notes,
 
-        duration: song.duration,
-        tags: song.tags,
+       duration: song.duration,
+tags: song.tags,
 
-        createdAt: song.created_at
-      }));
+createdAt: song.created_at
+}));
 
-          setSongs(mappedSongs);
+setSongs(mappedSongs);
+};
 
-  loadSongsFromSupabase();
-
+loadSongsFromSupabase();
 }, []);
 
 // ============================================================
