@@ -808,7 +808,99 @@ canEdit: member.name === 'Daniel Antwi'
   // ============================================================
   // TEAM - SAVE MEMBER
   // ============================================================
+const handlePhotoSelected = async (
+  member: TeamMember,
+  file: File
+): Promise<void> => {
+  try {
+    console.log('Uploading team photo:', {
+      memberId: member.id,
+      memberName: member.name,
+      fileName: file.name,
+      fileType: file.type,
+      fileSize: file.size,
+    });
 
+    const fileExtension =
+      file.name.split('.').pop()?.toLowerCase() || 'jpg';
+
+    const filePath = `team-members/${member.id}-${Date.now()}.${fileExtension}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('team-photos')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false,
+        contentType: file.type,
+      });
+
+    if (uploadError) {
+      console.error(
+        'Could not upload team photo:',
+        uploadError
+      );
+      alert(
+        `Photo upload failed: ${uploadError.message}`
+      );
+      return;
+    }
+
+    const {
+      data: publicUrlData,
+    } = supabase.storage
+      .from('team-photos')
+      .getPublicUrl(filePath);
+
+    const photoUrl = publicUrlData.publicUrl;
+
+    const { error: updateError } = await supabase
+      .from('team_members')
+      .update({
+        photo_url: photoUrl,
+      })
+      .eq('id', member.id);
+
+    if (updateError) {
+      console.error(
+        'Could not save team photo URL:',
+        updateError
+      );
+      alert(
+        `Photo was uploaded, but the database update failed: ${updateError.message}`
+      );
+      return;
+    }
+
+    setTeam(prev =>
+      prev.map(currentMember =>
+        currentMember.id === member.id
+          ? {
+              ...currentMember,
+              photoUrl,
+            }
+          : currentMember
+      )
+    );
+
+    console.log(
+      'Team photo uploaded successfully:',
+      photoUrl
+    );
+
+    alert(
+      `${member.name}'s photo has been updated successfully.`
+    );
+  } catch (error) {
+    console.error(
+      'Unexpected team photo upload error:',
+      error
+    );
+
+    alert(
+      'Something went wrong while uploading the photo.'
+    );
+  }
+};
   const handleSaveMember = (
     memberData:
       Omit<TeamMember, 'id'> & {
