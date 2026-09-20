@@ -1151,9 +1151,10 @@ const handlePhotoSelected = async (
                   setIsToolsModalOpen(true)
                 }
 
-                openStageMode={() =>
-                  setIsStageModeOpen(true)
-                }
+                openStageMode={() => {
+  console.log('STAGE MODE BUTTON CLICKED');
+  setIsStageModeOpen(true);
+}}
               />
 
             )}
