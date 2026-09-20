@@ -100,6 +100,7 @@ export interface TeamMember {
   instrumentType?: string;
 
   icon?: string;
+  photoUrl?: string;
 
   phone?: string;
   email?: string;
