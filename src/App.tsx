@@ -1213,9 +1213,10 @@ const handlePhotoSelected = async (
                   setSelectedSong(song)
                 }
 
-                openStageMode={() =>
-                  setIsStageModeOpen(true)
-                }
+                openStageMode={() => {
+  console.log('STAGE MODE BUTTON CLICKED');
+  setIsStageModeOpen(true);
+}}
               />
 
             )}
