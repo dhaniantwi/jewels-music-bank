@@ -1325,7 +1325,20 @@ const handlePhotoSelected = async (
               setIsToolsModalOpen(true)
             }
             openStageMode={() => {
-  console.log('STAGE MODE BUTTON CLICKED');
+  const stageMinistration =
+    selectedMinistration ||
+    ministrations.find(
+      m => m.status === 'Upcoming'
+    ) ||
+    ministrations[0] ||
+    null;
+
+  if (!stageMinistration) {
+    alert('No ministration is available for Stage Mode yet.');
+    return;
+  }
+
+  setSelectedMinistration(stageMinistration);
   setIsStageModeOpen(true);
 }}
           />
