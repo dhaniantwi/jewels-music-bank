@@ -957,7 +957,13 @@ useEffect(() => {
   // ============================================================
 
   return (
-    <div className="min-h-screen flex flex-col justify-between text-[#1d1d1f] font-sans pb-12 sm:pb-16 selection:bg-[#007aff]/20 selection:text-[#007aff]">
+    <div
+  className={`min-h-screen flex flex-col justify-between font-sans pb-12 sm:pb-16 transition-colors duration-300 ${
+    darkMode
+      ? 'text-white selection:bg-[#007aff]/30 selection:text-white'
+      : 'text-[#1d1d1f] selection:bg-[#007aff]/20 selection:text-[#007aff]'
+  }`}
+>
 
       {isMDPortalOpen ? (
 
