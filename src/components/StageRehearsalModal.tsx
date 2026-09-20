@@ -147,12 +147,12 @@ export const StageRehearsalModal: React.FC<
   const currentSong = songs.find(
     song => song.id === currentItem?.songId
   );
-console.log('STAGE SONG DEBUG:', {
-  currentSongIndex,
-  currentItem,
-  currentSong,
-  availableSongs: songs.map(song => ({
+console.log('STAGE ID DEBUG:', {
+  currentItemSongId: currentItem?.songId,
+  currentItemSongIdType: typeof currentItem?.songId,
+  availableSongIds: songs.map(song => ({
     id: song.id,
+    idType: typeof song.id,
     title: song.title,
   })),
 });
