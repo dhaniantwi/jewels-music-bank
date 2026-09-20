@@ -19,7 +19,8 @@ import {
   saveStoredMinistrations,
   loadStoredTeam,
   saveStoredTeam,
-  resetAllToDefaults
+  resetAllToDefaults,
+  migrateMinistrationsToCurrentSongs
 } from './utils/storage';
 
 import {
