@@ -1177,6 +1177,8 @@ useEffect(() => {
             activeTab={activeTab}
             setActiveTab={setActiveTab}
             activeRole={activeRole}
+              darkMode={darkMode}
+             setDarkMode={setDarkMode}
             onOpenMDLogin={() =>
               setShowMDLogin(true)
             }
