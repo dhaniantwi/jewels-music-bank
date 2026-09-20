@@ -40,6 +40,7 @@
 }
 
 /* iOS Glassmorphism and Depth System */
+
 .ios-glass {
   background: rgba(255, 255, 255, 0.72);
   backdrop-filter: blur(24px);
@@ -86,6 +87,13 @@ html.dark .ios-card {
     0 2px 8px -2px rgba(0, 0, 0, 0.25);
 }
 
+.ios-card:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 20px 45px -10px rgba(0, 0, 0, 0.09),
+    0 4px 12px -2px rgba(0, 0, 0, 0.04);
+}
+
 .ios-pill-active {
   background: #007aff;
   color: #ffffff;
@@ -93,6 +101,7 @@ html.dark .ios-card {
 }
 
 /* Custom subtle scrollbar */
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -118,25 +127,25 @@ html.dark ::-webkit-scrollbar-thumb {
 html.dark ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.28);
 }
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.25);
-}
 
 /* Printable Sheet styles */
+
 @media print {
   body {
     background: #ffffff !important;
     color: #000000 !important;
   }
+
   .no-print {
     display: none !important;
   }
+
   .print-only {
     display: block !important;
   }
-  .ios-glass, .ios-card {
+
+  .ios-glass,
+  .ios-card {
     background: #ffffff !important;
     border: 1px solid #e5e5ea !important;
     box-shadow: none !important;
