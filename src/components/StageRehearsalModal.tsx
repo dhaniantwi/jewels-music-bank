@@ -141,12 +141,107 @@ export const StageRehearsalModal: React.FC<
   const audioRef =
     useRef<HTMLAudioElement | null>(null);
 
-  const currentItem =
+    const currentItem =
     ministration.songs[currentSongIndex];
 
-  const currentSong = songs.find(
-    song => song.id === currentItem?.songId
-  );
+  const normalizeSongTitle = (
+    title: string
+  ): string => {
+    return title
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, ' ')
+      .replace(/[^\p{L}\p{N}\s]/gu, '');
+  };
+
+  const currentSong = useMemo(() => {
+    if (!currentItem) {
+      return undefined;
+    }
+
+    // 1. First try the current Supabase ID.
+    const directMatch = songs.find(
+      song =>
+        String(song.id) ===
+        String(currentItem.songId)
+    );
+
+    if (directMatch) {
+      return directMatch;
+    }
+
+    // 2. Legacy ministrations used numeric IDs.
+    //    Match those IDs against the original song
+    //    catalogue by position/reference.
+    const legacySongTitles: Record<string, string> = {
+      '1': 'Satisfy',
+      '2': 'Ogya Fire',
+      '3': 'Afropraise Medley',
+      '4': 'Wo Ne Nyame',
+      '5': 'You Are Great',
+      '6': 'Awesome God',
+    };
+
+    const legacyTitle =
+      legacySongTitles[
+        String(currentItem.songId)
+      ];
+
+    if (!legacyTitle) {
+      return undefined;
+    }
+
+    const normalizedLegacyTitle =
+      normalizeSongTitle(legacyTitle);
+
+    // 3. Exact normalized title match.
+    const exactTitleMatch = songs.find(
+      song =>
+        normalizeSongTitle(song.title) ===
+        normalizedLegacyTitle
+    );
+
+    if (exactTitleMatch) {
+      return exactTitleMatch;
+    }
+
+    // 4. Handle small title differences such as:
+    //    "Afropraise Medley"
+    //    vs "Afro Praise Medley"
+    //
+    //    and:
+    //    "Ogya Fire"
+    //    vs "Ogya"
+    const aliases: Record<string, string[]> = {
+      'Afropraise Medley': [
+        'Afro Praise Medley',
+        'GHANA PRAISE MEDLEY',
+      ],
+      'Ogya Fire': [
+        'Ogya',
+      ],
+    };
+
+    const possibleAliases =
+      aliases[legacyTitle] || [];
+
+    for (const alias of possibleAliases) {
+      const aliasMatch = songs.find(
+        song =>
+          normalizeSongTitle(song.title) ===
+          normalizeSongTitle(alias)
+      );
+
+      if (aliasMatch) {
+        return aliasMatch;
+      }
+    }
+
+    return undefined;
+  }, [
+    songs,
+    currentItem,
+  ]);
 console.log(
   'STAGE ID DEBUG:',
   JSON.stringify({
