@@ -1225,6 +1225,7 @@ const handlePhotoSelected = async (
               <MusicTeamView
                 team={team}
                 activeRole="admin_md"
+                onPhotoSelected={handlePhotoSelected}
 
                 onAddNewMember={() => {
                   setEditingMember(null);
@@ -1391,6 +1392,7 @@ const handlePhotoSelected = async (
               <MusicTeamView
                 team={team}
                 activeRole={activeRole}
+                onPhotoSelected={handlePhotoSelected}
 
                 onAddNewMember={() => {
                   setEditingMember(null);
