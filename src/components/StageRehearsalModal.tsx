@@ -147,7 +147,16 @@ export const StageRehearsalModal: React.FC<
   const currentSong = songs.find(
     song => song.id === currentItem?.songId
   );
-
+console.log('STAGE SONG DEBUG:', {
+  currentSongIndex,
+  currentItem,
+  currentSong,
+  availableSongs: songs.map(song => ({
+    id: song.id,
+    title: song.title,
+  })),
+});
+  
   const leadMember = team.find(
     member => member.id === currentItem?.lead
   );
