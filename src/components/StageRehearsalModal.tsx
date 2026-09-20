@@ -1,4 +1,4 @@
-```tsx
+
 import React, {
   useEffect,
   useMemo,
@@ -1441,4 +1441,4 @@ export const StageRehearsalModal: React.FC<
     </div>
   );
 };
-```
+
