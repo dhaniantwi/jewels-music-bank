@@ -147,15 +147,18 @@ export const StageRehearsalModal: React.FC<
   const currentSong = songs.find(
     song => song.id === currentItem?.songId
   );
-console.log('STAGE ID DEBUG:', {
-  currentItemSongId: currentItem?.songId,
-  currentItemSongIdType: typeof currentItem?.songId,
-  availableSongIds: songs.map(song => ({
-    id: song.id,
-    idType: typeof song.id,
-    title: song.title,
-  })),
-});
+console.log(
+  'STAGE ID DEBUG:',
+  JSON.stringify({
+    currentItemSongId: currentItem?.songId,
+    currentItemSongIdType: typeof currentItem?.songId,
+    availableSongIds: songs.map(song => ({
+      id: song.id,
+      idType: typeof song.id,
+      title: song.title,
+    })),
+  }, null, 2)
+);
   
   const leadMember = team.find(
     member => member.id === currentItem?.lead
