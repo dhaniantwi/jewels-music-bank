@@ -160,20 +160,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Right Action Tools & Role Switcher */}
         <div className="flex items-center gap-1.5 sm:gap-2">
                     {/* Theme Toggle */}
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            title={darkMode ? 'Switch to Bright Mode' : 'Switch to Dark Mode'}
-            aria-label={darkMode ? 'Switch to Bright Mode' : 'Switch to Dark Mode'}
-            className={`h-9 w-9 rounded-xl flex items-center justify-center border transition-all active:scale-95 ${
-              darkMode
-                ? 'bg-white/10 border-white/10 text-amber-300 hover:bg-white/15'
-                : 'bg-white/80 border-black/[0.08] text-[#1d1d1f] hover:bg-white'
-            }`}
-          >
-            <span className="text-base">
-              {darkMode ? '☀️' : '🌙'}
-            </span>
-          </button>
+          
           {/* Quick Tools button (Pitch Pipe & Metronome) */}
           <button
             onClick={openToolsModal}
