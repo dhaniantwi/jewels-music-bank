@@ -1,4 +1,3 @@
-
 import React, {
   useEffect,
   useMemo,
@@ -25,11 +24,7 @@ import {
   Gauge,
   Type,
   Volume2,
-  RotateCcw,
-  RotateCw,
   Music2,
-  Clock3,
-  Repeat2,
   CircleStop,
 } from 'lucide-react';
 
@@ -61,10 +56,16 @@ const formatTime = (seconds: number): string => {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = Math.floor(seconds % 60);
 
-  return minutes + ':' + remainingSeconds.toString().padStart(2, '0');
+  return (
+    minutes +
+    ':' +
+    remainingSeconds.toString().padStart(2, '0')
+  );
 };
 
-const getAudioUrl = (song: Song): string | undefined => {
+const getAudioUrl = (
+  song: Song
+): string | undefined => {
   const songWithAudio = song as Song & {
     audioUrl?: string;
     audio_url?: string;
@@ -141,7 +142,7 @@ export const StageRehearsalModal: React.FC<
   const audioRef =
     useRef<HTMLAudioElement | null>(null);
 
-    const currentItem =
+  const currentItem =
     ministration.songs[currentSongIndex];
 
   const normalizeSongTitle = (
@@ -171,8 +172,8 @@ export const StageRehearsalModal: React.FC<
     }
 
     // 2. Legacy ministrations used numeric IDs.
-    //    Match those IDs against the original song
-    //    catalogue by position/reference.
+    // Match those IDs against the original song
+    // catalogue by position/reference.
     const legacySongTitles: Record<string, string> = {
       '1': 'Satisfy',
       '2': 'Ogya Fire',
@@ -206,20 +207,14 @@ export const StageRehearsalModal: React.FC<
     }
 
     // 4. Handle small title differences such as:
-    //    "Afropraise Medley"
-    //    vs "Afro Praise Medley"
-    //
-    //    and:
-    //    "Ogya Fire"
-    //    vs "Ogya"
+    // "Afropraise Medley" vs "Afro Praise Medley"
+    // and "Ogya Fire" vs "Ogya".
     const aliases: Record<string, string[]> = {
       'Afropraise Medley': [
         'Afro Praise Medley',
         'GHANA PRAISE MEDLEY',
       ],
-      'Ogya Fire': [
-        'Ogya',
-      ],
+      'Ogya Fire': ['Ogya'],
     };
 
     const possibleAliases =
@@ -238,23 +233,8 @@ export const StageRehearsalModal: React.FC<
     }
 
     return undefined;
-  }, [
-    songs,
-    currentItem,
-  ]);
-console.log(
-  'STAGE ID DEBUG:',
-  JSON.stringify({
-    currentItemSongId: currentItem?.songId,
-    currentItemSongIdType: typeof currentItem?.songId,
-    availableSongIds: songs.map(song => ({
-      id: song.id,
-      idType: typeof song.id,
-      title: song.title,
-    })),
-  }, null, 2)
-);
-  
+  }, [songs, currentItem]);
+
   const leadMember = team.find(
     member => member.id === currentItem?.lead
   );
@@ -535,10 +515,7 @@ console.log(
         clearInterval(scrollTimer);
       }
     };
-  }, [
-    isAutoScrolling,
-    scrollSpeed,
-  ]);
+  }, [isAutoScrolling, scrollSpeed]);
 
   /*
    * ------------------------------------------------------
@@ -557,7 +534,10 @@ console.log(
       return;
     }
 
-    if (isShuffle && ministration.songs.length > 1) {
+    if (
+      isShuffle &&
+      ministration.songs.length > 1
+    ) {
       let nextIndex = currentSongIndex;
 
       while (nextIndex === currentSongIndex) {
@@ -616,11 +596,10 @@ console.log(
       return;
     }
 
-    audioRef.current.currentTime =
-      Math.max(
-        0,
-        audioRef.current.currentTime - 10
-      );
+    audioRef.current.currentTime = Math.max(
+      0,
+      audioRef.current.currentTime - 10
+    );
   };
 
   const skipForward = () => {
@@ -628,11 +607,10 @@ console.log(
       return;
     }
 
-    audioRef.current.currentTime =
-      Math.min(
-        audioRef.current.duration || Infinity,
-        audioRef.current.currentTime + 10
-      );
+    audioRef.current.currentTime = Math.min(
+      audioRef.current.duration || Infinity,
+      audioRef.current.currentTime + 10
+    );
   };
 
   const handleSeek = (
@@ -731,7 +709,7 @@ console.log(
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#0f0f11] text-white flex flex-col overflow-hidden animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-[#0f0f11] text-white animate-in fade-in duration-200">
 
       <audio
         ref={audioRef}
@@ -742,23 +720,23 @@ console.log(
           TOP BAR
       ================================================== */}
 
-      <header className="p-3 sm:p-4 bg-black/70 backdrop-blur-xl border-b border-white/10 flex items-center justify-between gap-3 flex-shrink-0">
+      <header className="flex flex-shrink-0 items-center justify-between gap-3 border-b border-white/10 bg-[#111113]/90 p-3 backdrop-blur-2xl sm:p-4">
 
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex min-w-0 items-center gap-2">
 
-          <div className="flex items-center gap-1 bg-white/10 p-1 rounded-xl">
+          <div className="flex items-center gap-1 rounded-2xl border border-white/10 bg-white/[0.055] p-1 shadow-lg shadow-black/10">
 
             <button
               type="button"
               onClick={goToPreviousSong}
               disabled={currentSongIndex === 0}
-              className="p-2 rounded-lg hover:bg-white/10 disabled:opacity-30 transition-colors"
+              className="rounded-xl p-2 transition-colors hover:bg-white/10 disabled:opacity-30"
               title="Previous song"
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="h-5 w-5" />
             </button>
 
-            <span className="text-xs font-bold px-2">
+            <span className="px-2 text-xs font-bold text-white/80">
               {currentSongIndex + 1} /{' '}
               {ministration.songs.length}
             </span>
@@ -771,20 +749,20 @@ console.log(
                 currentSongIndex ===
                   ministration.songs.length - 1
               }
-              className="p-2 rounded-lg hover:bg-white/10 disabled:opacity-30 transition-colors"
+              className="rounded-xl p-2 transition-colors hover:bg-white/10 disabled:opacity-30"
               title="Next song"
             >
-              <ChevronRight className="w-5 h-5" />
+              <ChevronRight className="h-5 w-5" />
             </button>
 
           </div>
 
-          <div className="min-w-0 hidden sm:block">
-            <h2 className="text-sm font-bold truncate text-white/90">
+          <div className="hidden min-w-0 sm:block">
+            <h2 className="truncate text-sm font-bold text-white/90">
               {currentSong.title}
             </h2>
 
-            <p className="text-[10px] text-white/50 truncate">
+            <p className="truncate text-[10px] text-white/45">
               {ministration.name} •{' '}
               {currentSong.artist}
             </p>
@@ -798,9 +776,9 @@ console.log(
             type="button"
             onClick={playKeyTone}
             title="Play starting key pitch"
-            className="px-3 py-2 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold flex items-center gap-1.5 hover:bg-amber-500/30 transition-all"
+            className="flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/15 px-3 py-2 text-xs font-bold text-amber-300 transition-all hover:bg-amber-500/25"
           >
-            <Volume2 className="w-3.5 h-3.5" />
+            <Volume2 className="h-3.5 w-3.5" />
 
             <span className="hidden sm:inline">
               Key {effectiveKey}
@@ -814,16 +792,16 @@ console.log(
                 previous => !previous
               )
             }
-            className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+            className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-all ${
               isAutoScrolling
-                ? 'bg-emerald-500 text-black'
-                : 'bg-white/10 text-white hover:bg-white/20'
+                ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/10'
+                : 'border border-white/10 bg-white/[0.055] text-white hover:bg-white/10'
             }`}
           >
             {isAutoScrolling ? (
-              <Pause className="w-3.5 h-3.5 fill-current" />
+              <Pause className="h-3.5 w-3.5 fill-current" />
             ) : (
-              <Play className="w-3.5 h-3.5 fill-current" />
+              <Play className="h-3.5 w-3.5 fill-current" />
             )}
 
             <span className="hidden sm:inline">
@@ -840,23 +818,23 @@ console.log(
                 previous => !previous
               )
             }
-            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+            className={`rounded-xl px-3 py-2 text-xs font-bold transition-all ${
               showChords
-                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                : 'bg-white/10 text-white/60'
+                ? 'border border-amber-500/30 bg-amber-500/15 text-amber-300'
+                : 'border border-white/10 bg-white/[0.055] text-white/55'
             }`}
           >
             Chords
           </button>
 
-          <div className="hidden sm:flex items-center bg-white/10 p-0.5 rounded-xl text-xs font-bold">
+          <div className="hidden items-center rounded-xl border border-white/10 bg-white/[0.055] p-0.5 text-xs font-bold sm:flex">
 
             <button
               type="button"
               onClick={() =>
                 setFontSize('normal')
               }
-              className={`px-2 py-1 rounded-lg ${
+              className={`rounded-lg px-2 py-1 ${
                 fontSize === 'normal'
                   ? 'bg-white text-black'
                   : 'text-white/70'
@@ -870,7 +848,7 @@ console.log(
               onClick={() =>
                 setFontSize('large')
               }
-              className={`px-2 py-1 rounded-lg ${
+              className={`rounded-lg px-2 py-1 ${
                 fontSize === 'large'
                   ? 'bg-white text-black'
                   : 'text-white/70'
@@ -884,7 +862,7 @@ console.log(
               onClick={() =>
                 setFontSize('huge')
               }
-              className={`px-2 py-1 rounded-lg ${
+              className={`rounded-lg px-2 py-1 ${
                 fontSize === 'huge'
                   ? 'bg-white text-black'
                   : 'text-white/70'
@@ -900,10 +878,10 @@ console.log(
         <button
           type="button"
           onClick={onClose}
-          className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors flex-shrink-0"
+          className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.055] text-white transition-colors hover:bg-white/15"
           title="Close Stage Mode"
         >
-          <X className="w-5 h-5" />
+          <X className="h-5 w-5" />
         </button>
 
       </header>
@@ -912,13 +890,14 @@ console.log(
           SETLIST
       ================================================== */}
 
-      <div className="bg-black/50 px-4 py-2 border-b border-white/5 flex items-center gap-2 overflow-x-auto scrollbar-none flex-shrink-0">
+      <div className="flex flex-shrink-0 items-center gap-2 overflow-x-auto border-b border-white/5 bg-black/35 px-4 py-2">
 
         {ministration.songs.map(
           (item, index) => {
             const song = songs.find(
               current =>
-                current.id === item.songId
+                String(current.id) ===
+                String(item.songId)
             );
 
             if (!song) {
@@ -932,10 +911,10 @@ console.log(
                 onClick={() =>
                   setCurrentSongIndex(index)
                 }
-                className={`px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                className={`flex items-center gap-1.5 whitespace-nowrap rounded-xl border px-3 py-2 text-xs font-bold transition-all ${
                   currentSongIndex === index
-                    ? 'bg-[#007aff] text-white shadow-sm'
-                    : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
+                    ? 'border-[#007aff]/40 bg-[#007aff] text-white shadow-lg shadow-blue-500/20'
+                    : 'border-white/5 bg-white/[0.035] text-white/55 hover:border-white/10 hover:bg-white/[0.08] hover:text-white'
                 }`}
               >
                 <span className="opacity-60">
@@ -944,7 +923,7 @@ console.log(
 
                 <span>{song.title}</span>
 
-                <span className="text-[10px] opacity-75 font-mono">
+                <span className="font-mono text-[10px] opacity-75">
                   (
                   {item.keyOverride ||
                     song.key}
@@ -963,58 +942,58 @@ console.log(
 
       <div
         ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto p-4 sm:p-8 lg:p-12 max-w-5xl mx-auto w-full space-y-6"
+        className="mx-auto w-full max-w-5xl flex-1 space-y-6 overflow-y-auto p-4 sm:p-8 lg:p-12"
       >
 
         {/* ==================================================
             NOW PLAYING
         ================================================== */}
 
-        <section className="rounded-3xl bg-white/[0.05] border border-white/10 backdrop-blur-md p-5 sm:p-7">
+        <section className="rounded-[28px] border border-white/10 bg-white/[0.05] p-5 shadow-2xl shadow-black/10 backdrop-blur-2xl sm:p-7">
 
-          <div className="flex flex-col lg:flex-row gap-6 lg:items-center">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center">
 
-            <div className="flex-1 min-w-0">
+            <div className="min-w-0 flex-1">
 
-              <div className="flex items-center gap-2 mb-3 flex-wrap">
+              <div className="mb-3 flex flex-wrap items-center gap-2">
 
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#007aff] bg-[#007aff]/20 px-2.5 py-1 rounded-full">
+                <span className="rounded-full border border-[#007aff]/20 bg-[#007aff]/15 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-[#4da3ff]">
                   Now Playing
                 </span>
 
-                <span className="text-[10px] font-extrabold text-amber-300 bg-amber-500/20 px-2.5 py-1 rounded-full">
+                <span className="rounded-full border border-amber-500/20 bg-amber-500/15 px-2.5 py-1 text-[10px] font-extrabold text-amber-300">
                   KEY: {effectiveKey}
                 </span>
 
-                <span className="text-[10px] font-bold text-white/50">
+                <span className="text-[10px] font-bold text-white/40">
                   {currentSong.tempo}
                 </span>
 
               </div>
 
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight">
+              <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl">
                 {currentSong.title}
               </h1>
 
-              <p className="text-sm sm:text-base font-semibold text-white/50 mt-1">
+              <p className="mt-1 text-sm font-semibold text-white/45 sm:text-base">
                 {currentSong.artist ||
                   'Jewels of His Crown'}
               </p>
 
             </div>
 
-            <div className="flex items-center gap-3 p-4 rounded-2xl bg-white/5 border border-white/10">
+            <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.045] p-4">
 
-              <div className="w-12 h-12 rounded-2xl bg-[#007aff]/15 flex items-center justify-center">
-                <Music2 className="w-6 h-6 text-[#007aff]" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#007aff]/15">
+                <Music2 className="h-6 w-6 text-[#4da3ff]" />
               </div>
 
               <div>
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#007aff] block">
+                <span className="block text-[10px] font-extrabold uppercase tracking-wider text-[#4da3ff]">
                   Lead Vocalist
                 </span>
 
-                <p className="text-sm font-bold">
+                <p className="text-sm font-bold text-white">
                   {leadMember
                     ? leadMember.name
                     : 'Unassigned'}
@@ -1027,16 +1006,16 @@ console.log(
 
           {/* AUDIO PLAYER */}
 
-          <div className="mt-6 pt-5 border-t border-white/10">
+          <div className="mt-6 border-t border-white/10 pt-5">
 
             {!hasAudio ? (
-              <div className="rounded-2xl bg-amber-500/10 border border-amber-500/20 p-4 text-amber-200 text-sm">
+              <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-200">
                 <div className="flex items-center gap-2 font-bold">
-                  <Music2 className="w-4 h-4" />
+                  <Music2 className="h-4 w-4" />
                   No audio file attached to this song yet.
                 </div>
 
-                <p className="text-xs text-amber-200/60 mt-1">
+                <p className="mt-1 text-xs text-amber-200/55">
                   The player controls will become
                   active once an audio URL is added
                   to the song.
@@ -1048,7 +1027,7 @@ console.log(
 
                 <div className="flex items-center gap-3">
 
-                  <span className="text-xs font-mono text-white/50 w-10 text-right">
+                  <span className="w-10 text-right font-mono text-xs text-white/45">
                     {formatTime(currentTime)}
                   </span>
 
@@ -1061,18 +1040,19 @@ console.log(
                         : 0
                     }
                     step="0.1"
-                    value={
-                      Math.min(
-                        currentTime,
-                        duration || currentTime
-                      )
-                    }
+                    value={Math.min(
+                      currentTime,
+                      duration || currentTime
+                    )}
                     onChange={handleSeek}
-                    className="flex-1 accent-[#007aff] cursor-pointer"
+                    className="flex-1 cursor-pointer accent-[#007aff]"
                     aria-label="Song progress"
+                    style={{
+                      background: `linear-gradient(to right, #007aff ${progressPercent}%, rgba(255,255,255,0.12) ${progressPercent}%)`,
+                    }}
                   />
 
-                  <span className="text-xs font-mono text-white/50 w-10">
+                  <span className="w-10 font-mono text-xs text-white/45">
                     {formatTime(duration)}
                   </span>
 
@@ -1085,25 +1065,25 @@ console.log(
                   <button
                     type="button"
                     onClick={goToPreviousSong}
-                    className="w-11 h-11 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors"
+                    className="flex h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-white/10"
                     title="Previous song"
                   >
-                    <ChevronLeft className="w-5 h-5" />
+                    <ChevronLeft className="h-5 w-5" />
                   </button>
 
                   <button
                     type="button"
                     onClick={skipBackward}
-                    className="w-11 h-11 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors"
+                    className="flex h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-white/10"
                     title="Back 10 seconds"
                   >
-                    <SkipBack className="w-5 h-5" />
+                    <SkipBack className="h-5 w-5" />
                   </button>
 
                   <button
                     type="button"
                     onClick={togglePlayback}
-                    className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#007aff] hover:bg-[#0062cc] flex items-center justify-center shadow-lg shadow-blue-500/20 transition-transform active:scale-95"
+                    className="flex h-14 w-14 items-center justify-center rounded-full bg-[#007aff] shadow-xl shadow-blue-500/20 transition-transform hover:bg-[#0062cc] active:scale-95 sm:h-16 sm:w-16"
                     title={
                       isPlaying
                         ? 'Pause'
@@ -1111,35 +1091,35 @@ console.log(
                     }
                   >
                     {isPlaying ? (
-                      <Pause className="w-7 h-7 fill-current" />
+                      <Pause className="h-7 w-7 fill-current" />
                     ) : (
-                      <Play className="w-7 h-7 fill-current ml-1" />
+                      <Play className="ml-1 h-7 w-7 fill-current" />
                     )}
                   </button>
 
                   <button
                     type="button"
                     onClick={skipForward}
-                    className="w-11 h-11 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors"
+                    className="flex h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-white/10"
                     title="Forward 10 seconds"
                   >
-                    <SkipForward className="w-5 h-5" />
+                    <SkipForward className="h-5 w-5" />
                   </button>
 
                   <button
                     type="button"
                     onClick={goToNextSong}
-                    className="w-11 h-11 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors"
+                    className="flex h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-white/10"
                     title="Next song"
                   >
-                    <ChevronRight className="w-5 h-5" />
+                    <ChevronRight className="h-5 w-5" />
                   </button>
 
                 </div>
 
                 {/* Secondary controls */}
 
-                <div className="mt-4 flex items-center justify-center gap-2 flex-wrap">
+                <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
 
                   <button
                     type="button"
@@ -1148,13 +1128,13 @@ console.log(
                         previous => !previous
                       )
                     }
-                    className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 ${
+                    className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold ${
                       isShuffle
-                        ? 'bg-[#007aff]/20 text-[#4da3ff] border border-[#007aff]/30'
-                        : 'bg-white/5 text-white/60'
+                        ? 'border-[#007aff]/30 bg-[#007aff]/15 text-[#4da3ff]'
+                        : 'border-white/5 bg-white/[0.035] text-white/55 hover:bg-white/[0.08]'
                     }`}
                   >
-                    <Shuffle className="w-3.5 h-3.5" />
+                    <Shuffle className="h-3.5 w-3.5" />
                     Shuffle
                   </button>
 
@@ -1165,13 +1145,13 @@ console.log(
                         previous => !previous
                       )
                     }
-                    className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 ${
+                    className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold ${
                       isRepeat
-                        ? 'bg-[#007aff]/20 text-[#4da3ff] border border-[#007aff]/30'
-                        : 'bg-white/5 text-white/60'
+                        ? 'border-[#007aff]/30 bg-[#007aff]/15 text-[#4da3ff]'
+                        : 'border-white/5 bg-white/[0.035] text-white/55 hover:bg-white/[0.08]'
                     }`}
                   >
-                    <Repeat className="w-3.5 h-3.5" />
+                    <Repeat className="h-3.5 w-3.5" />
                     Repeat
                   </button>
 
@@ -1184,14 +1164,14 @@ console.log(
                           previous => !previous
                         )
                       }
-                      className="px-3 py-2 rounded-xl text-xs font-bold bg-white/5 text-white/60 flex items-center gap-1.5"
+                      className="flex items-center gap-1.5 rounded-xl border border-white/5 bg-white/[0.035] px-3 py-2 text-xs font-bold text-white/55 hover:bg-white/[0.08]"
                     >
-                      <Gauge className="w-3.5 h-3.5" />
+                      <Gauge className="h-3.5 w-3.5" />
                       {playbackSpeed}×
                     </button>
 
                     {showSpeedMenu && (
-                      <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-[#1c1c1f] border border-white/10 rounded-2xl p-2 shadow-2xl z-20">
+                      <div className="absolute bottom-full left-1/2 z-20 mb-2 -translate-x-1/2 rounded-2xl border border-white/10 bg-[#1c1c1f]/95 p-2 shadow-2xl backdrop-blur-2xl">
 
                         {[
                           0.5,
@@ -1212,7 +1192,7 @@ console.log(
                                 false
                               );
                             }}
-                            className={`block w-20 px-3 py-2 rounded-xl text-xs font-bold ${
+                            className={`block w-20 rounded-xl px-3 py-2 text-xs font-bold ${
                               playbackSpeed ===
                               speed
                                 ? 'bg-[#007aff] text-white'
@@ -1239,10 +1219,10 @@ console.log(
                     onClick={
                       setLoopStartPoint
                     }
-                    className={`px-3 py-2 rounded-xl text-xs font-bold ${
+                    className={`rounded-xl border px-3 py-2 text-xs font-bold ${
                       loopStart !== null
-                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                        : 'bg-white/5 text-white/60'
+                        ? 'border-amber-500/30 bg-amber-500/15 text-amber-300'
+                        : 'border-white/5 bg-white/[0.035] text-white/55 hover:bg-white/[0.08]'
                     }`}
                   >
                     A
@@ -1259,10 +1239,10 @@ console.log(
                     disabled={
                       loopStart === null
                     }
-                    className={`px-3 py-2 rounded-xl text-xs font-bold ${
+                    className={`rounded-xl border px-3 py-2 text-xs font-bold ${
                       loopEnd !== null
-                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                        : 'bg-white/5 text-white/60 disabled:opacity-30'
+                        ? 'border-amber-500/30 bg-amber-500/15 text-amber-300'
+                        : 'border-white/5 bg-white/[0.035] text-white/55 disabled:opacity-30'
                     }`}
                   >
                     B
@@ -1276,15 +1256,15 @@ console.log(
                     <button
                       type="button"
                       onClick={clearLoop}
-                      className="px-3 py-2 rounded-xl text-xs font-bold bg-white/5 text-white/60 hover:bg-white/10 flex items-center gap-1"
+                      className="flex items-center gap-1 rounded-xl border border-white/5 bg-white/[0.035] px-3 py-2 text-xs font-bold text-white/55 hover:bg-white/[0.08]"
                     >
-                      <CircleStop className="w-3.5 h-3.5" />
+                      <CircleStop className="h-3.5 w-3.5" />
                       Clear Loop
                     </button>
                   )}
 
                   {isLooping && (
-                    <span className="px-3 py-2 rounded-xl bg-emerald-500/15 text-emerald-300 text-xs font-bold">
+                    <span className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs font-bold text-emerald-300">
                       A–B Loop Active
                     </span>
                   )}
@@ -1303,14 +1283,13 @@ console.log(
 
         {(currentItem?.orderNote ||
           currentSong.mdNotes) && (
-          <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200">
+          <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4 text-amber-200">
 
-            <span className="text-[10px] font-extrabold uppercase tracking-wider block text-amber-400 mb-1">
-              🎼 Transition Cue & Director
-              Notes
+            <span className="mb-1 block text-[10px] font-extrabold uppercase tracking-wider text-amber-400">
+              🎼 Transition Cue & Director Notes
             </span>
 
-            <p className="text-xs sm:text-sm font-medium">
+            <p className="text-xs font-medium sm:text-sm">
               {currentItem?.orderNote
                 ? `${currentItem.orderNote} • `
                 : ''}
@@ -1327,9 +1306,9 @@ console.log(
 
         {showChords &&
           currentSong.chords && (
-            <div className="p-4 rounded-2xl bg-black/60 border border-white/10 font-mono text-xs text-amber-300 whitespace-pre-wrap leading-relaxed">
+            <div className="rounded-2xl border border-white/10 bg-black/55 p-4 font-mono text-xs leading-relaxed text-amber-300 whitespace-pre-wrap">
 
-              <span className="text-[10px] font-bold uppercase text-white/40 block mb-1">
+              <span className="mb-1 block text-[10px] font-bold uppercase text-white/35">
                 Chords Progression (Key of{' '}
                 {effectiveKey})
               </span>
@@ -1345,24 +1324,24 @@ console.log(
 
         <section>
 
-          <div className="flex items-center justify-between mb-3">
+          <div className="mb-3 flex items-center justify-between">
 
-            <div className="flex items-center gap-2 text-white/50">
-              <Type className="w-4 h-4" />
+            <div className="flex items-center gap-2 text-white/45">
+              <Type className="h-4 w-4" />
 
               <span className="text-xs font-bold uppercase tracking-wider">
                 Lyrics
               </span>
             </div>
 
-            <div className="sm:hidden flex items-center bg-white/10 p-0.5 rounded-xl text-xs font-bold">
+            <div className="flex items-center rounded-xl border border-white/10 bg-white/[0.055] p-0.5 text-xs font-bold sm:hidden">
 
               <button
                 type="button"
                 onClick={() =>
                   setFontSize('normal')
                 }
-                className={`px-2 py-1 rounded-lg ${
+                className={`rounded-lg px-2 py-1 ${
                   fontSize === 'normal'
                     ? 'bg-white text-black'
                     : 'text-white/70'
@@ -1376,7 +1355,7 @@ console.log(
                 onClick={() =>
                   setFontSize('large')
                 }
-                className={`px-2 py-1 rounded-lg ${
+                className={`rounded-lg px-2 py-1 ${
                   fontSize === 'large'
                     ? 'bg-white text-black'
                     : 'text-white/70'
@@ -1390,7 +1369,7 @@ console.log(
                 onClick={() =>
                   setFontSize('huge')
                 }
-                className={`px-2 py-1 rounded-lg ${
+                className={`rounded-lg px-2 py-1 ${
                   fontSize === 'huge'
                     ? 'bg-white text-black'
                     : 'text-white/70'
@@ -1404,7 +1383,7 @@ console.log(
           </div>
 
           <div
-            className={`font-sans font-medium leading-loose whitespace-pre-wrap ${fontClass} text-white/90 p-5 sm:p-7 rounded-3xl bg-white/[0.02] border border-white/[0.04]`}
+            className={`rounded-[28px] border border-white/[0.05] bg-white/[0.02] p-5 font-sans font-medium leading-loose text-white/90 whitespace-pre-wrap sm:p-7 ${fontClass}`}
           >
             {currentSong.lyrics ||
               'No lyrics text provided for this song.'}
@@ -1416,16 +1395,16 @@ console.log(
             AUTO SCROLL CONTROLS
         ================================================== */}
 
-        <section className="p-4 rounded-2xl bg-white/[0.03] border border-white/10">
+        <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
 
             <div>
               <h3 className="text-sm font-bold">
                 Teleprompter Scroll
               </h3>
 
-              <p className="text-xs text-white/40 mt-1">
+              <p className="mt-1 text-xs text-white/40">
                 Automatically move through the lyrics
                 during rehearsal.
               </p>
@@ -1440,10 +1419,10 @@ console.log(
                     previous => !previous
                   )
                 }
-                className={`px-4 py-2 rounded-xl text-xs font-bold ${
+                className={`rounded-xl px-4 py-2 text-xs font-bold ${
                   isAutoScrolling
                     ? 'bg-emerald-500 text-black'
-                    : 'bg-white/10 text-white'
+                    : 'border border-white/10 bg-white/[0.055] text-white hover:bg-white/10'
                 }`}
               >
                 {isAutoScrolling
@@ -1458,7 +1437,7 @@ console.log(
                     Number(event.target.value)
                   )
                 }
-                className="bg-white/10 border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-white outline-none"
+                className="rounded-xl border border-white/10 bg-white/[0.055] px-3 py-2 text-xs font-bold text-white outline-none"
               >
                 <option
                   value="0.5"
@@ -1499,15 +1478,15 @@ console.log(
             BOTTOM NAVIGATION
         ================================================== */}
 
-        <div className="flex items-center justify-between pt-5 pb-12 border-t border-white/10 gap-3">
+        <div className="flex items-center justify-between gap-3 border-t border-white/10 pb-12 pt-5">
 
           <button
             type="button"
             onClick={goToPreviousSong}
             disabled={currentSongIndex === 0}
-            className="px-4 sm:px-6 py-3 rounded-2xl bg-white/10 hover:bg-white/20 disabled:opacity-20 text-sm font-bold flex items-center gap-2 transition-all"
+            className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.055] px-4 py-3 text-sm font-bold transition-all hover:bg-white/10 disabled:opacity-20 sm:px-6"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="h-4 w-4" />
 
             <span className="hidden sm:inline">
               Previous Song
@@ -1526,7 +1505,7 @@ console.log(
               currentSongIndex ===
                 ministration.songs.length - 1
             }
-            className="px-4 sm:px-6 py-3 rounded-2xl bg-[#007aff] hover:bg-[#0062cc] disabled:opacity-20 text-white text-sm font-bold flex items-center gap-2 transition-all shadow-lg"
+            className="flex items-center gap-2 rounded-2xl bg-[#007aff] px-4 py-3 text-sm font-bold text-white shadow-lg shadow-blue-500/15 transition-all hover:bg-[#0062cc] disabled:opacity-20 sm:px-6"
           >
             <span className="hidden sm:inline">
               Next Song
@@ -1536,7 +1515,7 @@ console.log(
               Next
             </span>
 
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="h-4 w-4" />
           </button>
 
         </div>
@@ -1546,4 +1525,3 @@ console.log(
     </div>
   );
 };
-
