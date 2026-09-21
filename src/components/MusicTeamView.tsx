@@ -55,7 +55,6 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
     if (!isMD) return;
 
     setPhotoTarget(member);
-
     fileInputRef.current?.click();
   };
 
@@ -90,7 +89,7 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
   ) => {
     const style =
       variant === 'director'
-        ? 'bg-amber-500/20 border-amber-500/30'
+        ? 'bg-amber-500/10 border-amber-400/20'
         : variant === 'vocal'
           ? 'bg-[#7c3aed]/10 border-[#7c3aed]/20'
           : 'bg-[#007aff]/10 border-[#007aff]/20';
@@ -106,9 +105,9 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
               ? `Change photo for ${member.name}`
               : `${member.name}'s profile photo`
           }
-          className={`w-12 h-12 rounded-2xl ${style} border overflow-hidden flex items-center justify-center transition-all ${
+          className={`w-14 h-14 rounded-2xl ${style} border overflow-hidden flex items-center justify-center transition-all ${
             isMD
-              ? 'cursor-pointer hover:scale-105 hover:shadow-md'
+              ? 'cursor-pointer hover:scale-105 hover:border-white/20'
               : 'cursor-default'
           }`}
         >
@@ -130,9 +129,68 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
         </button>
 
         {isMD && (
-          <div className="absolute -right-1 -bottom-1 w-5 h-5 rounded-full bg-white border border-black/10 shadow-sm flex items-center justify-center pointer-events-none">
-            <Camera className="w-2.5 h-2.5 text-[#007aff]" />
+          <div className="absolute -right-1 -bottom-1 w-5 h-5 rounded-full bg-[#17171a] border border-white/10 shadow-lg flex items-center justify-center pointer-events-none">
+            <Camera className="w-2.5 h-2.5 text-[#4da3ff]" />
           </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderContactInfo = (member: TeamMember) => (
+    <div className="space-y-1.5 pt-1 text-xs text-white/40">
+      {member.phone && (
+        <div className="flex items-center gap-2 min-w-0">
+          <Phone className="w-3 h-3 text-[#007aff] flex-shrink-0" />
+          <span className="truncate">{member.phone}</span>
+        </div>
+      )}
+
+      {member.email && (
+        <div className="flex items-center gap-2 min-w-0">
+          <Mail className="w-3 h-3 text-[#7c3aed] flex-shrink-0" />
+          <span className="truncate">{member.email}</span>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderMemberActions = (
+    member: TeamMember,
+    allowDelete: boolean
+  ) => {
+    if (!isMD) return null;
+
+    return (
+      <div className="flex items-center gap-1 flex-shrink-0">
+        <button
+          onClick={() => onEditMember(member)}
+          title="Edit member"
+          className="w-8 h-8 rounded-xl bg-white/[0.05] border border-white/10 hover:bg-white/[0.10] flex items-center justify-center text-white/45 hover:text-white transition-all"
+        >
+          <Edit className="w-3.5 h-3.5" />
+        </button>
+
+        {allowDelete && (
+          <button
+            onClick={() => {
+              if (
+                confirm(
+                  `Remove ${member.name} from the ${
+                    member.type === 'vocal'
+                      ? 'vocal'
+                      : 'band'
+                  } roster?`
+                )
+              ) {
+                onDeleteMember(member.id);
+              }
+            }}
+            title="Delete member"
+            className="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/15 hover:bg-rose-500/20 text-rose-400 flex items-center justify-center transition-all"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
         )}
       </div>
     );
@@ -150,110 +208,136 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
         onChange={handlePhotoChange}
       />
 
-      {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* =========================================================
+          PAGE HEADER
+      ========================================================= */}
+      <div className="space-y-5">
 
-        <div>
-          <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-700 bg-amber-500/10 px-2.5 py-0.5 rounded-full inline-block mb-1">
-            PEOPLE & MINISTRY ROSTER
-          </span>
+        <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-5">
 
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-[#1d1d1f] tracking-tight">
-            Jewels Music Team
-          </h1>
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-300 bg-amber-400/10 border border-amber-400/15 px-3 py-1 rounded-full">
+                People & Ministry Roster
+              </span>
 
-          <p className="text-sm text-[#6e6e73] font-medium mt-0.5">
-            {team.length} dedicated vocalists, musicians, and directors serving in music ministry.
-          </p>
-        </div>
-
-        {/* MD Add Member Action */}
-        <div className="flex items-center gap-2">
-
-          {isMD ? (
-            <button
-              onClick={onAddNewMember}
-              className="px-5 py-2.5 rounded-2xl bg-[#007aff] hover:bg-[#0062cc] text-white text-xs sm:text-sm font-bold flex items-center gap-2 shadow-md shadow-[#007aff]/30 transition-all active:scale-95 flex-shrink-0"
-            >
-              <UserPlus className="w-4 h-4" />
-              <span>Add Team Member</span>
-            </button>
-          ) : (
-            <div className="px-3.5 py-2 rounded-2xl bg-black/5 text-[#86868b] text-xs font-semibold flex items-center gap-1.5 border border-black/5">
-              <span>
-                🔒 Member management restricted to MD
+              <span className="text-[10px] font-bold uppercase tracking-wider text-white/35">
+                Team Control
               </span>
             </div>
-          )}
+
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+              Jewels Music Team
+            </h1>
+
+            <p className="text-sm text-white/45 font-medium mt-2 max-w-2xl">
+              {team.length} dedicated vocalists, musicians,
+              and directors serving in music ministry.
+            </p>
+          </div>
+
+          {/* MD ACTION */}
+          <div className="flex items-center gap-2">
+
+            {isMD ? (
+              <button
+                onClick={onAddNewMember}
+                className="px-5 py-2.5 rounded-2xl bg-[#007aff] hover:bg-[#1685ff] text-white text-xs sm:text-sm font-bold flex items-center gap-2 shadow-[0_10px_30px_rgba(0,122,255,0.25)] transition-all active:scale-95"
+              >
+                <UserPlus className="w-4 h-4" />
+                <span>Add Team Member</span>
+              </button>
+            ) : (
+              <div className="px-3.5 py-2.5 rounded-2xl bg-white/[0.045] text-white/35 text-xs font-semibold flex items-center gap-1.5 border border-white/10">
+                <span>
+                  🔒 Member management restricted to MD
+                </span>
+              </div>
+            )}
+
+          </div>
+        </div>
+
+        {/* =====================================================
+            FILTER TABS
+        ===================================================== */}
+        <div className="flex items-center gap-1.5 bg-white/[0.035] border border-white/10 p-1 rounded-2xl max-w-full overflow-x-auto">
+
+          <button
+            onClick={() => setActiveFilter('all')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+              activeFilter === 'all'
+                ? 'bg-[#007aff] text-white shadow-[0_5px_18px_rgba(0,122,255,0.20)]'
+                : 'text-white/40 hover:text-white hover:bg-white/[0.05]'
+            }`}
+          >
+            All Members ({team.length})
+          </button>
+
+          <button
+            onClick={() => setActiveFilter('vocal')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+              activeFilter === 'vocal'
+                ? 'bg-[#7c3aed] text-white shadow-[0_5px_18px_rgba(124,58,237,0.20)]'
+                : 'text-white/40 hover:text-white hover:bg-white/[0.05]'
+            }`}
+          >
+            🎤 Vocalists ({vocalists.length})
+          </button>
+
+          <button
+            onClick={() => setActiveFilter('instrument')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+              activeFilter === 'instrument'
+                ? 'bg-[#007aff] text-white shadow-[0_5px_18px_rgba(0,122,255,0.20)]'
+                : 'text-white/40 hover:text-white hover:bg-white/[0.05]'
+            }`}
+          >
+            🎹 Musicians ({instrumentalists.length})
+          </button>
+
+          <button
+            onClick={() => setActiveFilter('director')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+              activeFilter === 'director'
+                ? 'bg-amber-500 text-black shadow-[0_5px_18px_rgba(245,158,11,0.18)]'
+                : 'text-white/40 hover:text-white hover:bg-white/[0.05]'
+            }`}
+          >
+            🎼 Leadership ({directors.length})
+          </button>
 
         </div>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex items-center gap-1.5 bg-black/[0.04] p-1 rounded-2xl max-w-fit overflow-x-auto">
-
-        <button
-          onClick={() => setActiveFilter('all')}
-          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-            activeFilter === 'all'
-              ? 'bg-white text-[#1d1d1f] shadow-xs'
-              : 'text-[#6e6e73] hover:text-[#1d1d1f]'
-          }`}
-        >
-          All Members ({team.length})
-        </button>
-
-        <button
-          onClick={() => setActiveFilter('vocal')}
-          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-            activeFilter === 'vocal'
-              ? 'bg-white text-[#7c3aed] shadow-xs'
-              : 'text-[#6e6e73] hover:text-[#1d1d1f]'
-          }`}
-        >
-          🎤 Vocalists ({vocalists.length})
-        </button>
-
-        <button
-          onClick={() => setActiveFilter('instrument')}
-          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-            activeFilter === 'instrument'
-              ? 'bg-white text-[#007aff] shadow-xs'
-              : 'text-[#6e6e73] hover:text-[#1d1d1f]'
-          }`}
-        >
-          🎹 Musicians ({instrumentalists.length})
-        </button>
-
-        <button
-          onClick={() => setActiveFilter('director')}
-          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-            activeFilter === 'director'
-              ? 'bg-white text-amber-600 shadow-xs'
-              : 'text-[#6e6e73] hover:text-[#1d1d1f]'
-          }`}
-        >
-          🎼 Leadership ({directors.length})
-        </button>
-
-      </div>
-
-      {/* ============================================================
+      {/* =========================================================
           LEADERSHIP
-          ============================================================ */}
-
+      ========================================================= */}
       {(activeFilter === 'all' ||
         activeFilter === 'director') &&
         directors.length > 0 && (
 
-          <section className="space-y-3">
+          <section className="space-y-4">
 
-            <div className="flex items-center gap-2">
-              <span className="text-lg">🎼</span>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">🎼</span>
 
-              <h2 className="text-xl font-bold text-[#1d1d1f] tracking-tight">
-                Music Leadership
-              </h2>
+                  <h2 className="text-xl font-bold text-white tracking-tight">
+                    Music Leadership
+                  </h2>
+                </div>
+
+                <p className="text-xs text-white/30 mt-1">
+                  Ministry direction and administration
+                </p>
+              </div>
+
+              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300 bg-amber-400/10 border border-amber-400/15 px-2.5 py-1 rounded-full">
+                {directors.length} Leader
+                {directors.length !== 1 ? 's' : ''}
+              </span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -262,32 +346,35 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
 
                 <div
                   key={member.id}
-                  className="ios-glass p-5 rounded-[26px] bg-gradient-to-br from-amber-500/10 via-white to-white border border-amber-500/20 shadow-sm flex flex-col justify-between"
+                  className="ios-card p-5 border-amber-400/15 bg-gradient-to-br from-amber-400/[0.08] via-white/[0.045] to-transparent flex flex-col justify-between"
                 >
 
                   <div>
 
-                    <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="flex items-start justify-between gap-3 mb-4">
 
                       <div className="flex items-center gap-3 min-w-0">
 
-                        {renderMemberPhoto(member, 'director')}
+                        {renderMemberPhoto(
+                          member,
+                          'director'
+                        )}
 
                         <div className="min-w-0">
 
                           <div className="flex items-center gap-1.5">
 
-                            <h3 className="text-base font-extrabold text-[#1d1d1f] truncate">
+                            <h3 className="text-base font-extrabold text-white truncate">
                               {member.name}
                             </h3>
 
-                            <span className="text-[10px] bg-amber-600 text-white font-extrabold px-1.5 py-0.2 rounded-full">
+                            <span className="text-[9px] bg-amber-500 text-black font-extrabold px-1.5 py-0.5 rounded-full">
                               MD
                             </span>
 
                           </div>
 
-                          <p className="text-xs font-semibold text-amber-900 mt-0.5 truncate">
+                          <p className="text-xs font-semibold text-amber-300 mt-1 truncate">
                             {member.role}
                           </p>
 
@@ -295,87 +382,65 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
 
                       </div>
 
-                      {isMD && (
-                        <div className="flex items-center gap-1 flex-shrink-0">
-
-                          <button
-                            onClick={() => onEditMember(member)}
-                            title="Edit member"
-                            className="w-7 h-7 rounded-lg bg-black/5 hover:bg-black/10 flex items-center justify-center text-[#6e6e73]"
-                          >
-                            <Edit className="w-3.5 h-3.5" />
-                          </button>
-
-                        </div>
+                      {renderMemberActions(
+                        member,
+                        false
                       )}
 
                     </div>
 
-                    <div className="space-y-1.5 pt-2 text-xs text-[#6e6e73]">
-
-                      {member.phone && (
-                        <div className="flex items-center gap-2">
-                          <Phone className="w-3.5 h-3.5 text-[#007aff]" />
-                          <span>{member.phone}</span>
-                        </div>
-                      )}
-
-                      {member.email && (
-                        <div className="flex items-center gap-2">
-                          <Mail className="w-3.5 h-3.5 text-[#7c3aed]" />
-                          <span className="truncate">{member.email}</span>
-                        </div>
-                      )}
-
-                    </div>
+                    {renderContactInfo(member)}
 
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-black/5 flex items-center justify-between">
+                  <div className="mt-5 pt-3 border-t border-white/[0.08] flex items-center justify-between gap-2">
 
-                    <span className="text-[11px] font-bold text-amber-700 flex items-center gap-1">
+                    <span className="text-[11px] font-bold text-amber-300 flex items-center gap-1">
                       <ShieldCheck className="w-3.5 h-3.5" />
                       Full Admin Rights
                     </span>
 
-                    <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                    <span className="text-[10px] font-semibold text-emerald-300 bg-emerald-400/10 border border-emerald-400/10 px-2 py-0.5 rounded-full">
                       Active Leader
                     </span>
 
                   </div>
 
                 </div>
-
               ))}
 
             </div>
-
           </section>
-
         )}
 
-      {/* ============================================================
+      {/* =========================================================
           VOCAL TEAM
-          ============================================================ */}
-
+      ========================================================= */}
       {(activeFilter === 'all' ||
         activeFilter === 'vocal') &&
         vocalists.length > 0 && (
 
-          <section className="space-y-3">
+          <section className="space-y-4">
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-3">
 
-              <div className="flex items-center gap-2">
-                <span className="text-lg">🎤</span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">🎤</span>
 
-                <h2 className="text-xl font-bold text-[#1d1d1f] tracking-tight">
-                  Vocal Team (Harmonies & Solos)
-                </h2>
+                  <h2 className="text-xl font-bold text-white tracking-tight">
+                    Vocal Team
+                  </h2>
+                </div>
+
+                <p className="text-xs text-white/30 mt-1">
+                  Harmonies, solos and lead vocal assignments
+                </p>
               </div>
 
-              <span className="text-xs font-semibold text-[#86868b]">
-                {vocalists.length} Vocalists Active
+              <span className="text-[10px] font-bold text-white/35 bg-white/[0.045] border border-white/10 px-2.5 py-1 rounded-full">
+                {vocalists.length} Vocalist
+                {vocalists.length !== 1 ? 's' : ''}
               </span>
 
             </div>
@@ -391,95 +456,63 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
 
                   <div>
 
-                    <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="flex items-start justify-between gap-3 mb-4">
 
                       <div className="flex items-center gap-3 min-w-0">
 
-                        {renderMemberPhoto(member, 'vocal')}
+                        {renderMemberPhoto(
+                          member,
+                          'vocal'
+                        )}
 
                         <div className="min-w-0">
 
-                          <h3 className="text-base font-bold text-[#1d1d1f] truncate">
+                          <h3 className="text-base font-bold text-white truncate">
                             {member.name}
                           </h3>
 
-                          <p className="text-xs font-semibold text-[#7c3aed] truncate">
-                            {member.voicePart || member.role}
+                          <p className="text-xs font-semibold text-[#b18cff] truncate mt-1">
+                            {member.voicePart ||
+                              member.role}
                           </p>
 
                         </div>
 
                       </div>
 
-                      {isMD && (
-                        <div className="flex items-center gap-1 flex-shrink-0">
-
-                          <button
-                            onClick={() => onEditMember(member)}
-                            title="Edit member"
-                            className="w-7 h-7 rounded-lg bg-black/5 hover:bg-black/10 flex items-center justify-center text-[#6e6e73]"
-                          >
-                            <Edit className="w-3.5 h-3.5" />
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              if (
-                                confirm(
-                                  `Remove ${member.name} from the vocal roster?`
-                                )
-                              ) {
-                                onDeleteMember(member.id);
-                              }
-                            }}
-                            title="Delete member"
-                            className="w-7 h-7 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 flex items-center justify-center"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-
-                        </div>
+                      {renderMemberActions(
+                        member,
+                        true
                       )}
 
                     </div>
 
-                    <div className="space-y-1 pt-1 text-xs text-[#6e6e73]">
-
-                      {member.phone && (
-                        <div className="flex items-center gap-2">
-                          <Phone className="w-3 h-3 text-[#007aff]" />
-                          <span>{member.phone}</span>
-                        </div>
-                      )}
-
-                      {member.email && (
-                        <div className="flex items-center gap-2">
-                          <Mail className="w-3 h-3 text-[#7c3aed]" />
-                          <span className="truncate">{member.email}</span>
-                        </div>
-                      )}
-
-                    </div>
+                    {renderContactInfo(member)}
 
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-black/5 flex items-center justify-between">
+                  <div className="mt-5 pt-3 border-t border-white/[0.08] flex items-center justify-between gap-2">
 
-                    <span className="text-[11px] font-bold text-[#7c3aed] bg-[#7c3aed]/10 px-2 py-0.5 rounded-full">
-                      {member.voicePart || 'Vocal Section'}
+                    <span className="text-[10px] font-bold text-[#b18cff] bg-[#7c3aed]/10 border border-[#7c3aed]/15 px-2.5 py-1 rounded-full">
+                      {member.voicePart ||
+                        'Vocal Section'}
                     </span>
 
                     {isMD && (
                       <button
-                        onClick={() => onTogglePermission(member.id)}
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition-all ${
+                        onClick={() =>
+                          onTogglePermission(
+                            member.id
+                          )
+                        }
+                        className={`text-[10px] font-bold px-2.5 py-1 rounded-full border transition-all ${
                           member.canEdit
-                            ? 'bg-emerald-500/15 text-emerald-700'
-                            : 'bg-black/5 text-[#86868b] hover:bg-black/10'
+                            ? 'bg-emerald-400/10 border-emerald-400/15 text-emerald-300'
+                            : 'bg-white/[0.04] border-white/10 text-white/35 hover:text-white/60'
                         }`}
                       >
                         {member.canEdit
-                          ? '✓ Upload Access Granted'
+                          ? '✓ Upload Access'
                           : '+ Grant Uploads'}
                       </button>
                     )}
@@ -487,37 +520,40 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
                   </div>
 
                 </div>
-
               ))}
 
             </div>
-
           </section>
-
         )}
 
-      {/* ============================================================
+      {/* =========================================================
           INSTRUMENTALISTS
-          ============================================================ */}
-
+      ========================================================= */}
       {(activeFilter === 'all' ||
         activeFilter === 'instrument') &&
         instrumentalists.length > 0 && (
 
-          <section className="space-y-3">
+          <section className="space-y-4">
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-3">
 
-              <div className="flex items-center gap-2">
-                <span className="text-lg">🎹</span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">🎹</span>
 
-                <h2 className="text-xl font-bold text-[#1d1d1f] tracking-tight">
-                  Band & Instrumentalists
-                </h2>
+                  <h2 className="text-xl font-bold text-white tracking-tight">
+                    Band & Instrumentalists
+                  </h2>
+                </div>
+
+                <p className="text-xs text-white/30 mt-1">
+                  Musicians and instrumental sections
+                </p>
               </div>
 
-              <span className="text-xs font-semibold text-[#86868b]">
-                {instrumentalists.length} Musicians
+              <span className="text-[10px] font-bold text-white/35 bg-white/[0.045] border border-white/10 px-2.5 py-1 rounded-full">
+                {instrumentalists.length} Musician
+                {instrumentalists.length !== 1 ? 's' : ''}
               </span>
 
             </div>
@@ -533,91 +569,59 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
 
                   <div>
 
-                    <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="flex items-start justify-between gap-3 mb-4">
 
                       <div className="flex items-center gap-3 min-w-0">
 
-                        {renderMemberPhoto(member, 'instrument')}
+                        {renderMemberPhoto(
+                          member,
+                          'instrument'
+                        )}
 
                         <div className="min-w-0">
 
-                          <h3 className="text-base font-bold text-[#1d1d1f] truncate">
+                          <h3 className="text-base font-bold text-white truncate">
                             {member.name}
                           </h3>
 
-                          <p className="text-xs font-semibold text-[#007aff] truncate">
-                            {member.instrumentType || member.role}
+                          <p className="text-xs font-semibold text-[#4da3ff] truncate mt-1">
+                            {member.instrumentType ||
+                              member.role}
                           </p>
 
                         </div>
 
                       </div>
 
-                      {isMD && (
-                        <div className="flex items-center gap-1 flex-shrink-0">
-
-                          <button
-                            onClick={() => onEditMember(member)}
-                            title="Edit member"
-                            className="w-7 h-7 rounded-lg bg-black/5 hover:bg-black/10 flex items-center justify-center text-[#6e6e73]"
-                          >
-                            <Edit className="w-3.5 h-3.5" />
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              if (
-                                confirm(
-                                  `Remove ${member.name} from the band roster?`
-                                )
-                              ) {
-                                onDeleteMember(member.id);
-                              }
-                            }}
-                            title="Delete member"
-                            className="w-7 h-7 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 flex items-center justify-center"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-
-                        </div>
+                      {renderMemberActions(
+                        member,
+                        true
                       )}
 
                     </div>
 
-                    <div className="space-y-1 pt-1 text-xs text-[#6e6e73]">
-
-                      {member.phone && (
-                        <div className="flex items-center gap-2">
-                          <Phone className="w-3 h-3 text-[#007aff]" />
-                          <span>{member.phone}</span>
-                        </div>
-                      )}
-
-                      {member.email && (
-                        <div className="flex items-center gap-2">
-                          <Mail className="w-3 h-3 text-[#7c3aed]" />
-                          <span className="truncate">{member.email}</span>
-                        </div>
-                      )}
-
-                    </div>
+                    {renderContactInfo(member)}
 
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-black/5 flex items-center justify-between">
+                  <div className="mt-5 pt-3 border-t border-white/[0.08] flex items-center justify-between gap-2">
 
-                    <span className="text-[11px] font-bold text-[#007aff] bg-[#007aff]/10 px-2 py-0.5 rounded-full">
-                      {member.instrumentType || 'Band'}
+                    <span className="text-[10px] font-bold text-[#4da3ff] bg-[#007aff]/10 border border-[#007aff]/15 px-2.5 py-1 rounded-full">
+                      {member.instrumentType ||
+                        'Band'}
                     </span>
 
                     {isMD && (
                       <button
-                        onClick={() => onTogglePermission(member.id)}
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition-all ${
+                        onClick={() =>
+                          onTogglePermission(
+                            member.id
+                          )
+                        }
+                        className={`text-[10px] font-bold px-2.5 py-1 rounded-full border transition-all ${
                           member.canEdit
-                            ? 'bg-emerald-500/15 text-emerald-700'
-                            : 'bg-black/5 text-[#86868b] hover:bg-black/10'
+                            ? 'bg-emerald-400/10 border-emerald-400/15 text-emerald-300'
+                            : 'bg-white/[0.04] border-white/10 text-white/35 hover:text-white/60'
                         }`}
                       >
                         {member.canEdit
@@ -629,31 +633,31 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
                   </div>
 
                 </div>
-
               ))}
 
             </div>
-
           </section>
-
         )}
 
-      {/* Photo upload information */}
+      {/* =========================================================
+          PHOTO INFORMATION
+      ========================================================= */}
       {isMD && (
-        <div className="ios-glass rounded-2xl p-4 flex items-start gap-3 border border-[#007aff]/10">
+        <div className="ios-glass rounded-2xl p-4 flex items-start gap-3 border border-[#007aff]/15">
 
-          <div className="w-9 h-9 rounded-xl bg-[#007aff]/10 flex items-center justify-center flex-shrink-0">
-            <ImageIcon className="w-4 h-4 text-[#007aff]" />
+          <div className="w-10 h-10 rounded-xl bg-[#007aff]/10 border border-[#007aff]/15 flex items-center justify-center flex-shrink-0">
+            <ImageIcon className="w-4 h-4 text-[#4da3ff]" />
           </div>
 
           <div>
-            <p className="text-xs font-bold text-[#1d1d1f]">
+            <p className="text-xs font-bold text-white">
               Team photos
             </p>
 
-            <p className="text-[11px] text-[#6e6e73] mt-0.5">
-              Click a member's photo area to choose a profile image.
-              Photos should be JPG, PNG, WebP, or GIF and under 5 MB.
+            <p className="text-[11px] text-white/35 mt-1 leading-relaxed">
+              Click a member's photo area to choose a
+              profile image. Photos should be JPG, PNG,
+              WebP, or GIF and under 5 MB.
             </p>
           </div>
 
