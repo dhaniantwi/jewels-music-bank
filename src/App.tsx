@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -17,10 +16,7 @@ import {
 import {
   loadStoredMinistrations,
   saveStoredMinistrations,
-  loadStoredTeam,
-  saveStoredTeam,
-  resetAllToDefaults,
-  migrateMinistrationsToCurrentSongs
+  resetAllToDefaults
 } from './utils/storage';
 
 import {
@@ -42,7 +38,6 @@ import { ToolsModal } from './components/ToolsModal';
 import { StageRehearsalModal } from './components/StageRehearsalModal';
 
 export default function App() {
-
   // ============================================================
   // MAIN APPLICATION STATE
   // ============================================================
@@ -53,7 +48,8 @@ export default function App() {
     loadStoredMinistrations()
   );
 
- const [team, setTeam] = useState<TeamMember[]>([]);
+  const [team, setTeam] = useState<TeamMember[]>([]);
+
   // ============================================================
   // THEME
   // ============================================================
@@ -65,7 +61,6 @@ export default function App() {
       return savedTheme === 'dark';
     }
 
-    // First-time visitors get Dark Mode by default.
     return true;
   });
 
@@ -80,6 +75,7 @@ export default function App() {
       darkMode
     );
   }, [darkMode]);
+
   // ============================================================
   // ACTIVE VIEW & ROLE
   // ============================================================
@@ -95,6 +91,10 @@ export default function App() {
 
   const [isMDPortalOpen, setIsMDPortalOpen] =
     useState(false);
+
+  // ============================================================
+  // CHECK EXISTING MD SESSION
+  // ============================================================
 
   useEffect(() => {
     const checkMDSession = async () => {
@@ -112,12 +112,6 @@ export default function App() {
         .eq('id', data.session.user.id)
         .single();
 
-      console.log('MD AUTH CHECK:', {
-        userId: data.session.user.id,
-        profile,
-        error,
-      });
-
       if (error || profile?.role !== 'admin_md') {
         await supabase.auth.signOut({ scope: 'local' });
         setIsMDPortalOpen(false);
@@ -132,11 +126,14 @@ export default function App() {
     checkMDSession();
   }, []);
 
+  // ============================================================
+  // AUTH STATE LISTENER
+  // ============================================================
+
   useEffect(() => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-
       if (event === 'SIGNED_OUT' || !session) {
         setIsMDPortalOpen(false);
         setActiveRole('vocalist');
@@ -144,7 +141,6 @@ export default function App() {
       }
 
       setTimeout(async () => {
-
         const { data: profile, error } = await supabase
           .from('profiles')
           .select('role')
@@ -160,7 +156,6 @@ export default function App() {
 
         setActiveRole('admin_md');
         setIsMDPortalOpen(true);
-
       }, 0);
     });
 
@@ -218,9 +213,7 @@ export default function App() {
   // ============================================================
 
   useEffect(() => {
-
     const loadSongsFromSupabase = async () => {
-
       const { data, error } = await supabase
         .from('songs')
         .select('*')
@@ -265,76 +258,79 @@ export default function App() {
 
         mdNotes: song.md_notes,
 
-       duration: song.duration,
-tags: song.tags,
+        duration: song.duration,
+        tags: song.tags,
 
-createdAt: song.created_at
-}));
+        createdAt: song.created_at
+      }));
 
-setSongs(mappedSongs);
-};
+      setSongs(mappedSongs);
+    };
 
-loadSongsFromSupabase();
-}, []);
+    loadSongsFromSupabase();
+  }, []);
 
-// ============================================================
-// LOAD TEAM FROM SUPABASE
-// ============================================================
+  // ============================================================
+  // LOAD TEAM FROM SUPABASE
+  // ============================================================
 
-useEffect(() => {
+  useEffect(() => {
+    const loadTeamFromSupabase = async () => {
+      const { data, error } = await supabase
+        .from('team_members')
+        .select('*')
+        .order('id', { ascending: true });
 
-  const loadTeamFromSupabase = async () => {
+      if (error) {
+        console.error(
+          'Could not load team from Supabase:',
+          error
+        );
+        return;
+      }
 
-    const { data, error } = await supabase
-      .from('team_members')
-      .select('*')
-      .order('id', { ascending: true });
+      if (!data) {
+        setTeam([]);
+        return;
+      }
 
-    if (error) {
-      console.error(
-        'Could not load team from Supabase:',
-        error
-      );
-      return;
-    }
+      const mappedTeam: TeamMember[] = data.map((member) => ({
+        id: member.id,
+        name: member.name,
+        role: member.role || '',
 
-    if (!data) {
-      setTeam([]);
-      return;
-    }
+        type:
+          member.role === 'Vocalist'
+            ? 'vocal'
+            : member.role === 'Instrumentalist'
+              ? 'instrument'
+              : 'director',
 
-    const mappedTeam: TeamMember[] = data.map((member) => ({
-      id: member.id,
-      name: member.name,
-      role: member.role || '',
-      type:
-        member.role === 'Vocalist'
-          ? 'vocal'
-          : member.role === 'Instrumentalist'
-            ? 'instrument'
-            : 'director',
-      voicePart:
-        member.role === 'Vocalist'
-          ? member.instrument || undefined
-          : undefined,
-      instrumentType:
-        member.role === 'Instrumentalist'
-          ? member.instrument || undefined
-          : undefined,
-      phone: member.phone || undefined,
-      email: member.email || undefined,
-      isAvailable: true,
-      photoUrl: member.photo_url || undefined,
-canEdit: member.name === 'Daniel Antwi'
-    }));
+        voicePart:
+          member.role === 'Vocalist'
+            ? member.instrument || undefined
+            : undefined,
 
-    setTeam(mappedTeam);
-  };
+        instrumentType:
+          member.role === 'Instrumentalist'
+            ? member.instrument || undefined
+            : undefined,
 
-  loadTeamFromSupabase();
+        phone: member.phone || undefined,
+        email: member.email || undefined,
 
-}, []);
- 
+        isAvailable: true,
+
+        photoUrl: member.photo_url || undefined,
+
+        canEdit: member.name === 'Daniel Antwi'
+      }));
+
+      setTeam(mappedTeam);
+    };
+
+    loadTeamFromSupabase();
+  }, []);
 
   // ============================================================
   // SAVE MINISTRATIONS
@@ -345,19 +341,10 @@ canEdit: member.name === 'Daniel Antwi'
   }, [ministrations]);
 
   // ============================================================
-  // SAVE TEAM
-  // ============================================================
-
-  // ============================================================
-// TEAM IS SAVED DIRECTLY TO SUPABASE
-// ============================================================
-
-  // ============================================================
   // KEEP SELECTED MINISTRATION UPDATED
   // ============================================================
 
   useEffect(() => {
-
     if (!selectedMinistration) return;
 
     const refreshed = ministrations.find(
@@ -367,33 +354,180 @@ canEdit: member.name === 'Daniel Antwi'
     if (refreshed) {
       setSelectedMinistration(refreshed);
     }
-
   }, [ministrations, selectedMinistration]);
+
+  // ============================================================
+  // OPEN STAGE MODE
+  // ============================================================
+
+  const openStageMode = () => {
+    const stageMinistration =
+      selectedMinistration ||
+      ministrations.find(
+        m => m.status === 'Upcoming'
+      ) ||
+      ministrations[0] ||
+      null;
+
+    if (!stageMinistration) {
+      alert(
+        'No ministration is available for Stage Mode yet.'
+      );
+      return;
+    }
+
+    setSelectedMinistration(stageMinistration);
+    setIsStageModeOpen(true);
+  };
 
   // ============================================================
   // SONG BANK - SAVE SONG
   // ============================================================
 
   const handleSaveSong = async (
-  songData: Omit<Song, 'id'> & { id?: string },
-  audioFile?: File
-): Promise<void> => {
+    songData: Omit<Song, 'id'> & { id?: string },
+    audioFile?: File
+  ): Promise<void> => {
+    try {
+      // ==========================================================
+      // EDIT EXISTING SONG
+      // ==========================================================
 
-  try {
+      if (songData.id !== undefined) {
+        const { data, error } = await supabase
+          .from('songs')
+          .update({
+            title: songData.title,
+            artist: songData.artist,
+            category: songData.category,
+            song_key: songData.key,
+            original_key: songData.originalKey,
+            tempo: songData.tempo,
+            bpm: songData.bpm,
+            time_signature: songData.timeSignature,
+            icon: songData.icon,
+            lyrics: songData.lyrics,
+            chords: songData.chords,
+            arrangment: songData.arrangement,
+            instrument: songData.instruments,
+            md_notes: songData.mdNotes,
+            duration: songData.duration,
+            tags: songData.tags
+          })
+          .eq('id', songData.id)
+          .select()
+          .single();
 
-    // ============================================================
-    // EDIT EXISTING SONG
-    // ============================================================
+        if (error) {
+          console.error(
+            'Error updating song:',
+            error
+          );
 
-    if (songData.id !== undefined) {
+          alert(
+            'The song could not be updated. Please try again.'
+          );
 
-      // ----------------------------------------------------------
-      // 1. Update song metadata
-      // ----------------------------------------------------------
+          return;
+        }
+
+        let finalAudioUrl = data.audio_url;
+
+        // Upload replacement audio if provided.
+        if (audioFile) {
+          try {
+            finalAudioUrl = await saveAudioFile(
+              data.id,
+              audioFile
+            );
+
+            const {
+              error: audioUrlError
+            } = await supabase
+              .from('songs')
+              .update({
+                audio_url: finalAudioUrl
+              })
+              .eq('id', data.id);
+
+            if (audioUrlError) {
+              console.error(
+                'Error saving audio URL:',
+                audioUrlError
+              );
+
+              alert(
+                'The song was updated, but the audio URL could not be saved.'
+              );
+            }
+          } catch (audioError) {
+            console.error(
+              'Error uploading replacement audio:',
+              audioError
+            );
+
+            alert(
+              'The song was updated, but the new audio file could not be uploaded.'
+            );
+          }
+        }
+
+        const updatedSong: Song = {
+          id: data.id,
+          title: data.title,
+          artist: data.artist,
+          category: data.category,
+
+          key: data.song_key,
+          originalKey: data.original_key,
+
+          tempo: data.tempo,
+          bpm: data.bpm,
+
+          timeSignature: data.time_signature,
+
+          icon: data.icon,
+
+          audioUrl: finalAudioUrl,
+
+          lyrics: data.lyrics,
+          chords: data.chords,
+
+          arrangement: data.arrangment,
+          instruments: data.instrument,
+
+          mdNotes: data.md_notes,
+
+          duration: data.duration,
+          tags: data.tags,
+
+          createdAt: data.created_at
+        };
+
+        setSongs(prev =>
+          prev.map(song =>
+            song.id === updatedSong.id
+              ? updatedSong
+              : song
+          )
+        );
+
+        setSelectedSong(prev =>
+          prev && prev.id === updatedSong.id
+            ? updatedSong
+            : prev
+        );
+
+        return;
+      }
+
+      // ==========================================================
+      // ADD NEW SONG
+      // ==========================================================
 
       const { data, error } = await supabase
         .from('songs')
-        .update({
+        .insert({
           title: songData.title,
           artist: songData.artist,
           category: songData.category,
@@ -411,19 +545,17 @@ canEdit: member.name === 'Daniel Antwi'
           duration: songData.duration,
           tags: songData.tags
         })
-        .eq('id', songData.id)
         .select()
         .single();
 
       if (error) {
-
         console.error(
-          'Error updating song:',
+          'Error adding song:',
           error
         );
 
         alert(
-          'The song could not be updated. Please try again.'
+          'The song could not be added. Please try again.'
         );
 
         return;
@@ -431,20 +563,14 @@ canEdit: member.name === 'Daniel Antwi'
 
       let finalAudioUrl = data.audio_url;
 
-      // ----------------------------------------------------------
-      // 2. Upload replacement audio if provided
-      // ----------------------------------------------------------
-
+      // Upload audio using the new Supabase UUID.
       if (audioFile) {
-
         try {
-
           finalAudioUrl = await saveAudioFile(
             data.id,
             audioFile
           );
 
-          // Save the new public URL in Supabase.
           const {
             error: audioUrlError
           } = await supabase
@@ -455,35 +581,28 @@ canEdit: member.name === 'Daniel Antwi'
             .eq('id', data.id);
 
           if (audioUrlError) {
-
             console.error(
               'Error saving audio URL:',
               audioUrlError
             );
 
             alert(
-              'The song was updated, but the audio URL could not be saved.'
+              'The song was added, but its audio URL could not be saved.'
             );
           }
-
         } catch (audioError) {
-
           console.error(
-            'Error uploading replacement audio:',
+            'Audio could not be uploaded:',
             audioError
           );
 
           alert(
-            'The song was updated, but the new audio file could not be uploaded.'
+            'The song was added, but the audio file could not be uploaded.'
           );
         }
       }
 
-      // ----------------------------------------------------------
-      // 3. Build final song object
-      // ----------------------------------------------------------
-
-      const updatedSong: Song = {
+      const newSong: Song = {
         id: data.id,
         title: data.title,
         artist: data.artist,
@@ -515,401 +634,196 @@ canEdit: member.name === 'Daniel Antwi'
         createdAt: data.created_at
       };
 
-      // ----------------------------------------------------------
-      // 4. Update React state
-      // ----------------------------------------------------------
-
-      setSongs(prev =>
-        prev.map(song =>
-          song.id === updatedSong.id
-            ? updatedSong
-            : song
-        )
-      );
-
-      setSelectedSong(prev =>
-        prev && prev.id === updatedSong.id
-          ? updatedSong
-          : prev
-      );
-
-      console.log(
-        'Song updated successfully:',
-        updatedSong.title
-      );
-
-      return;
-    }
-
-    // ============================================================
-    // ADD NEW SONG
-    // ============================================================
-
-    // ------------------------------------------------------------
-    // 1. Create song metadata first.
-    // Supabase generates the UUID.
-    // ------------------------------------------------------------
-
-    const { data, error } = await supabase
-      .from('songs')
-      .insert({
-        title: songData.title,
-        artist: songData.artist,
-        category: songData.category,
-        song_key: songData.key,
-        original_key: songData.originalKey,
-        tempo: songData.tempo,
-        bpm: songData.bpm,
-        time_signature: songData.timeSignature,
-        icon: songData.icon,
-        lyrics: songData.lyrics,
-        chords: songData.chords,
-        arrangment: songData.arrangement,
-        instrument: songData.instruments,
-        md_notes: songData.mdNotes,
-        duration: songData.duration,
-        tags: songData.tags
-      })
-      .select()
-      .single();
-
-    if (error) {
-
+      setSongs(prev => [
+        newSong,
+        ...prev
+      ]);
+    } catch (error) {
       console.error(
-        'Error adding song:',
+        'Unexpected error while saving song:',
         error
       );
 
       alert(
-        'The song could not be added. Please try again.'
+        'The song could not be saved. Please try again.'
       );
-
-      return;
     }
+  };
 
-    // ------------------------------------------------------------
-    // 2. Upload audio using the new Supabase UUID.
-    // ------------------------------------------------------------
-
-    let finalAudioUrl = data.audio_url;
-
-    if (audioFile) {
-
-      try {
-
-        finalAudioUrl = await saveAudioFile(
-          data.id,
-          audioFile
-        );
-
-        // Save the public URL to the song record.
-        const {
-          error: audioUrlError
-        } = await supabase
-          .from('songs')
-          .update({
-            audio_url: finalAudioUrl
-          })
-          .eq('id', data.id);
-
-        if (audioUrlError) {
-
-          console.error(
-            'Error saving audio URL:',
-            audioUrlError
-          );
-
-          alert(
-            'The song was added, but its audio URL could not be saved.'
-          );
-        }
-
-      } catch (audioError) {
-
-        console.error(
-          'Audio could not be uploaded:',
-          audioError
-        );
-
-        alert(
-          'The song was added, but the audio file could not be uploaded.'
-        );
-      }
-    }
-
-    // ------------------------------------------------------------
-    // 3. Build final song object
-    // ------------------------------------------------------------
-
-    const newSong: Song = {
-      id: data.id,
-      title: data.title,
-      artist: data.artist,
-      category: data.category,
-
-      key: data.song_key,
-      originalKey: data.original_key,
-
-      tempo: data.tempo,
-      bpm: data.bpm,
-
-      timeSignature: data.time_signature,
-
-      icon: data.icon,
-
-      audioUrl: finalAudioUrl,
-
-      lyrics: data.lyrics,
-      chords: data.chords,
-
-      arrangement: data.arrangment,
-      instruments: data.instrument,
-
-      mdNotes: data.md_notes,
-
-      duration: data.duration,
-      tags: data.tags,
-
-      createdAt: data.created_at
-    };
-
-    // ------------------------------------------------------------
-    // 4. Add final song to React state
-    // ------------------------------------------------------------
-
-    setSongs(prev => [
-      newSong,
-      ...prev
-    ]);
-
-    console.log(
-      'Song added successfully:',
-      newSong.title
-    );
-
-  } catch (error) {
-
-    console.error(
-      'Unexpected error while saving song:',
-      error
-    );
-
-    alert(
-      'The song could not be saved. Please try again.'
-    );
-  }
-};
   // ============================================================
   // DELETE SONG
   // ============================================================
 
   const handleDeleteSong = async (
-  songId: string
-): Promise<void> => {
-
-  try {
-
-    // ----------------------------------------------------------
-    // 1. Delete the song's audio from Supabase Storage
-    // ----------------------------------------------------------
-
+    songId: string
+  ): Promise<void> => {
     try {
+      // Delete audio from Supabase Storage first.
+      try {
+        await deleteAudioFile(songId);
+      } catch (audioError) {
+        console.error(
+          'Error deleting song audio:',
+          audioError
+        );
+      }
 
-      await deleteAudioFile(songId);
+      // Delete song record.
+      const { error } = await supabase
+        .from('songs')
+        .delete()
+        .eq('id', songId);
 
-    } catch (audioError) {
+      if (error) {
+        console.error(
+          'Error deleting song:',
+          error
+        );
 
-      console.error(
-        'Error deleting song audio:',
-        audioError
+        alert(
+          'The song could not be deleted. Please try again.'
+        );
+
+        return;
+      }
+
+      setSongs(prev =>
+        prev.filter(song =>
+          song.id !== songId
+        )
       );
 
-      // Continue with song deletion even if the
-      // audio file could not be removed.
-    }
+      setMinistrations(prev =>
+        prev.map(ministration => ({
+          ...ministration,
 
-    // ----------------------------------------------------------
-    // 2. Delete the song record from Supabase
-    // ----------------------------------------------------------
+          songs:
+            ministration.songs.filter(
+              item =>
+                item.songId !== songId
+            )
+        }))
+      );
 
-    const { error } = await supabase
-      .from('songs')
-      .delete()
-      .eq('id', songId);
-
-    if (error) {
-
+      setSelectedSong(prev =>
+        prev && prev.id === songId
+          ? null
+          : prev
+      );
+    } catch (error) {
       console.error(
-        'Error deleting song:',
+        'Unexpected error while deleting song:',
         error
       );
 
       alert(
         'The song could not be deleted. Please try again.'
       );
-
-      return;
     }
+  };
 
-    // ----------------------------------------------------------
-    // 3. Remove song from React state
-    // ----------------------------------------------------------
+  // ============================================================
+  // TEAM - SAVE PHOTO
+  // ============================================================
 
-    setSongs(prev =>
-      prev.filter(song =>
-        song.id !== songId
-      )
-    );
+  const handlePhotoSelected = async (
+    member: TeamMember,
+    file: File
+  ): Promise<void> => {
+    try {
+      const fileExtension =
+        file.name.split('.').pop()?.toLowerCase() || 'jpg';
 
-    // ----------------------------------------------------------
-    // 4. Remove song from local ministration data
-    // ----------------------------------------------------------
+      const filePath =
+        `team-members/${member.id}-${Date.now()}.${fileExtension}`;
 
-    setMinistrations(prev =>
-      prev.map(ministration => ({
-        ...ministration,
+      const { error: uploadError } = await supabase.storage
+        .from('team-photos')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false,
+          contentType: file.type,
+        });
 
-        songs:
-          ministration.songs.filter(
-            item =>
-              item.songId !== songId
-          )
-      }))
-    );
+      if (uploadError) {
+        console.error(
+          'Could not upload team photo:',
+          uploadError
+        );
 
-    // ----------------------------------------------------------
-    // 5. Close selected song if necessary
-    // ----------------------------------------------------------
+        alert(
+          `Photo upload failed: ${uploadError.message}`
+        );
 
-    setSelectedSong(prev =>
-      prev && prev.id === songId
-        ? null
-        : prev
-    );
+        return;
+      }
 
-    console.log(
-      'Song deleted successfully:',
-      songId
-    );
+      const {
+        data: publicUrlData,
+      } = supabase.storage
+        .from('team-photos')
+        .getPublicUrl(filePath);
 
-  } catch (error) {
+      const photoUrl =
+        publicUrlData.publicUrl;
 
-    console.error(
-      'Unexpected error while deleting song:',
-      error
-    );
+      const { error: updateError } = await supabase
+        .from('team_members')
+        .update({
+          photo_url: photoUrl,
+        })
+        .eq('id', member.id);
 
-    alert(
-      'The song could not be deleted. Please try again.'
-    );
-  }
-};
+      if (updateError) {
+        console.error(
+          'Could not save team photo URL:',
+          updateError
+        );
+
+        alert(
+          `Photo was uploaded, but the database update failed: ${updateError.message}`
+        );
+
+        return;
+      }
+
+      setTeam(prev =>
+        prev.map(currentMember =>
+          currentMember.id === member.id
+            ? {
+                ...currentMember,
+                photoUrl,
+              }
+            : currentMember
+        )
+      );
+
+      alert(
+        `${member.name}'s photo has been updated successfully.`
+      );
+    } catch (error) {
+      console.error(
+        'Unexpected team photo upload error:',
+        error
+      );
+
+      alert(
+        'Something went wrong while uploading the photo.'
+      );
+    }
+  };
 
   // ============================================================
   // TEAM - SAVE MEMBER
   // ============================================================
-const handlePhotoSelected = async (
-  member: TeamMember,
-  file: File
-): Promise<void> => {
-  try {
-    console.log('Uploading team photo:', {
-      memberId: member.id,
-      memberName: member.name,
-      fileName: file.name,
-      fileType: file.type,
-      fileSize: file.size,
-    });
 
-    const fileExtension =
-      file.name.split('.').pop()?.toLowerCase() || 'jpg';
-
-    const filePath = `team-members/${member.id}-${Date.now()}.${fileExtension}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('team-photos')
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: false,
-        contentType: file.type,
-      });
-
-    if (uploadError) {
-      console.error(
-        'Could not upload team photo:',
-        uploadError
-      );
-      alert(
-        `Photo upload failed: ${uploadError.message}`
-      );
-      return;
-    }
-
-    const {
-      data: publicUrlData,
-    } = supabase.storage
-      .from('team-photos')
-      .getPublicUrl(filePath);
-
-    const photoUrl = publicUrlData.publicUrl;
-
-    const { error: updateError } = await supabase
-      .from('team_members')
-      .update({
-        photo_url: photoUrl,
-      })
-      .eq('id', member.id);
-
-    if (updateError) {
-      console.error(
-        'Could not save team photo URL:',
-        updateError
-      );
-      alert(
-        `Photo was uploaded, but the database update failed: ${updateError.message}`
-      );
-      return;
-    }
-
-    setTeam(prev =>
-      prev.map(currentMember =>
-        currentMember.id === member.id
-          ? {
-              ...currentMember,
-              photoUrl,
-            }
-          : currentMember
-      )
-    );
-
-    console.log(
-      'Team photo uploaded successfully:',
-      photoUrl
-    );
-
-    alert(
-      `${member.name}'s photo has been updated successfully.`
-    );
-  } catch (error) {
-    console.error(
-      'Unexpected team photo upload error:',
-      error
-    );
-
-    alert(
-      'Something went wrong while uploading the photo.'
-    );
-  }
-};
   const handleSaveMember = (
     memberData:
       Omit<TeamMember, 'id'> & {
         id?: number;
       }
   ): void => {
-
     if (memberData.id !== undefined) {
-
       const updatedMember: TeamMember = {
         ...memberData,
         id: memberData.id
@@ -922,9 +836,7 @@ const handlePhotoSelected = async (
             : member
         )
       );
-
     } else {
-
       const newMember: TeamMember = {
         ...memberData,
         id: Date.now()
@@ -944,7 +856,6 @@ const handlePhotoSelected = async (
   const handleDeleteMember = (
     memberId: number
   ): void => {
-
     setTeam(prev =>
       prev.filter(member =>
         member.id !== memberId
@@ -975,7 +886,6 @@ const handlePhotoSelected = async (
   const handleTogglePermission = (
     memberId: number
   ): void => {
-
     setTeam(prev =>
       prev.map(member =>
         member.id === memberId
@@ -995,7 +905,6 @@ const handlePhotoSelected = async (
   const handleUpdateMinistration = (
     updated: Ministration
   ): void => {
-
     setMinistrations(prev =>
       prev.map(ministration =>
         ministration.id === updated.id
@@ -1014,7 +923,6 @@ const handlePhotoSelected = async (
   const handleCreateMinistration = (
     newMinData: Omit<Ministration, 'id'>
   ): void => {
-
     const created: Ministration = {
       ...newMinData,
       id: Date.now()
@@ -1033,7 +941,6 @@ const handlePhotoSelected = async (
   // ============================================================
 
   const handleResetData = (): void => {
-
     const confirmed = window.confirm(
       'Reset all songs, ministrations, and team roster to initial church defaults?'
     );
@@ -1050,63 +957,57 @@ const handlePhotoSelected = async (
   // ============================================================
 
   return (
-    <div
-  className={`min-h-screen flex flex-col justify-between font-sans pb-12 sm:pb-16 transition-colors duration-300 ${
-    darkMode
-      ? 'text-white selection:bg-[#007aff]/30 selection:text-white'
-      : 'text-[#1d1d1f] selection:bg-[#007aff]/20 selection:text-[#007aff]'
-  }`}
->
+    <div className="min-h-screen flex flex-col font-sans text-white selection:bg-[#007aff]/30 selection:text-white">
+      {/* ======================================================
+          MD ADMIN PORTAL
+      ====================================================== */}
 
       {isMDPortalOpen ? (
+        <div className="min-h-screen">
+          {/* MD Portal Header */}
+          <div className="sticky top-0 z-40 px-3 pt-3 sm:px-5">
+            <div className="mx-auto flex max-w-7xl items-center justify-between rounded-[24px] border border-white/10 bg-white/[0.055] px-4 py-3 shadow-[0_15px_45px_rgba(0,0,0,0.22)] backdrop-blur-2xl sm:px-5">
+              <div className="min-w-0">
+                <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/35">
+                  Jewels Music Ministry
+                </p>
 
-        <div>
+                <div className="mt-1 flex items-center gap-2">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-blue-500/10 text-sm">
+                    🔐
+                  </span>
 
-          {/* ======================================================
-              MD ADMIN PORTAL
-          ====================================================== */}
+                  <h1 className="truncate text-sm font-extrabold tracking-tight text-white sm:text-base">
+                    MD Admin Portal
+                  </h1>
 
-          <div className="bg-[#1d1d1f] text-white px-4 py-3 flex items-center justify-between">
+                  <span className="hidden rounded-full border border-amber-400/15 bg-amber-400/10 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-amber-300 sm:inline-flex">
+                    Music Director
+                  </span>
+                </div>
+              </div>
 
-            <div>
+              <button
+                onClick={async () => {
+                  await supabase.auth.signOut({
+                    scope: 'local'
+                  });
 
-              <p className="text-xs uppercase tracking-wider text-gray-400">
-                Jewels Music Ministry
-              </p>
-
-              <h1 className="text-lg font-extrabold">
-                🔐 MD Admin Portal
-              </h1>
-
+                  setIsMDPortalOpen(false);
+                  setActiveRole('vocalist');
+                }}
+                className="rounded-xl border border-white/10 bg-white/[0.055] px-3.5 py-2 text-xs font-bold text-white/70 transition hover:border-white/15 hover:bg-white/[0.09] hover:text-white sm:px-4"
+              >
+                Logout
+              </button>
             </div>
-
-            <button
-              onClick={async () => {
-
-                await supabase.auth.signOut({
-                  scope: 'local'
-                });
-
-                setIsMDPortalOpen(false);
-                setActiveRole('vocalist');
-
-              }}
-              className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-sm font-bold transition"
-            >
-              Logout
-            </button>
-
           </div>
 
-          {/* ======================================================
-              MD ADMIN MUSIC HUB
-          ====================================================== */}
-
+          {/* MD Navigation */}
           <Navbar
             activeTab={activeTab}
             setActiveTab={setActiveTab}
             activeRole="admin_md"
-              
             onOpenMDLogin={() =>
               setShowMDLogin(true)
             }
@@ -1115,207 +1016,112 @@ const handlePhotoSelected = async (
             openToolsModal={() =>
               setIsToolsModalOpen(true)
             }
-            openStageMode={() => {
-  const stageMinistration =
-    selectedMinistration ||
-    ministrations.find(
-      m => m.status === 'Upcoming'
-    ) ||
-    ministrations[0] ||
-    null;
-
-  if (!stageMinistration) {
-    alert('No ministration is available for Stage Mode yet.');
-    return;
-  }
-
-  setSelectedMinistration(stageMinistration);
-  setIsStageModeOpen(true);
-}}
+            openStageMode={openStageMode}
           />
 
-          {/* ======================================================
-              MAIN CONTENT
-          ====================================================== */}
-
-          <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-2">
-
-            {/* HOME */}
-
+          {/* Main Content */}
+          <main className="mx-auto max-w-7xl px-4 pt-2 sm:px-6">
             {activeTab === 'home' && (
-
               <DashboardView
                 songs={songs}
                 ministrations={ministrations}
                 team={team}
                 activeRole="admin_md"
                 setActiveTab={setActiveTab}
-
                 onSelectSong={song =>
                   setSelectedSong(song)
                 }
-
                 onSelectMinistration={ministration => {
                   setSelectedMinistration(ministration);
                   setActiveTab('ministrations');
                 }}
-
                 openToolsModal={() =>
                   setIsToolsModalOpen(true)
                 }
-
-                openStageMode={() => {
-  const stageMinistration =
-    selectedMinistration ||
-    ministrations.find(
-      m => m.status === 'Upcoming'
-    ) ||
-    ministrations[0] ||
-    null;
-
-  if (!stageMinistration) {
-    alert('No ministration is available for Stage Mode yet.');
-    return;
-  }
-
-  setSelectedMinistration(stageMinistration);
-  setIsStageModeOpen(true);
-}}
+                openStageMode={openStageMode}
               />
-
             )}
 
-            {/* SONG BANK */}
-
             {activeTab === 'songs' && (
-
               <SongBankView
                 songs={songs}
                 activeRole="admin_md"
-
                 onSelectSong={song =>
                   setSelectedSong(song)
                 }
-
                 onAddNewSong={() => {
                   setEditingSong(null);
                   setIsAddEditSongOpen(true);
                 }}
-
                 onEditSong={song => {
                   setEditingSong(song);
                   setIsAddEditSongOpen(true);
                 }}
-
                 onDeleteSong={handleDeleteSong}
               />
-
             )}
 
-            {/* MINISTRATIONS */}
-
             {activeTab === 'ministrations' && (
-
               <MinistrationsView
                 ministrations={ministrations}
                 songs={songs}
                 team={team}
                 activeRole="admin_md"
                 selectedMinistration={selectedMinistration}
-
                 onSelectMinistration={ministration =>
                   setSelectedMinistration(ministration)
                 }
-
                 onUpdateMinistration={
                   handleUpdateMinistration
                 }
-
                 onCreateMinistration={
                   handleCreateMinistration
                 }
-
                 onSelectSong={song =>
                   setSelectedSong(song)
                 }
-
-                openStageMode={() => {
-  const stageMinistration =
-    selectedMinistration ||
-    ministrations.find(
-      m => m.status === 'Upcoming'
-    ) ||
-    ministrations[0] ||
-    null;
-
-  if (!stageMinistration) {
-    alert('No ministration is available for Stage Mode yet.');
-    return;
-  }
-
-  setSelectedMinistration(stageMinistration);
-  setIsStageModeOpen(true);
-}}
+                openStageMode={openStageMode}
               />
-
             )}
 
-            {/* MUSIC TEAM */}
-
             {activeTab === 'team' && (
-
               <MusicTeamView
                 team={team}
                 activeRole="admin_md"
                 onPhotoSelected={handlePhotoSelected}
-
                 onAddNewMember={() => {
                   setEditingMember(null);
                   setIsAddEditMemberOpen(true);
                 }}
-
                 onEditMember={member => {
                   setEditingMember(member);
                   setIsAddEditMemberOpen(true);
                 }}
-
                 onDeleteMember={
                   handleDeleteMember
                 }
-
                 onTogglePermission={
                   handleTogglePermission
                 }
               />
-
             )}
-
           </main>
-
         </div>
-
       ) : showMDLogin ? (
-
         <MDLogin
           onLoginSuccess={() => {
             setShowMDLogin(false);
           }}
         />
-
       ) : (
-
-        <div>
-
-          {/* ======================================================
-              NAVIGATION
-          ====================================================== */}
-
+        <div className="min-h-screen">
+          {/* Navigation */}
           <Navbar
             activeTab={activeTab}
             setActiveTab={setActiveTab}
             activeRole={activeRole}
-              darkMode={darkMode}
-             setDarkMode={setDarkMode}
+            darkMode={darkMode}
+            setDarkMode={setDarkMode}
             onOpenMDLogin={() =>
               setShowMDLogin(true)
             }
@@ -1324,185 +1130,97 @@ const handlePhotoSelected = async (
             openToolsModal={() =>
               setIsToolsModalOpen(true)
             }
-            openStageMode={() => {
-  const stageMinistration =
-    selectedMinistration ||
-    ministrations.find(
-      m => m.status === 'Upcoming'
-    ) ||
-    ministrations[0] ||
-    null;
-
-  if (!stageMinistration) {
-    alert('No ministration is available for Stage Mode yet.');
-    return;
-  }
-
-  setSelectedMinistration(stageMinistration);
-  setIsStageModeOpen(true);
-}}
+            openStageMode={openStageMode}
           />
 
-          {/* ======================================================
-              MAIN CONTENT
-          ====================================================== */}
-
-          <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-2">
-
-            {/* HOME */}
-
+          {/* Main Content */}
+          <main className="mx-auto max-w-7xl px-4 pt-2 sm:px-6">
             {activeTab === 'home' && (
-
               <DashboardView
                 songs={songs}
                 ministrations={ministrations}
                 team={team}
                 activeRole={activeRole}
                 setActiveTab={setActiveTab}
-
                 onSelectSong={song =>
                   setSelectedSong(song)
                 }
-
                 onSelectMinistration={ministration => {
                   setSelectedMinistration(ministration);
                   setActiveTab('ministrations');
                 }}
-
                 openToolsModal={() =>
                   setIsToolsModalOpen(true)
                 }
-
-               openStageMode={() => {
-  const stageMinistration =
-    selectedMinistration ||
-    ministrations.find(
-      m => m.status === 'Upcoming'
-    ) ||
-    ministrations[0] ||
-    null;
-
-  if (!stageMinistration) {
-    alert('No ministration is available for Stage Mode yet.');
-    return;
-  }
-
-  setSelectedMinistration(stageMinistration);
-  setIsStageModeOpen(true);
-}}
+                openStageMode={openStageMode}
               />
-
             )}
 
-            {/* SONG BANK */}
-
             {activeTab === 'songs' && (
-
               <SongBankView
                 songs={songs}
                 activeRole={activeRole}
-
                 onSelectSong={song =>
                   setSelectedSong(song)
                 }
-
                 onAddNewSong={() => {
                   setEditingSong(null);
                   setIsAddEditSongOpen(true);
                 }}
-
                 onEditSong={song => {
                   setEditingSong(song);
                   setIsAddEditSongOpen(true);
                 }}
-
                 onDeleteSong={handleDeleteSong}
               />
-
             )}
 
-            {/* MINISTRATIONS */}
-
             {activeTab === 'ministrations' && (
-
               <MinistrationsView
                 ministrations={ministrations}
                 songs={songs}
                 team={team}
                 activeRole={activeRole}
                 selectedMinistration={selectedMinistration}
-
                 onSelectMinistration={ministration =>
                   setSelectedMinistration(ministration)
                 }
-
                 onUpdateMinistration={
                   handleUpdateMinistration
                 }
-
                 onCreateMinistration={
                   handleCreateMinistration
                 }
-
                 onSelectSong={song =>
                   setSelectedSong(song)
                 }
-
-                openStageMode={() => {
-  const stageMinistration =
-    selectedMinistration ||
-    ministrations.find(
-      m => m.status === 'Upcoming'
-    ) ||
-    ministrations[0] ||
-    null;
-
-  if (!stageMinistration) {
-    alert('No ministration is available for Stage Mode yet.');
-    return;
-  }
-
-  setSelectedMinistration(stageMinistration);
-  setIsStageModeOpen(true);
-}}
+                openStageMode={openStageMode}
               />
-
             )}
 
-            {/* MUSIC TEAM */}
-
             {activeTab === 'team' && (
-
               <MusicTeamView
                 team={team}
                 activeRole={activeRole}
                 onPhotoSelected={handlePhotoSelected}
-
                 onAddNewMember={() => {
                   setEditingMember(null);
                   setIsAddEditMemberOpen(true);
                 }}
-
                 onEditMember={member => {
                   setEditingMember(member);
                   setIsAddEditMemberOpen(true);
                 }}
-
                 onDeleteMember={
                   handleDeleteMember
                 }
-
                 onTogglePermission={
                   handleTogglePermission
                 }
               />
-
             )}
-
           </main>
-
         </div>
-
       )}
 
       {/* ========================================================
@@ -1510,44 +1228,35 @@ const handlePhotoSelected = async (
       ======================================================== */}
 
       {selectedMinistration && (
-
-        <div className="hidden print-only p-8 text-black bg-white">
-
-          <div className="border-b-2 border-black pb-4 mb-6">
-
+        <div className="hidden print-only bg-white p-8 text-black">
+          <div className="mb-6 border-b-2 border-black pb-4">
             <h1 className="text-3xl font-extrabold">
               {selectedMinistration.name}
             </h1>
 
-            <p className="text-base text-gray-700 mt-1">
-              Jewels Music Ministry • Date: {selectedMinistration.date}
+            <p className="mt-1 text-base text-gray-700">
+              Jewels Music Ministry • Date:{' '}
+              {selectedMinistration.date}
 
               {selectedMinistration.time ? (
                 <> • {selectedMinistration.time}</>
               ) : null}
-
             </p>
 
             {selectedMinistration.venue && (
-
               <p className="text-sm text-gray-600">
                 Venue: {selectedMinistration.venue}
               </p>
-
             )}
-
           </div>
 
-          <h2 className="text-xl font-bold mb-4">
+          <h2 className="mb-4 text-xl font-bold">
             Official Service Setlist & Vocal Allocations
           </h2>
 
           <table className="w-full border-collapse border border-gray-400 text-sm">
-
             <thead>
-
               <tr className="bg-gray-100">
-
                 <th className="border border-gray-400 p-2 text-left">
                   #
                 </th>
@@ -1571,16 +1280,12 @@ const handlePhotoSelected = async (
                 <th className="border border-gray-400 p-2 text-left">
                   Transition Cue
                 </th>
-
               </tr>
-
             </thead>
 
             <tbody>
-
               {selectedMinistration.songs.map(
                 (item, index) => {
-
                   const song =
                     songs.find(
                       s =>
@@ -1594,9 +1299,7 @@ const handlePhotoSelected = async (
                     );
 
                   return (
-
                     <tr key={item.songId}>
-
                       <td className="border border-gray-400 p-2 font-bold">
                         {index + 1}
                       </td>
@@ -1614,46 +1317,33 @@ const handlePhotoSelected = async (
                       </td>
 
                       <td className="border border-gray-400 p-2 font-bold">
-
                         {lead
                           ? lead.name
                           : 'Unassigned'}
-
                       </td>
 
                       <td className="border border-gray-400 p-2">
                         {item.orderNote || '—'}
                       </td>
-
                     </tr>
-
                   );
-
                 }
               )}
-
             </tbody>
-
           </table>
 
           {selectedMinistration.mdGlobalNotes && (
-
-            <div className="mt-6 p-4 border border-gray-400">
-
-              <h3 className="font-bold text-sm">
+            <div className="mt-6 border border-gray-400 p-4">
+              <h3 className="text-sm font-bold">
                 Music Director Directives:
               </h3>
 
-              <p className="text-xs mt-1">
+              <p className="mt-1 text-xs">
                 {selectedMinistration.mdGlobalNotes}
               </p>
-
             </div>
-
           )}
-
         </div>
-
       )}
 
       {/* ========================================================
@@ -1663,39 +1353,28 @@ const handlePhotoSelected = async (
       <SongDetailModal
         song={selectedSong}
         isOpen={!!selectedSong}
-
         onClose={() =>
           setSelectedSong(null)
         }
-
         activeRole={activeRole}
-
         onEdit={song => {
           setSelectedSong(null);
           setEditingSong(song);
           setIsAddEditSongOpen(true);
         }}
-
         onDelete={handleDeleteSong}
       />
 
-      {/* ========================================================
-          ADD / EDIT SONG
-      ======================================================== */}
-
       <AddEditSongModal
         isOpen={isAddEditSongOpen}
-
         onClose={() => {
           setIsAddEditSongOpen(false);
           setEditingSong(null);
         }}
-
         onSave={async (
           songData,
           audioFile
         ) => {
-
           await handleSaveSong(
             songData,
             audioFile
@@ -1703,111 +1382,71 @@ const handlePhotoSelected = async (
 
           setIsAddEditSongOpen(false);
           setEditingSong(null);
-
         }}
-
         editingSong={editingSong}
       />
 
-      {/* ========================================================
-          ADD / EDIT MEMBER
-      ======================================================== */}
-
       <AddEditMemberModal
         isOpen={isAddEditMemberOpen}
-
         onClose={() => {
           setIsAddEditMemberOpen(false);
           setEditingMember(null);
         }}
-
         onSave={handleSaveMember}
-
         editingMember={editingMember}
       />
 
-      {/* ========================================================
-          TOOLS
-      ======================================================== */}
-
       <ToolsModal
         isOpen={isToolsModalOpen}
-
         onClose={() =>
           setIsToolsModalOpen(false)
         }
       />
 
-      {/* ========================================================
-          STAGE REHEARSAL
-      ======================================================== */}
-
       {selectedMinistration && (
-  <>
-    {console.log(
-      'STAGE MODAL RENDER:',
-      isStageModeOpen,
-      selectedMinistration.name
-    )}
-
-    <StageRehearsalModal
+        <StageRehearsalModal
           isOpen={isStageModeOpen}
-
           onClose={() =>
             setIsStageModeOpen(false)
           }
-
-          ministration={
-            selectedMinistration
-          }
-
+          ministration={selectedMinistration}
           songs={songs}
-
           team={team}
         />
-      </>
       )}
 
       {/* ========================================================
           FOOTER
       ======================================================== */}
 
-      <footer className="mt-16 text-center text-xs text-[#86868b] space-y-2 no-print">
-
-        <div className="flex items-center justify-center gap-1 font-semibold">
-
-          <span>
+      <footer className="mx-auto mt-auto w-full max-w-7xl px-4 pb-8 pt-16 text-center text-xs text-white/35 no-print sm:px-6">
+        <div className="flex items-center justify-center gap-2 font-semibold">
+          <span className="text-white/60">
             Jewels Music Hub
           </span>
 
-          <span>•</span>
+          <span className="text-white/20">•</span>
 
           <span>
             Music • Excellence • Service
           </span>
-
         </div>
 
-        <div className="flex items-center justify-center gap-3 text-[11px]">
-
+        <div className="mt-2 flex flex-wrap items-center justify-center gap-3 text-[11px]">
           <span>
             Jewels Music Ministry Portal
           </span>
 
-          <span>•</span>
+          <span className="text-white/15">•</span>
 
           <button
             onClick={handleResetData}
-            className="text-[#86868b] hover:text-rose-600 underline transition-colors"
+            className="text-white/30 underline decoration-white/10 underline-offset-2 transition hover:text-rose-400"
           >
             Reset Defaults
           </button>
-
         </div>
-
       </footer>
-
     </div>
   );
 }
-
