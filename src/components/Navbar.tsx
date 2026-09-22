@@ -133,25 +133,32 @@ export const Navbar: React.FC<NavbarProps> = ({
       "
     >
       <nav
-        className="
-          mx-auto
-          flex
-          w-full
-          min-w-0
-          max-w-7xl
-          items-center
-          gap-1.5
-          overflow-x-auto
-          rounded-[28px]
-          border
-          border-white/10
-          bg-[#111113]/90
-          p-2
-          backdrop-blur-2xl
-          sm:gap-2
-          scrollbar-hide
-        "
-      >
+  className="
+    mx-auto
+    w-full
+    max-w-7xl
+    overflow-x-auto
+    overflow-y-visible
+    rounded-[28px]
+    border
+    border-white/10
+    bg-[#111113]/90
+    p-2
+    backdrop-blur-2xl
+    sm:overflow-visible
+  "
+>
+  <div
+    className="
+      flex
+      min-w-max
+      items-center
+      gap-1.5
+      sm:w-full
+      sm:min-w-0
+      sm:gap-2
+    "
+  >
 
         {/* BRAND */}
 
