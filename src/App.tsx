@@ -1020,7 +1020,7 @@ export default function App() {
           />
 
           {/* Main Content */}
-          <main className="mx-auto max-w-7xl px-4 pt-2 sm:px-6">
+          <main className="mx-auto w-full min-w-0 max-w-7xl overflow-visible px-4 pt-2 sm:px-6">
             {activeTab === 'home' && (
               <DashboardView
                 songs={songs}
@@ -1134,7 +1134,7 @@ export default function App() {
           />
 
           {/* Main Content */}
-          <main className="mx-auto max-w-7xl px-4 pt-2 sm:px-6">
+          <main className="mx-auto w-full min-w-0 max-w-7xl overflow-visible px-4 pt-2 sm:px-6">
             {activeTab === 'home' && (
               <DashboardView
                 songs={songs}
