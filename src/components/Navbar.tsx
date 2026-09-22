@@ -141,7 +141,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           max-w-7xl
           items-center
           gap-1.5
-          overflow-hidden
+          overflow-x-auto
           rounded-[28px]
           border
           border-white/10
@@ -149,6 +149,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           p-2
           backdrop-blur-2xl
           sm:gap-2
+          scrollbar-hide
         "
       >
 
@@ -242,17 +243,16 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </button>
 
-
         {/* NAVIGATION */}
 
         <div
           className="
             flex
-            min-w-0
-            shrink
+            min-w-max
+            shrink-0
             items-center
             gap-1
-            overflow-hidden
+            overflow-visible
             rounded-2xl
             border
             border-white/10
@@ -280,7 +280,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               Home
             </span>
           </button>
-
 
           {/* SONG BANK */}
 
@@ -318,7 +317,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             </span>
           </button>
 
-
           {/* MINISTRATIONS */}
 
           <button
@@ -340,7 +338,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               Ministrations
             </span>
           </button>
-
 
           {/* MUSIC TEAM */}
 
@@ -379,7 +376,6 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
 
         </div>
-
 
         {/* RIGHT ACTIONS */}
 
@@ -435,7 +431,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             </span>
           </button>
 
-
           {/* STAGE VIEW */}
 
           <button
@@ -472,7 +467,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               Stage View
             </span>
           </button>
-
 
           {/* ROLE SWITCHER */}
 
@@ -574,7 +568,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                 "
               />
             </button>
-
 
             {/* ROLE DROPDOWN */}
 
@@ -685,7 +678,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                       </p>
                     </div>
                   </button>
-
 
                   {/* MD ADMIN */}
 
