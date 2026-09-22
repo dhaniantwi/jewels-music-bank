@@ -1,13 +1,21 @@
 import React from 'react';
+
 import {
   ActiveTab,
   ActiveRole,
-  TeamMember
+  TeamMember,
 } from '../types';
+
 import {
   Radio,
   Wrench,
-  ChevronDown
+  ChevronDown,
+  Home,
+  Music2,
+  ClipboardList,
+  Users,
+  ShieldCheck,
+  Globe2,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -66,187 +74,196 @@ export const Navbar: React.FC<NavbarProps> = ({
     id: ActiveRole;
     label: string;
     desc: string;
-    icon: string;
     badge: string;
   }[] = [
     {
       id: 'admin_md',
       label: 'Daniel Antwi',
       desc: 'Music Director & Lead Admin (Full Control)',
-      icon: '🎼',
-      badge: 'MD & Admin'
+      badge: 'MD & Admin',
     },
     {
       id: 'vocal_member',
       label: 'Priscilla Mensah',
       desc: 'Vocal Team Member (View & Rehearse)',
-      icon: '🎤',
-      badge: 'Vocalist'
+      badge: 'Vocalist',
     },
     {
       id: 'instrumentalist',
       label: 'Joshua Boateng',
       desc: 'Instrumentalist / Band Member',
-      icon: '🎹',
-      badge: 'Band'
+      badge: 'Band',
     },
     {
       id: 'guest',
       label: 'Choir / Church Member',
       desc: 'Read-only viewer mode',
-      icon: '👤',
-      badge: 'Viewer'
-    }
+      badge: 'Viewer',
+    },
   ];
 
   const currentRoleObj =
     roleOptions.find(
-      r => r.id === activeRole
+      role => role.id === activeRole
     ) || roleOptions[0];
 
+  const navButtonBase =
+    'flex items-center gap-1.5 rounded-2xl border px-3 py-2 text-xs font-semibold transition-colors';
+
+  const navButtonInactive =
+    `${navButtonBase} border-white/5 bg-white/[0.035] text-white/55 hover:bg-white/[0.08]`;
+
+  const navButtonActive =
+    `${navButtonBase} border-[#007aff]/30 bg-[#007aff]/15 text-[#4da3ff]`;
+
   return (
-    <header className="sticky top-3 z-40 w-full px-3 sm:px-6 max-w-7xl mx-auto mb-4 no-print">
+    <header
+      className="
+        sticky
+        top-3
+        z-40
+        mb-4
+        w-full
+        px-3
+        sm:px-6
+        no-print
+      "
+    >
 
       <nav
         className="
-          bg-white/[0.045]
-          backdrop-blur-2xl
-          border border-white/10
-          rounded-[26px]
-          p-2 sm:p-2.5
-          flex items-center justify-between
+          mx-auto
+          flex
+          max-w-7xl
+          items-center
+          justify-between
           gap-2
-          shadow-2xl
-          shadow-black/30
+          rounded-[28px]
+          border
+          border-white/10
+          bg-[#111113]/90
+          p-2
+          backdrop-blur-2xl
         "
       >
 
-        {/* =====================================================
-            BRAND
-        ====================================================== */}
+        {/* BRAND */}
 
         <button
+          type="button"
           onClick={() => setActiveTab('home')}
           className="
-            flex items-center
+            flex
+            items-center
             gap-2.5
-            px-2.5
-            py-1.5
             rounded-2xl
-            hover:bg-white/10
-            transition-all
+            border
+            border-white/5
+            bg-white/[0.035]
+            px-2.5
+            py-2
             text-left
-            group
+            transition-colors
+            hover:bg-white/[0.08]
           "
         >
 
           <div
             className="
-              w-10 h-10
-              rounded-xl
-              bg-gradient-to-tr
-              from-[#007aff]
-              to-[#7c3aed]
-              flex items-center
+              flex
+              h-10
+              w-10
+              shrink-0
+              items-center
               justify-center
-              text-white
-              shadow-lg
-              shadow-[#007aff]/20
-              group-hover:scale-105
-              transition-transform
+              rounded-2xl
+              border
+              border-white/10
+              bg-[#007aff]/15
+              text-[#4da3ff]
             "
           >
-            <span className="text-xl">
-              🎼
-            </span>
+            <Music2 className="h-5 w-5" />
           </div>
 
           <div className="hidden sm:block">
 
-            <h1
+            <div
               className="
-                font-bold
-                text-[15px]
-                tracking-tight
-                leading-tight
-                text-white
-                flex items-center
+                flex
+                items-center
                 gap-1.5
+                text-[15px]
+                font-bold
+                leading-tight
+                tracking-tight
+                text-white
               "
             >
               Jewels Music Hub
 
               <span
                 className="
-                  text-[10px]
-                  uppercase
-                  font-extrabold
-                  tracking-wider
+                  rounded-full
+                  border
+                  border-[#007aff]/20
                   bg-[#007aff]/15
-                  text-[#4da3ff]
                   px-1.5
                   py-0.5
-                  rounded-full
+                  text-[9px]
+                  font-extrabold
+                  uppercase
+                  tracking-wider
+                  text-[#4da3ff]
                 "
               >
                 Portal
               </span>
-            </h1>
+            </div>
 
             <p
               className="
-                text-[11px]
-                text-white/40
-                font-medium
-                leading-none
                 mt-0.5
+                text-[11px]
+                leading-none
+                text-white/40
               "
             >
               Music Ministry Management
             </p>
 
           </div>
+
         </button>
 
 
-        {/* =====================================================
-            NAVIGATION TABS
-        ====================================================== */}
+        {/* NAVIGATION */}
 
         <div
           className="
-            flex items-center
-            bg-white/[0.05]
-            border border-white/10
-            p-1
-            rounded-2xl
+            flex
+            items-center
             gap-1
+            rounded-2xl
+            border
+            border-white/10
+            bg-white/[0.045]
+            p-1
           "
         >
 
           {/* HOME */}
 
           <button
+            type="button"
             onClick={() => setActiveTab('home')}
-            className={`
-              px-3
-              py-1.5
-              rounded-xl
-              text-xs
-              sm:text-[13px]
-              font-semibold
-              transition-all
-              flex items-center
-              gap-1.5
-
-              ${
-                activeTab === 'home'
-                  ? 'bg-white/10 text-white shadow-sm'
-                  : 'text-white/50 hover:text-white hover:bg-white/10'
-              }
-            `}
+            className={
+              activeTab === 'home'
+                ? navButtonActive
+                : navButtonInactive
+            }
           >
-            <span>🏠</span>
+            <Home className="h-3.5 w-3.5" />
 
             <span className="hidden md:inline">
               Home
@@ -257,27 +274,15 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* SONG BANK */}
 
           <button
+            type="button"
             onClick={() => setActiveTab('songs')}
-            className={`
-              px-3
-              py-1.5
-              rounded-xl
-              text-xs
-              sm:text-[13px]
-              font-semibold
-              transition-all
-              flex items-center
-              gap-1.5
-
-              ${
-                activeTab === 'songs'
-                  ? 'bg-white/10 text-[#4da3ff] shadow-sm'
-                  : 'text-white/50 hover:text-white hover:bg-white/10'
-              }
-            `}
+            className={
+              activeTab === 'songs'
+                ? navButtonActive
+                : navButtonInactive
+            }
           >
-
-            <span>🎵</span>
+            <Music2 className="h-3.5 w-3.5" />
 
             <span>
               Song Bank
@@ -285,145 +290,119 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             <span
               className="
-                text-[10px]
-                px-1.5
-                py-0.2
                 rounded-full
+                border
+                border-[#007aff]/20
                 bg-[#007aff]/15
-                text-[#4da3ff]
+                px-1.5
+                py-0.5
+                text-[10px]
                 font-bold
+                text-[#4da3ff]
               "
             >
               {songsCount}
             </span>
-
           </button>
 
 
           {/* MINISTRATIONS */}
 
           <button
+            type="button"
             onClick={() =>
               setActiveTab('ministrations')
             }
-            className={`
-              px-3
-              py-1.5
-              rounded-xl
-              text-xs
-              sm:text-[13px]
-              font-semibold
-              transition-all
-              flex items-center
-              gap-1.5
-
-              ${
-                activeTab === 'ministrations'
-                  ? 'bg-white/10 text-[#a78bfa] shadow-sm'
-                  : 'text-white/50 hover:text-white hover:bg-white/10'
-              }
-            `}
+            className={
+              activeTab === 'ministrations'
+                ? navButtonActive
+                : navButtonInactive
+            }
           >
+            <ClipboardList className="h-3.5 w-3.5" />
 
-            <span>📋</span>
-
-            <span>
+            <span className="hidden lg:inline">
               Ministrations
             </span>
-
           </button>
 
 
           {/* MUSIC TEAM */}
 
           <button
+            type="button"
             onClick={() => setActiveTab('team')}
-            className={`
-              px-3
-              py-1.5
-              rounded-xl
-              text-xs
-              sm:text-[13px]
-              font-semibold
-              transition-all
-              flex items-center
-              gap-1.5
-
-              ${
-                activeTab === 'team'
-                  ? 'bg-white/10 text-white shadow-sm'
-                  : 'text-white/50 hover:text-white hover:bg-white/10'
-              }
-            `}
+            className={
+              activeTab === 'team'
+                ? navButtonActive
+                : navButtonInactive
+            }
           >
+            <Users className="h-3.5 w-3.5" />
 
-            <span>👥</span>
-
-            <span>
+            <span className="hidden lg:inline">
               Music Team
             </span>
 
             <span
               className="
-                text-[10px]
-                px-1.5
-                py-0.2
                 rounded-full
-                bg-white/10
-                text-white/50
+                border
+                border-white/5
+                bg-white/[0.035]
+                px-1.5
+                py-0.5
+                text-[10px]
                 font-bold
+                text-white/55
               "
             >
               {team.length}
             </span>
-
           </button>
 
         </div>
 
 
-        {/* =====================================================
-            RIGHT ACTIONS
-        ====================================================== */}
+        {/* RIGHT ACTIONS */}
 
         <div
           className="
-            flex items-center
+            flex
+            items-center
             gap-1.5
             sm:gap-2
           "
         >
 
-          {/* =================================================
-              TOOLS
-          ================================================== */}
+          {/* TOOLS */}
 
           <button
+            type="button"
             onClick={openToolsModal}
             title="Music Director Rehearsal Tools"
             className="
-              h-9
+              flex
+              h-10
+              items-center
+              gap-1.5
+              rounded-2xl
+              border
+              border-white/5
+              bg-white/[0.035]
               px-2.5
-              sm:px-3
-              rounded-xl
-              bg-white/[0.06]
-              border border-white/10
-              hover:bg-white/10
-              text-white
               text-xs
               font-semibold
-              flex items-center
-              gap-1.5
-              transition-all
-              shadow-sm
-              active:scale-95
+              text-white/80
+              transition-colors
+              hover:bg-white/[0.08]
+              sm:px-3
             "
           >
-
             <Wrench
               className="
-                w-3.5
                 h-3.5
+                w-3.5
                 text-[#4da3ff]
               "
             />
@@ -431,55 +410,42 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span className="hidden lg:inline">
               Tools
             </span>
-
           </button>
 
 
-          {/* =================================================
-              STAGE MODE
-          ================================================== */}
+          {/* STAGE VIEW */}
 
           <button
+            type="button"
             onClick={openStageMode}
             title="Launch Stage & Live Rehearsal Mode"
             className="
-              h-9
-              px-2.5
-              sm:px-3
-              rounded-xl
+              flex
+              h-10
+              items-center
+              gap-1.5
+              rounded-2xl
               bg-[#007aff]
-              hover:bg-[#007aff]/90
-              text-white
+              px-3
               text-xs
               font-semibold
-              flex items-center
-              gap-1.5
-              transition-all
-              shadow-lg
-              shadow-[#007aff]/20
+              text-white
+              shadow-xl
+              shadow-blue-500/20
+              transition-colors
+              hover:bg-[#0062cc]
               active:scale-95
             "
           >
-
-            <Radio
-              className="
-                w-3.5
-                h-3.5
-                text-[#ff9500]
-                animate-pulse
-              "
-            />
+            <Radio className="h-3.5 w-3.5" />
 
             <span className="hidden md:inline">
               Stage View
             </span>
-
           </button>
 
 
-          {/* =================================================
-              ROLE SWITCHER
-          ================================================== */}
+          {/* ROLE SWITCHER */}
 
           <div
             className="relative"
@@ -487,41 +453,61 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
 
             <button
+              type="button"
               onClick={() =>
                 setRoleDropdownOpen(
                   !roleDropdownOpen
                 )
               }
               className={`
-                h-9
-                px-2
-                sm:px-3
-                rounded-xl
-                flex items-center
+                flex
+                h-10
+                items-center
                 gap-1.5
-                text-xs
-                font-bold
-                transition-all
+                rounded-2xl
                 border
+                px-2.5
+                text-xs
+                font-semibold
+                transition-colors
+                sm:px-3
 
                 ${
                   isMD
-                    ? 'bg-amber-500/10 text-amber-300 border-amber-500/20 hover:bg-amber-500/15'
-                    : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/10'
+                    ? `
+                      border-amber-500/20
+                      bg-amber-500/15
+                      text-amber-300
+                      hover:bg-amber-500/20
+                    `
+                    : `
+                      border-white/5
+                      bg-white/[0.035]
+                      text-white/55
+                      hover:bg-white/[0.08]
+                    `
                 }
               `}
             >
 
-              <span>
-                {currentRoleObj.icon}
-              </span>
+              <ShieldCheck
+                className={`
+                  h-3.5
+                  w-3.5
+                  ${
+                    isMD
+                      ? 'text-amber-300'
+                      : 'text-white/45'
+                  }
+                `}
+              />
 
               <span
                 className="
                   hidden
-                  xl:inline
                   max-w-[110px]
                   truncate
+                  xl:inline
                 "
               >
                 {currentRoleObj.label}
@@ -529,11 +515,14 @@ export const Navbar: React.FC<NavbarProps> = ({
 
               <span
                 className="
-                  text-[10px]
+                  rounded-full
+                  border
+                  border-white/5
+                  bg-white/[0.035]
                   px-1.5
                   py-0.5
-                  rounded-full
-                  bg-white/10
+                  text-[10px]
+                  text-white/55
                 "
               >
                 {currentRoleObj.badge}
@@ -541,48 +530,41 @@ export const Navbar: React.FC<NavbarProps> = ({
 
               <ChevronDown
                 className="
-                  w-3
                   h-3
-                  opacity-60
+                  w-3
+                  text-white/40
                 "
               />
 
             </button>
 
 
-            {/* =================================================
-                ROLE DROPDOWN
-            ================================================== */}
+            {/* ROLE DROPDOWN */}
 
             {roleDropdownOpen && (
-
               <div
                 className="
                   absolute
                   right-0
+                  z-50
                   mt-2
                   w-72
-                  bg-[#17171a]/95
-                  backdrop-blur-2xl
                   rounded-2xl
+                  border
+                  border-white/10
+                  bg-[#1c1c1f]/95
                   p-2
-                  shadow-2xl
-                  border border-white/10
-                  z-50
-                  animate-in
-                  fade-in
-                  slide-in-from-top-2
-                  duration-200
+                  backdrop-blur-2xl
                 "
               >
 
                 <div
                   className="
-                    px-3
-                    py-2
+                    mb-1
                     border-b
                     border-white/10
-                    mb-1
+                    px-3
+                    py-2
                   "
                 >
 
@@ -600,15 +582,16 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                   <p
                     className="
+                      mt-1
                       text-xs
-                      text-white/80
                       font-medium
-                      mt-0.5
+                      leading-relaxed
+                      text-white/80
                     "
                   >
                     {isMD
-                      ? '👑 You have full MD Admin rights to add songs, assign vocalists, and edit members.'
-                      : '🔒 Restricted Mode: Changes require MD permission.'
+                      ? 'You have full MD Admin rights to add songs, assign vocalists, and edit members.'
+                      : 'Restricted Mode: Changes require MD permission.'
                     }
                   </p>
 
@@ -620,26 +603,37 @@ export const Navbar: React.FC<NavbarProps> = ({
                   {/* GENERAL HUB */}
 
                   <button
+                    type="button"
                     onClick={() => {
                       setRoleDropdownOpen(false);
                     }}
                     className="
+                      flex
                       w-full
-                      text-left
-                      p-2.5
-                      rounded-xl
-                      text-xs
-                      flex items-center
+                      items-center
                       gap-2.5
-                      text-white
-                      hover:bg-white/10
+                      rounded-2xl
+                      border
+                      border-white/5
+                      bg-white/[0.035]
+                      p-2.5
+                      text-left
+                      text-xs
                       font-medium
+                      text-white/80
+                      transition-colors
+                      hover:bg-white/[0.08]
                     "
                   >
 
-                    <span className="text-base">
-                      🌐
-                    </span>
+                    <Globe2
+                      className="
+                        h-4
+                        w-4
+                        shrink-0
+                        text-[#4da3ff]
+                      "
+                    />
 
                     <div>
 
@@ -649,9 +643,10 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                       <p
                         className="
+                          mt-0.5
                           text-[10px]
-                          text-white/40
                           font-normal
+                          text-white/40
                         "
                       >
                         Browse, listen & rehearse
@@ -665,27 +660,38 @@ export const Navbar: React.FC<NavbarProps> = ({
                   {/* MD ADMIN */}
 
                   <button
+                    type="button"
                     onClick={() => {
                       setRoleDropdownOpen(false);
                       onOpenMDLogin();
                     }}
                     className="
+                      flex
                       w-full
-                      text-left
-                      p-2.5
-                      rounded-xl
-                      text-xs
-                      flex items-center
+                      items-center
                       gap-2.5
-                      text-white
-                      hover:bg-white/10
+                      rounded-2xl
+                      border
+                      border-amber-500/20
+                      bg-amber-500/15
+                      p-2.5
+                      text-left
+                      text-xs
                       font-medium
+                      text-amber-200
+                      transition-colors
+                      hover:bg-amber-500/20
                     "
                   >
 
-                    <span className="text-base">
-                      🔐
-                    </span>
+                    <ShieldCheck
+                      className="
+                        h-4
+                        w-4
+                        shrink-0
+                        text-amber-300
+                      "
+                    />
 
                     <div>
 
@@ -695,9 +701,10 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                       <p
                         className="
+                          mt-0.5
                           text-[10px]
-                          text-white/40
                           font-normal
+                          text-amber-300/60
                         "
                       >
                         Authorized MD access only
@@ -710,7 +717,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </div>
 
               </div>
-
             )}
 
           </div>
