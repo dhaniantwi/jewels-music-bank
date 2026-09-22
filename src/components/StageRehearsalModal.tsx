@@ -160,6 +160,7 @@ export const StageRehearsalModal: React.FC<
       return undefined;
     }
 
+    // 1. First try the current Supabase ID.
     const directMatch = songs.find(
       song =>
         String(song.id) ===
@@ -170,6 +171,9 @@ export const StageRehearsalModal: React.FC<
       return directMatch;
     }
 
+    // 2. Legacy ministrations used numeric IDs.
+    // Match those IDs against the original song
+    // catalogue by position/reference.
     const legacySongTitles: Record<string, string> = {
       '1': 'Satisfy',
       '2': 'Ogya Fire',
@@ -191,6 +195,7 @@ export const StageRehearsalModal: React.FC<
     const normalizedLegacyTitle =
       normalizeSongTitle(legacyTitle);
 
+    // 3. Exact normalized title match.
     const exactTitleMatch = songs.find(
       song =>
         normalizeSongTitle(song.title) ===
@@ -201,6 +206,9 @@ export const StageRehearsalModal: React.FC<
       return exactTitleMatch;
     }
 
+    // 4. Handle small title differences such as:
+    // "Afropraise Medley" vs "Afro Praise Medley"
+    // and "Ogya Fire" vs "Ogya".
     const aliases: Record<string, string[]> = {
       'Afropraise Medley': [
         'Afro Praise Medley',
@@ -249,6 +257,12 @@ export const StageRehearsalModal: React.FC<
 
   const hasAudio = Boolean(audioUrl);
 
+  /*
+   * ------------------------------------------------------
+   * RESET SONG STATE WHEN CURRENT SONG CHANGES
+   * ------------------------------------------------------
+   */
+
   useEffect(() => {
     setCurrentTime(0);
     setDuration(0);
@@ -262,6 +276,12 @@ export const StageRehearsalModal: React.FC<
       audioRef.current.currentTime = 0;
     }
   }, [currentSong?.id]);
+
+  /*
+   * ------------------------------------------------------
+   * AUDIO SOURCE
+   * ------------------------------------------------------
+   */
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -361,12 +381,24 @@ export const StageRehearsalModal: React.FC<
     loopEnd,
   ]);
 
+  /*
+   * ------------------------------------------------------
+   * PLAYBACK SPEED
+   * ------------------------------------------------------
+   */
+
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.playbackRate =
         playbackSpeed;
     }
   }, [playbackSpeed]);
+
+  /*
+   * ------------------------------------------------------
+   * MEDIA SESSION / PHONE LOCK SCREEN
+   * ------------------------------------------------------
+   */
 
   useEffect(() => {
     if (
@@ -457,6 +489,12 @@ export const StageRehearsalModal: React.FC<
     }
   }, [isPlaying]);
 
+  /*
+   * ------------------------------------------------------
+   * AUTO SCROLL
+   * ------------------------------------------------------
+   */
+
   useEffect(() => {
     let scrollTimer: number | undefined;
 
@@ -478,6 +516,12 @@ export const StageRehearsalModal: React.FC<
       }
     };
   }, [isAutoScrolling, scrollSpeed]);
+
+  /*
+   * ------------------------------------------------------
+   * NAVIGATION
+   * ------------------------------------------------------
+   */
 
   function goToPreviousSong() {
     setCurrentSongIndex(prev =>
@@ -519,6 +563,12 @@ export const StageRehearsalModal: React.FC<
       setCurrentSongIndex(0);
     }
   }
+
+  /*
+   * ------------------------------------------------------
+   * AUDIO CONTROLS
+   * ------------------------------------------------------
+   */
 
   const togglePlayback = async () => {
     const audio = audioRef.current;
@@ -579,6 +629,12 @@ export const StageRehearsalModal: React.FC<
     setCurrentTime(newTime);
   };
 
+  /*
+   * ------------------------------------------------------
+   * A-B LOOP
+   * ------------------------------------------------------
+   */
+
   const setLoopStartPoint = () => {
     if (!audioRef.current) {
       return;
@@ -614,6 +670,12 @@ export const StageRehearsalModal: React.FC<
     setIsLooping(false);
   };
 
+  /*
+   * ------------------------------------------------------
+   * KEY TONE
+   * ------------------------------------------------------
+   */
+
   const playKeyTone = () => {
     if (!effectiveKey) {
       return;
@@ -624,6 +686,12 @@ export const StageRehearsalModal: React.FC<
       2.5
     );
   };
+
+  /*
+   * ------------------------------------------------------
+   * NOW PLAYING PROGRESS
+   * ------------------------------------------------------
+   */
 
   const progressPercent =
     duration > 0
@@ -641,64 +709,28 @@ export const StageRehearsalModal: React.FC<
   }
 
   return (
-    <div
-      className="
-        fixed inset-0 z-50 flex flex-col overflow-hidden
-        text-white
-        animate-in fade-in duration-200
-        bg-[#07080b]
-        bg-[radial-gradient(circle_at_12%_8%,rgba(0,122,255,0.18),transparent_32%),radial-gradient(circle_at_88%_12%,rgba(124,58,237,0.14),transparent_30%),radial-gradient(circle_at_50%_100%,rgba(0,122,255,0.10),transparent_40%)]
-      "
-    >
+    <div className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-[#0f0f11] text-white animate-in fade-in duration-200">
+
       <audio
         ref={audioRef}
         preload="metadata"
       />
 
       {/* ==================================================
-          TOP BAR — GLASS
+          TOP BAR
       ================================================== */}
 
-      <header
-        className="
-          relative z-30
-          mx-2 mt-2
-          flex flex-shrink-0 items-center justify-between gap-3
-          rounded-[24px]
-          border border-white/[0.12]
-          bg-white/[0.055]
-          p-2.5
-          shadow-[0_20px_60px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.06)]
-          backdrop-blur-3xl
-          sm:mx-3 sm:mt-3 sm:p-3
-        "
-      >
+      <header className="flex flex-shrink-0 items-center justify-between gap-3 border-b border-white/10 bg-[#111113]/90 p-3 backdrop-blur-2xl sm:p-4">
+
         <div className="flex min-w-0 items-center gap-2">
 
-          <div
-            className="
-              flex items-center gap-1
-              rounded-2xl
-              border border-white/[0.10]
-              bg-black/20
-              p-1
-              shadow-inner
-              backdrop-blur-xl
-            "
-          >
+          <div className="flex items-center gap-1 rounded-2xl border border-white/10 bg-white/[0.055] p-1 shadow-lg shadow-black/10">
+
             <button
               type="button"
               onClick={goToPreviousSong}
               disabled={currentSongIndex === 0}
-              className="
-                rounded-xl p-2
-                text-white/65
-                transition-all
-                hover:bg-white/10
-                hover:text-white
-                active:scale-95
-                disabled:opacity-25
-              "
+              className="rounded-xl p-2 transition-colors hover:bg-white/10 disabled:opacity-30"
               title="Previous song"
             >
               <ChevronLeft className="h-5 w-5" />
@@ -717,19 +749,12 @@ export const StageRehearsalModal: React.FC<
                 currentSongIndex ===
                   ministration.songs.length - 1
               }
-              className="
-                rounded-xl p-2
-                text-white/65
-                transition-all
-                hover:bg-white/10
-                hover:text-white
-                active:scale-95
-                disabled:opacity-25
-              "
+              className="rounded-xl p-2 transition-colors hover:bg-white/10 disabled:opacity-30"
               title="Next song"
             >
               <ChevronRight className="h-5 w-5" />
             </button>
+
           </div>
 
           <div className="hidden min-w-0 sm:block">
@@ -737,11 +762,12 @@ export const StageRehearsalModal: React.FC<
               {currentSong.title}
             </h2>
 
-            <p className="truncate text-[10px] text-white/40">
+            <p className="truncate text-[10px] text-white/45">
               {ministration.name} •{' '}
               {currentSong.artist}
             </p>
           </div>
+
         </div>
 
         <div className="flex items-center gap-2">
@@ -750,20 +776,7 @@ export const StageRehearsalModal: React.FC<
             type="button"
             onClick={playKeyTone}
             title="Play starting key pitch"
-            className="
-              flex items-center gap-1.5
-              rounded-xl
-              border border-amber-400/25
-              bg-amber-400/[0.10]
-              px-3 py-2
-              text-xs font-bold text-amber-300
-              shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]
-              backdrop-blur-xl
-              transition-all
-              hover:border-amber-300/40
-              hover:bg-amber-400/[0.17]
-              active:scale-95
-            "
+            className="flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/15 px-3 py-2 text-xs font-bold text-amber-300 transition-all hover:bg-amber-500/25"
           >
             <Volume2 className="h-3.5 w-3.5" />
 
@@ -779,10 +792,10 @@ export const StageRehearsalModal: React.FC<
                 previous => !previous
               )
             }
-            className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold backdrop-blur-xl transition-all active:scale-95 ${
+            className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-all ${
               isAutoScrolling
-                ? 'border-emerald-400/30 bg-emerald-400/[0.14] text-emerald-300 shadow-[0_0_25px_rgba(16,185,129,0.10)]'
-                : 'border-white/[0.10] bg-white/[0.055] text-white/70 hover:bg-white/[0.10] hover:text-white'
+                ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/10'
+                : 'border border-white/10 bg-white/[0.055] text-white hover:bg-white/10'
             }`}
           >
             {isAutoScrolling ? (
@@ -805,94 +818,80 @@ export const StageRehearsalModal: React.FC<
                 previous => !previous
               )
             }
-            className={`rounded-xl border px-3 py-2 text-xs font-bold backdrop-blur-xl transition-all active:scale-95 ${
+            className={`rounded-xl px-3 py-2 text-xs font-bold transition-all ${
               showChords
-                ? 'border-amber-400/25 bg-amber-400/[0.11] text-amber-300'
-                : 'border-white/[0.10] bg-white/[0.055] text-white/55 hover:bg-white/[0.10]'
+                ? 'border border-amber-500/30 bg-amber-500/15 text-amber-300'
+                : 'border border-white/10 bg-white/[0.055] text-white/55'
             }`}
           >
             Chords
           </button>
 
-          <div
-            className="
-              hidden items-center
-              rounded-xl
-              border border-white/[0.10]
-              bg-black/20
-              p-0.5
-              text-xs font-bold
-              backdrop-blur-xl
-              sm:flex
-            "
-          >
-            {(['normal', 'large', 'huge'] as FontSize[]).map(
-              size => (
-                <button
-                  type="button"
-                  key={size}
-                  onClick={() =>
-                    setFontSize(size)
-                  }
-                  className={`rounded-lg px-2 py-1 transition-all ${
-                    fontSize === size
-                      ? 'bg-white text-black shadow-lg'
-                      : 'text-white/60 hover:bg-white/10 hover:text-white'
-                  }`}
-                >
-                  {size === 'normal'
-                    ? 'A'
-                    : size === 'large'
-                      ? 'A+'
-                      : 'A++'}
-                </button>
-              )
-            )}
+          <div className="hidden items-center rounded-xl border border-white/10 bg-white/[0.055] p-0.5 text-xs font-bold sm:flex">
+
+            <button
+              type="button"
+              onClick={() =>
+                setFontSize('normal')
+              }
+              className={`rounded-lg px-2 py-1 ${
+                fontSize === 'normal'
+                  ? 'bg-white text-black'
+                  : 'text-white/70'
+              }`}
+            >
+              A
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                setFontSize('large')
+              }
+              className={`rounded-lg px-2 py-1 ${
+                fontSize === 'large'
+                  ? 'bg-white text-black'
+                  : 'text-white/70'
+              }`}
+            >
+              A+
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                setFontSize('huge')
+              }
+              className={`rounded-lg px-2 py-1 ${
+                fontSize === 'huge'
+                  ? 'bg-white text-black'
+                  : 'text-white/70'
+              }`}
+            >
+              A++
+            </button>
+
           </div>
+
         </div>
 
         <button
           type="button"
           onClick={onClose}
-          className="
-            flex h-10 w-10 flex-shrink-0
-            items-center justify-center
-            rounded-full
-            border border-white/[0.12]
-            bg-white/[0.055]
-            text-white/80
-            shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]
-            backdrop-blur-xl
-            transition-all
-            hover:bg-white/[0.12]
-            hover:text-white
-            active:scale-95
-          "
+          className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.055] text-white transition-colors hover:bg-white/15"
           title="Close Stage Mode"
         >
           <X className="h-5 w-5" />
         </button>
+
       </header>
 
       {/* ==================================================
-          SETLIST — FLOATING GLASS STRIP
+          SETLIST
       ================================================== */}
 
-      <div
-        className="
-          relative z-20
-          mx-2 mt-2
-          flex flex-shrink-0 items-center gap-2
-          overflow-x-auto
-          rounded-[20px]
-          border border-white/[0.08]
-          bg-white/[0.025]
-          px-3 py-2
-          shadow-[0_12px_35px_rgba(0,0,0,0.25)]
-          backdrop-blur-3xl
-          sm:mx-3
-        "
-      >
+      <div className="flex flex-shrink-0 items-center gap-2 overflow-x-auto border-b border-white/5 bg-black/35 px-4 py-2">
+
         {ministration.songs.map(
           (item, index) => {
             const song = songs.find(
@@ -912,19 +911,19 @@ export const StageRehearsalModal: React.FC<
                 onClick={() =>
                   setCurrentSongIndex(index)
                 }
-                className={`flex items-center gap-1.5 whitespace-nowrap rounded-2xl border px-3 py-2 text-xs font-bold backdrop-blur-xl transition-all active:scale-[0.98] ${
+                className={`flex items-center gap-1.5 whitespace-nowrap rounded-xl border px-3 py-2 text-xs font-bold transition-all ${
                   currentSongIndex === index
-                    ? 'border-[#4da3ff]/40 bg-[#007aff]/20 text-white shadow-[0_8px_30px_rgba(0,122,255,0.16),inset_0_1px_0_rgba(255,255,255,0.08)]'
-                    : 'border-white/[0.07] bg-white/[0.035] text-white/50 hover:border-white/[0.14] hover:bg-white/[0.075] hover:text-white'
+                    ? 'border-[#007aff]/40 bg-[#007aff] text-white shadow-lg shadow-blue-500/20'
+                    : 'border-white/5 bg-white/[0.035] text-white/55 hover:border-white/10 hover:bg-white/[0.08] hover:text-white'
                 }`}
               >
-                <span className="opacity-50">
+                <span className="opacity-60">
                   {index + 1}.
                 </span>
 
                 <span>{song.title}</span>
 
-                <span className="font-mono text-[10px] opacity-60">
+                <span className="font-mono text-[10px] opacity-75">
                   (
                   {item.keyOverride ||
                     song.key}
@@ -934,6 +933,7 @@ export const StageRehearsalModal: React.FC<
             );
           }
         )}
+
       </div>
 
       {/* ==================================================
@@ -942,597 +942,379 @@ export const StageRehearsalModal: React.FC<
 
       <div
         ref={scrollContainerRef}
-        className="
-          mx-auto
-          w-full max-w-6xl
-          flex-1
-          space-y-5
-          overflow-y-auto
-          px-3 py-4
-          sm:space-y-6 sm:px-6 sm:py-7
-          lg:px-10 lg:py-10
-        "
+        className="mx-auto w-full max-w-5xl flex-1 space-y-6 overflow-y-auto p-4 sm:p-8 lg:p-12"
       >
 
         {/* ==================================================
-            NOW PLAYING — HERO GLASS
+            NOW PLAYING
         ================================================== */}
 
-        <section
-          className="
-            relative overflow-hidden
-            rounded-[30px]
-            border border-white/[0.12]
-            bg-white/[0.055]
-            p-5
-            shadow-[0_30px_90px_rgba(0,0,0,0.38),inset_0_1px_0_rgba(255,255,255,0.06)]
-            backdrop-blur-3xl
-            sm:p-7
-          "
-        >
-          {/* Ambient glow inside hero */}
-          <div
-            className="
-              pointer-events-none absolute
-              -right-24 -top-24
-              h-64 w-64
-              rounded-full
-              bg-[#007aff]/[0.10]
-              blur-3xl
-            "
-          />
+        <section className="rounded-[28px] border border-white/10 bg-white/[0.05] p-5 shadow-2xl shadow-black/10 backdrop-blur-2xl sm:p-7">
 
-          <div
-            className="
-              pointer-events-none absolute
-              -bottom-32 -left-20
-              h-72 w-72
-              rounded-full
-              bg-violet-500/[0.07]
-              blur-3xl
-            "
-          />
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center">
 
-          <div className="relative">
+            <div className="min-w-0 flex-1">
 
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-center">
+              <div className="mb-3 flex flex-wrap items-center gap-2">
 
-              <div className="min-w-0 flex-1">
+                <span className="rounded-full border border-[#007aff]/20 bg-[#007aff]/15 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-[#4da3ff]">
+                  Now Playing
+                </span>
 
-                <div className="mb-3 flex flex-wrap items-center gap-2">
+                <span className="rounded-full border border-amber-500/20 bg-amber-500/15 px-2.5 py-1 text-[10px] font-extrabold text-amber-300">
+                  KEY: {effectiveKey}
+                </span>
 
-                  <span
-                    className="
-                      rounded-full
-                      border border-[#4da3ff]/30
-                      bg-[#007aff]/[0.13]
-                      px-3 py-1.5
-                      text-[10px]
-                      font-extrabold
-                      uppercase
-                      tracking-wider
-                      text-[#63adff]
-                      shadow-[0_0_25px_rgba(0,122,255,0.08)]
-                    "
-                  >
-                    Now Playing
-                  </span>
+                <span className="text-[10px] font-bold text-white/40">
+                  {currentSong.tempo}
+                </span>
 
-                  <span
-                    className="
-                      rounded-full
-                      border border-amber-400/25
-                      bg-amber-400/[0.10]
-                      px-3 py-1.5
-                      text-[10px]
-                      font-extrabold
-                      text-amber-300
-                    "
-                  >
-                    KEY: {effectiveKey}
-                  </span>
+              </div>
 
-                  {currentSong.tempo && (
-                    <span className="rounded-full border border-white/[0.07] bg-white/[0.035] px-3 py-1.5 text-[10px] font-bold text-white/40">
-                      {currentSong.tempo}
-                    </span>
-                  )}
-                </div>
+              <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl">
+                {currentSong.title}
+              </h1>
 
-                <h1 className="text-3xl font-extrabold tracking-[-0.03em] text-white sm:text-4xl lg:text-5xl">
-                  {currentSong.title}
-                </h1>
+              <p className="mt-1 text-sm font-semibold text-white/45 sm:text-base">
+                {currentSong.artist ||
+                  'Jewels of His Crown'}
+              </p>
 
-                <p className="mt-1 text-sm font-semibold text-white/40 sm:text-base">
-                  {currentSong.artist ||
-                    'Jewels of His Crown'}
+            </div>
+
+            <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.045] p-4">
+
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#007aff]/15">
+                <Music2 className="h-6 w-6 text-[#4da3ff]" />
+              </div>
+
+              <div>
+                <span className="block text-[10px] font-extrabold uppercase tracking-wider text-[#4da3ff]">
+                  Lead Vocalist
+                </span>
+
+                <p className="text-sm font-bold text-white">
+                  {leadMember
+                    ? leadMember.name
+                    : 'Unassigned'}
                 </p>
               </div>
 
-              {/* Lead vocalist glass card */}
+            </div>
 
-              <div
-                className="
-                  flex items-center gap-3
-                  rounded-[22px]
-                  border border-white/[0.10]
-                  bg-black/[0.16]
-                  p-3.5
-                  shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]
-                  backdrop-blur-2xl
-                  lg:min-w-[245px]
-                "
-              >
-                <div
-                  className="
-                    flex h-12 w-12 flex-shrink-0
-                    items-center justify-center
-                    rounded-2xl
-                    border border-[#4da3ff]/20
-                    bg-[#007aff]/[0.12]
-                    shadow-[0_8px_25px_rgba(0,122,255,0.10)]
-                  "
-                >
-                  <Music2 className="h-6 w-6 text-[#4da3ff]" />
+          </div>
+
+          {/* AUDIO PLAYER */}
+
+          <div className="mt-6 border-t border-white/10 pt-5">
+
+            {!hasAudio ? (
+              <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-200">
+                <div className="flex items-center gap-2 font-bold">
+                  <Music2 className="h-4 w-4" />
+                  No audio file attached to this song yet.
                 </div>
 
-                <div>
-                  <span className="block text-[10px] font-extrabold uppercase tracking-wider text-[#4da3ff]">
-                    Lead Vocalist
+                <p className="mt-1 text-xs text-amber-200/55">
+                  The player controls will become
+                  active once an audio URL is added
+                  to the song.
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Progress */}
+
+                <div className="flex items-center gap-3">
+
+                  <span className="w-10 text-right font-mono text-xs text-white/45">
+                    {formatTime(currentTime)}
                   </span>
 
-                  <p className="mt-0.5 text-sm font-bold text-white">
-                    {leadMember
-                      ? leadMember.name
-                      : 'Unassigned'}
-                  </p>
+                  <input
+                    type="range"
+                    min="0"
+                    max={
+                      duration > 0
+                        ? duration
+                        : 0
+                    }
+                    step="0.1"
+                    value={Math.min(
+                      currentTime,
+                      duration || currentTime
+                    )}
+                    onChange={handleSeek}
+                    className="flex-1 cursor-pointer accent-[#007aff]"
+                    aria-label="Song progress"
+                    style={{
+                      background: `linear-gradient(to right, #007aff ${progressPercent}%, rgba(255,255,255,0.12) ${progressPercent}%)`,
+                    }}
+                  />
+
+                  <span className="w-10 font-mono text-xs text-white/45">
+                    {formatTime(duration)}
+                  </span>
+
                 </div>
-              </div>
-            </div>
 
-            {/* AUDIO PLAYER */}
+                {/* Main controls */}
 
-            <div className="mt-7 border-t border-white/[0.08] pt-6">
+                <div className="mt-4 flex items-center justify-center gap-2 sm:gap-4">
 
-              {!hasAudio ? (
-                <div
-                  className="
-                    rounded-2xl
-                    border border-amber-400/20
-                    bg-amber-400/[0.07]
-                    p-4
-                    backdrop-blur-xl
-                  "
-                >
-                  <div className="flex items-center gap-2 font-bold text-amber-200">
-                    <Music2 className="h-4 w-4" />
-                    No audio file attached to this song yet.
-                  </div>
+                  <button
+                    type="button"
+                    onClick={goToPreviousSong}
+                    className="flex h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-white/10"
+                    title="Previous song"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
 
-                  <p className="mt-1 text-xs text-amber-200/50">
-                    The player controls will become
-                    active once an audio URL is added
-                    to the song.
-                  </p>
+                  <button
+                    type="button"
+                    onClick={skipBackward}
+                    className="flex h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-white/10"
+                    title="Back 10 seconds"
+                  >
+                    <SkipBack className="h-5 w-5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={togglePlayback}
+                    className="flex h-14 w-14 items-center justify-center rounded-full bg-[#007aff] shadow-xl shadow-blue-500/20 transition-transform hover:bg-[#0062cc] active:scale-95 sm:h-16 sm:w-16"
+                    title={
+                      isPlaying
+                        ? 'Pause'
+                        : 'Play'
+                    }
+                  >
+                    {isPlaying ? (
+                      <Pause className="h-7 w-7 fill-current" />
+                    ) : (
+                      <Play className="ml-1 h-7 w-7 fill-current" />
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={skipForward}
+                    className="flex h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-white/10"
+                    title="Forward 10 seconds"
+                  >
+                    <SkipForward className="h-5 w-5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={goToNextSong}
+                    className="flex h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-white/10"
+                    title="Next song"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+
                 </div>
-              ) : (
-                <>
-                  {/* Progress */}
 
-                  <div className="flex items-center gap-3">
+                {/* Secondary controls */}
 
-                    <span className="w-10 text-right font-mono text-xs text-white/40">
-                      {formatTime(currentTime)}
-                    </span>
+                <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
 
-                    <input
-                      type="range"
-                      min="0"
-                      max={
-                        duration > 0
-                          ? duration
-                          : 0
-                      }
-                      step="0.1"
-                      value={Math.min(
-                        currentTime,
-                        duration || currentTime
-                      )}
-                      onChange={handleSeek}
-                      className="
-                        stage-progress
-                        flex-1
-                        cursor-pointer
-                      "
-                      aria-label="Song progress"
-                      style={{
-                        background: `linear-gradient(to right, #1687ff ${progressPercent}%, rgba(255,255,255,0.10) ${progressPercent}%)`,
-                      }}
-                    />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setIsShuffle(
+                        previous => !previous
+                      )
+                    }
+                    className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold ${
+                      isShuffle
+                        ? 'border-[#007aff]/30 bg-[#007aff]/15 text-[#4da3ff]'
+                        : 'border-white/5 bg-white/[0.035] text-white/55 hover:bg-white/[0.08]'
+                    }`}
+                  >
+                    <Shuffle className="h-3.5 w-3.5" />
+                    Shuffle
+                  </button>
 
-                    <span className="w-10 font-mono text-xs text-white/40">
-                      {formatTime(duration)}
-                    </span>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setIsRepeat(
+                        previous => !previous
+                      )
+                    }
+                    className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold ${
+                      isRepeat
+                        ? 'border-[#007aff]/30 bg-[#007aff]/15 text-[#4da3ff]'
+                        : 'border-white/5 bg-white/[0.035] text-white/55 hover:bg-white/[0.08]'
+                    }`}
+                  >
+                    <Repeat className="h-3.5 w-3.5" />
+                    Repeat
+                  </button>
 
-                  {/* Main controls */}
-
-                  <div className="mt-6 flex items-center justify-center gap-1.5 sm:gap-3">
-
-                    <button
-                      type="button"
-                      onClick={goToPreviousSong}
-                      className="
-                        flex h-11 w-11
-                        items-center justify-center
-                        rounded-full
-                        border border-white/[0.06]
-                        bg-white/[0.025]
-                        text-white/65
-                        backdrop-blur-xl
-                        transition-all
-                        hover:bg-white/[0.08]
-                        hover:text-white
-                        active:scale-90
-                      "
-                      title="Previous song"
-                    >
-                      <ChevronLeft className="h-5 w-5" />
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={skipBackward}
-                      className="
-                        flex h-11 w-11
-                        items-center justify-center
-                        rounded-full
-                        border border-white/[0.06]
-                        bg-white/[0.025]
-                        text-white/65
-                        backdrop-blur-xl
-                        transition-all
-                        hover:bg-white/[0.08]
-                        hover:text-white
-                        active:scale-90
-                      "
-                      title="Back 10 seconds"
-                    >
-                      <SkipBack className="h-5 w-5" />
-                    </button>
-
-                    {/* HERO PLAY BUTTON */}
-
-                    <button
-                      type="button"
-                      onClick={togglePlayback}
-                      className="
-                        relative
-                        mx-2
-                        flex h-16 w-16
-                        items-center justify-center
-                        rounded-full
-                        border border-[#65b5ff]/40
-                        bg-[#087fff]
-                        text-white
-                        shadow-[0_0_0_6px_rgba(0,122,255,0.07),0_15px_45px_rgba(0,122,255,0.35),inset_0_1px_0_rgba(255,255,255,0.22)]
-                        transition-all
-                        hover:bg-[#1687ff]
-                        hover:shadow-[0_0_0_8px_rgba(0,122,255,0.08),0_20px_55px_rgba(0,122,255,0.42)]
-                        active:scale-90
-                        sm:h-[68px] sm:w-[68px]
-                      "
-                      title={
-                        isPlaying
-                          ? 'Pause'
-                          : 'Play'
-                      }
-                    >
-                      {isPlaying ? (
-                        <Pause className="h-7 w-7 fill-current" />
-                      ) : (
-                        <Play className="ml-1 h-7 w-7 fill-current" />
-                      )}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={skipForward}
-                      className="
-                        flex h-11 w-11
-                        items-center justify-center
-                        rounded-full
-                        border border-white/[0.06]
-                        bg-white/[0.025]
-                        text-white/65
-                        backdrop-blur-xl
-                        transition-all
-                        hover:bg-white/[0.08]
-                        hover:text-white
-                        active:scale-90
-                      "
-                      title="Forward 10 seconds"
-                    >
-                      <SkipForward className="h-5 w-5" />
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={goToNextSong}
-                      className="
-                        flex h-11 w-11
-                        items-center justify-center
-                        rounded-full
-                        border border-white/[0.06]
-                        bg-white/[0.025]
-                        text-white/65
-                        backdrop-blur-xl
-                        transition-all
-                        hover:bg-white/[0.08]
-                        hover:text-white
-                        active:scale-90
-                      "
-                      title="Next song"
-                    >
-                      <ChevronRight className="h-5 w-5" />
-                    </button>
-                  </div>
-
-                  {/* Secondary controls */}
-
-                  <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+                  <div className="relative">
 
                     <button
                       type="button"
                       onClick={() =>
-                        setIsShuffle(
+                        setShowSpeedMenu(
                           previous => !previous
                         )
                       }
-                      className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold backdrop-blur-xl transition-all active:scale-95 ${
-                        isShuffle
-                          ? 'border-[#4da3ff]/35 bg-[#007aff]/[0.14] text-[#62b0ff] shadow-[0_0_20px_rgba(0,122,255,0.08)]'
-                          : 'border-white/[0.07] bg-white/[0.035] text-white/50 hover:bg-white/[0.075] hover:text-white'
-                      }`}
+                      className="flex items-center gap-1.5 rounded-xl border border-white/5 bg-white/[0.035] px-3 py-2 text-xs font-bold text-white/55 hover:bg-white/[0.08]"
                     >
-                      <Shuffle className="h-3.5 w-3.5" />
-                      Shuffle
+                      <Gauge className="h-3.5 w-3.5" />
+                      {playbackSpeed}×
                     </button>
 
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setIsRepeat(
-                          previous => !previous
-                        )
-                      }
-                      className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold backdrop-blur-xl transition-all active:scale-95 ${
-                        isRepeat
-                          ? 'border-[#4da3ff]/35 bg-[#007aff]/[0.14] text-[#62b0ff] shadow-[0_0_20px_rgba(0,122,255,0.08)]'
-                          : 'border-white/[0.07] bg-white/[0.035] text-white/50 hover:bg-white/[0.075] hover:text-white'
-                      }`}
-                    >
-                      <Repeat className="h-3.5 w-3.5" />
-                      Repeat
-                    </button>
+                    {showSpeedMenu && (
+                      <div className="absolute bottom-full left-1/2 z-20 mb-2 -translate-x-1/2 rounded-2xl border border-white/10 bg-[#1c1c1f]/95 p-2 shadow-2xl backdrop-blur-2xl">
 
-                    <div className="relative">
+                        {[
+                          0.5,
+                          0.75,
+                          1,
+                          1.25,
+                          1.5,
+                          2,
+                        ].map(speed => (
+                          <button
+                            type="button"
+                            key={speed}
+                            onClick={() => {
+                              setPlaybackSpeed(
+                                speed as PlaybackSpeed
+                              );
+                              setShowSpeedMenu(
+                                false
+                              );
+                            }}
+                            className={`block w-20 rounded-xl px-3 py-2 text-xs font-bold ${
+                              playbackSpeed ===
+                              speed
+                                ? 'bg-[#007aff] text-white'
+                                : 'text-white/70 hover:bg-white/10'
+                            }`}
+                          >
+                            {speed}×
+                          </button>
+                        ))}
 
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setShowSpeedMenu(
-                            previous => !previous
-                          )
-                        }
-                        className="
-                          flex items-center gap-1.5
-                          rounded-xl
-                          border border-white/[0.07]
-                          bg-white/[0.035]
-                          px-3 py-2
-                          text-xs font-bold text-white/50
-                          backdrop-blur-xl
-                          transition-all
-                          hover:bg-white/[0.075]
-                          hover:text-white
-                        "
-                      >
-                        <Gauge className="h-3.5 w-3.5" />
-                        {playbackSpeed}×
-                      </button>
-
-                      {showSpeedMenu && (
-                        <div
-                          className="
-                            absolute bottom-full left-1/2 z-40 mb-2
-                            -translate-x-1/2
-                            rounded-2xl
-                            border border-white/[0.12]
-                            bg-[#101114]/80
-                            p-2
-                            shadow-[0_25px_70px_rgba(0,0,0,0.55)]
-                            backdrop-blur-3xl
-                          "
-                        >
-                          {[
-                            0.5,
-                            0.75,
-                            1,
-                            1.25,
-                            1.5,
-                            2,
-                          ].map(speed => (
-                            <button
-                              type="button"
-                              key={speed}
-                              onClick={() => {
-                                setPlaybackSpeed(
-                                  speed as PlaybackSpeed
-                                );
-                                setShowSpeedMenu(
-                                  false
-                                );
-                              }}
-                              className={`block w-20 rounded-xl px-3 py-2 text-xs font-bold transition-all ${
-                                playbackSpeed ===
-                                speed
-                                  ? 'bg-[#007aff] text-white shadow-[0_6px_20px_rgba(0,122,255,0.25)]'
-                                  : 'text-white/65 hover:bg-white/10 hover:text-white'
-                              }`}
-                            >
-                              {speed}×
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* A-B LOOP */}
-
-                  <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-
-                    <button
-                      type="button"
-                      onClick={
-                        setLoopStartPoint
-                      }
-                      className={`rounded-xl border px-3 py-2 text-xs font-bold backdrop-blur-xl transition-all active:scale-95 ${
-                        loopStart !== null
-                          ? 'border-amber-400/30 bg-amber-400/[0.12] text-amber-300'
-                          : 'border-white/[0.07] bg-white/[0.035] text-white/50 hover:bg-white/[0.075] hover:text-white'
-                      }`}
-                    >
-                      A
-                      {loopStart !== null
-                        ? ` ${formatTime(loopStart)}`
-                        : ''}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={
-                        setLoopEndPoint
-                      }
-                      disabled={
-                        loopStart === null
-                      }
-                      className={`rounded-xl border px-3 py-2 text-xs font-bold backdrop-blur-xl transition-all ${
-                        loopEnd !== null
-                          ? 'border-amber-400/30 bg-amber-400/[0.12] text-amber-300'
-                          : 'border-white/[0.07] bg-white/[0.035] text-white/50 hover:bg-white/[0.075] hover:text-white disabled:opacity-25'
-                      }`}
-                    >
-                      B
-                      {loopEnd !== null
-                        ? ` ${formatTime(loopEnd)}`
-                        : ''}
-                    </button>
-
-                    {(loopStart !== null ||
-                      loopEnd !== null) && (
-                      <button
-                        type="button"
-                        onClick={clearLoop}
-                        className="
-                          flex items-center gap-1
-                          rounded-xl
-                          border border-white/[0.07]
-                          bg-white/[0.035]
-                          px-3 py-2
-                          text-xs font-bold text-white/50
-                          backdrop-blur-xl
-                          transition-all
-                          hover:bg-white/[0.075]
-                          hover:text-white
-                        "
-                      >
-                        <CircleStop className="h-3.5 w-3.5" />
-                        Clear Loop
-                      </button>
+                      </div>
                     )}
 
-                    {isLooping && (
-                      <span
-                        className="
-                          rounded-xl
-                          border border-emerald-400/20
-                          bg-emerald-400/[0.08]
-                          px-3 py-2
-                          text-xs font-bold
-                          text-emerald-300
-                          backdrop-blur-xl
-                        "
-                      >
-                        A–B Loop Active
-                      </span>
-                    )}
                   </div>
-                </>
-              )}
-            </div>
+
+                </div>
+
+                {/* A-B LOOP */}
+
+                <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+
+                  <button
+                    type="button"
+                    onClick={
+                      setLoopStartPoint
+                    }
+                    className={`rounded-xl border px-3 py-2 text-xs font-bold ${
+                      loopStart !== null
+                        ? 'border-amber-500/30 bg-amber-500/15 text-amber-300'
+                        : 'border-white/5 bg-white/[0.035] text-white/55 hover:bg-white/[0.08]'
+                    }`}
+                  >
+                    A
+                    {loopStart !== null
+                      ? ` ${formatTime(loopStart)}`
+                      : ''}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={
+                      setLoopEndPoint
+                    }
+                    disabled={
+                      loopStart === null
+                    }
+                    className={`rounded-xl border px-3 py-2 text-xs font-bold ${
+                      loopEnd !== null
+                        ? 'border-amber-500/30 bg-amber-500/15 text-amber-300'
+                        : 'border-white/5 bg-white/[0.035] text-white/55 disabled:opacity-30'
+                    }`}
+                  >
+                    B
+                    {loopEnd !== null
+                      ? ` ${formatTime(loopEnd)}`
+                      : ''}
+                  </button>
+
+                  {(loopStart !== null ||
+                    loopEnd !== null) && (
+                    <button
+                      type="button"
+                      onClick={clearLoop}
+                      className="flex items-center gap-1 rounded-xl border border-white/5 bg-white/[0.035] px-3 py-2 text-xs font-bold text-white/55 hover:bg-white/[0.08]"
+                    >
+                      <CircleStop className="h-3.5 w-3.5" />
+                      Clear Loop
+                    </button>
+                  )}
+
+                  {isLooping && (
+                    <span className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs font-bold text-emerald-300">
+                      A–B Loop Active
+                    </span>
+                  )}
+
+                </div>
+              </>
+            )}
+
           </div>
+
         </section>
 
         {/* ==================================================
-            DIRECTOR NOTES — GLASS AMBER
+            CUE / NOTES
         ================================================== */}
 
         {(currentItem?.orderNote ||
           currentSong.mdNotes) && (
-          <div
-            className="
-              rounded-[24px]
-              border border-amber-400/20
-              bg-amber-400/[0.06]
-              p-4
-              text-amber-200
-              shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]
-              backdrop-blur-2xl
-            "
-          >
-            <span className="mb-1 block text-[10px] font-extrabold uppercase tracking-wider text-amber-300">
+          <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4 text-amber-200">
+
+            <span className="mb-1 block text-[10px] font-extrabold uppercase tracking-wider text-amber-400">
               🎼 Transition Cue & Director Notes
             </span>
 
-            <p className="text-xs font-medium text-amber-100/80 sm:text-sm">
+            <p className="text-xs font-medium sm:text-sm">
               {currentItem?.orderNote
                 ? `${currentItem.orderNote} • `
                 : ''}
 
               {currentSong.mdNotes}
             </p>
+
           </div>
         )}
 
         {/* ==================================================
-            CHORDS — GLASS DARK PANEL
+            CHORDS
         ================================================== */}
 
         {showChords &&
           currentSong.chords && (
-            <div
-              className="
-                rounded-[24px]
-                border border-white/[0.09]
-                bg-black/[0.22]
-                p-5
-                font-mono
-                text-xs
-                leading-relaxed
-                text-amber-300
-                whitespace-pre-wrap
-                shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]
-                backdrop-blur-2xl
-              "
-            >
-              <span className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-white/30">
+            <div className="rounded-2xl border border-white/10 bg-black/55 p-4 font-mono text-xs leading-relaxed text-amber-300 whitespace-pre-wrap">
+
+              <span className="mb-1 block text-[10px] font-bold uppercase text-white/35">
                 Chords Progression (Key of{' '}
                 {effectiveKey})
               </span>
 
               {currentSong.chords}
+
             </div>
           )}
 
@@ -1542,7 +1324,7 @@ export const StageRehearsalModal: React.FC<
 
         <section>
 
-          <div className="mb-3 flex items-center justify-between px-1">
+          <div className="mb-3 flex items-center justify-between">
 
             <div className="flex items-center gap-2 text-white/45">
               <Type className="h-4 w-4" />
@@ -1552,102 +1334,77 @@ export const StageRehearsalModal: React.FC<
               </span>
             </div>
 
-            <div
-              className="
-                flex items-center
-                rounded-xl
-                border border-white/[0.10]
-                bg-white/[0.035]
-                p-0.5
-                text-xs font-bold
-                shadow-inner
-                backdrop-blur-xl
-                sm:hidden
-              "
-            >
-              {(['normal', 'large', 'huge'] as FontSize[]).map(
-                size => (
-                  <button
-                    type="button"
-                    key={size}
-                    onClick={() =>
-                      setFontSize(size)
-                    }
-                    className={`rounded-lg px-2 py-1 transition-all ${
-                      fontSize === size
-                        ? 'bg-white text-black shadow-lg'
-                        : 'text-white/60 hover:bg-white/10 hover:text-white'
-                    }`}
-                  >
-                    {size === 'normal'
-                      ? 'A'
-                      : size === 'large'
-                        ? 'A+'
-                        : 'A++'}
-                  </button>
-                )
-              )}
+            <div className="flex items-center rounded-xl border border-white/10 bg-white/[0.055] p-0.5 text-xs font-bold sm:hidden">
+
+              <button
+                type="button"
+                onClick={() =>
+                  setFontSize('normal')
+                }
+                className={`rounded-lg px-2 py-1 ${
+                  fontSize === 'normal'
+                    ? 'bg-white text-black'
+                    : 'text-white/70'
+                }`}
+              >
+                A
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setFontSize('large')
+                }
+                className={`rounded-lg px-2 py-1 ${
+                  fontSize === 'large'
+                    ? 'bg-white text-black'
+                    : 'text-white/70'
+                }`}
+              >
+                A+
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setFontSize('huge')
+                }
+                className={`rounded-lg px-2 py-1 ${
+                  fontSize === 'huge'
+                    ? 'bg-white text-black'
+                    : 'text-white/70'
+                }`}
+              >
+                A++
+              </button>
+
             </div>
+
           </div>
 
           <div
-            className={`
-              relative overflow-hidden
-              rounded-[30px]
-              border border-white/[0.09]
-              bg-white/[0.035]
-              p-5
-              font-sans
-              font-medium
-              leading-loose
-              text-white/90
-              whitespace-pre-wrap
-              shadow-[0_25px_70px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.04)]
-              backdrop-blur-3xl
-              sm:p-8
-              ${fontClass}
-            `}
+            className={`rounded-[28px] border border-white/[0.05] bg-white/[0.02] p-5 font-sans font-medium leading-loose text-white/90 whitespace-pre-wrap sm:p-7 ${fontClass}`}
           >
-            <div
-              className="
-                pointer-events-none absolute
-                -right-24 -top-24
-                h-56 w-56
-                rounded-full
-                bg-[#007aff]/[0.045]
-                blur-3xl
-              "
-            />
-
-            <div className="relative">
-              {currentSong.lyrics ||
-                'No lyrics text provided for this song.'}
-            </div>
+            {currentSong.lyrics ||
+              'No lyrics text provided for this song.'}
           </div>
+
         </section>
 
         {/* ==================================================
-            TELEPROMPTER — GLASS
+            AUTO SCROLL CONTROLS
         ================================================== */}
 
-        <section
-          className="
-            rounded-[24px]
-            border border-white/[0.09]
-            bg-white/[0.035]
-            p-4
-            shadow-[0_20px_50px_rgba(0,0,0,0.20),inset_0_1px_0_rgba(255,255,255,0.04)]
-            backdrop-blur-2xl
-          "
-        >
+        <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
 
             <div>
-              <h3 className="text-sm font-bold text-white">
+              <h3 className="text-sm font-bold">
                 Teleprompter Scroll
               </h3>
 
-              <p className="mt-1 text-xs text-white/35">
+              <p className="mt-1 text-xs text-white/40">
                 Automatically move through the lyrics
                 during rehearsal.
               </p>
@@ -1662,10 +1419,10 @@ export const StageRehearsalModal: React.FC<
                     previous => !previous
                   )
                 }
-                className={`rounded-xl border px-4 py-2 text-xs font-bold backdrop-blur-xl transition-all active:scale-95 ${
+                className={`rounded-xl px-4 py-2 text-xs font-bold ${
                   isAutoScrolling
-                    ? 'border-emerald-400/30 bg-emerald-400/[0.12] text-emerald-300'
-                    : 'border-white/[0.09] bg-white/[0.045] text-white/70 hover:bg-white/[0.09] hover:text-white'
+                    ? 'bg-emerald-500 text-black'
+                    : 'border border-white/10 bg-white/[0.055] text-white hover:bg-white/10'
                 }`}
               >
                 {isAutoScrolling
@@ -1680,79 +1437,54 @@ export const StageRehearsalModal: React.FC<
                     Number(event.target.value)
                   )
                 }
-                className="
-                  rounded-xl
-                  border border-white/[0.09]
-                  bg-white/[0.045]
-                  px-3 py-2
-                  text-xs font-bold text-white
-                  outline-none
-                  backdrop-blur-xl
-                "
+                className="rounded-xl border border-white/10 bg-white/[0.055] px-3 py-2 text-xs font-bold text-white outline-none"
               >
                 <option
                   value="0.5"
-                  className="bg-[#15161a]"
+                  className="bg-[#1c1c1f]"
                 >
                   Slow
                 </option>
 
                 <option
                   value="1"
-                  className="bg-[#15161a]"
+                  className="bg-[#1c1c1f]"
                 >
                   Normal
                 </option>
 
                 <option
                   value="2"
-                  className="bg-[#15161a]"
+                  className="bg-[#1c1c1f]"
                 >
                   Fast
                 </option>
 
                 <option
                   value="3"
-                  className="bg-[#15161a]"
+                  className="bg-[#1c1c1f]"
                 >
                   Very Fast
                 </option>
               </select>
+
             </div>
+
           </div>
+
         </section>
 
         {/* ==================================================
             BOTTOM NAVIGATION
         ================================================== */}
 
-        <div
-          className="
-            flex items-center justify-between gap-3
-            border-t border-white/[0.08]
-            pb-12 pt-5
-          "
-        >
+        <div className="flex items-center justify-between gap-3 border-t border-white/10 pb-12 pt-5">
+
           <button
             type="button"
             onClick={goToPreviousSong}
             disabled={currentSongIndex === 0}
-            className="
-              flex items-center gap-2
-              rounded-2xl
-              border border-white/[0.09]
-              bg-white/[0.045]
-              px-4 py-3
-              text-sm font-bold text-white/70
-              shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]
-              backdrop-blur-xl
-              transition-all
-              hover:bg-white/[0.09]
-              hover:text-white
-              active:scale-95
-              disabled:opacity-20
-              sm:px-6
-            "
+            className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.055] px-4 py-3 text-sm font-bold transition-all hover:bg-white/10 disabled:opacity-20 sm:px-6"
           >
             <ChevronLeft className="h-4 w-4" />
 
@@ -1773,22 +1505,7 @@ export const StageRehearsalModal: React.FC<
               currentSongIndex ===
                 ministration.songs.length - 1
             }
-            className="
-              flex items-center gap-2
-              rounded-2xl
-              border border-[#4da3ff]/30
-              bg-[#007aff]/[0.16]
-              px-4 py-3
-              text-sm font-bold text-[#70b8ff]
-              shadow-[0_12px_35px_rgba(0,122,255,0.16),inset_0_1px_0_rgba(255,255,255,0.07)]
-              backdrop-blur-xl
-              transition-all
-              hover:bg-[#007aff]/[0.23]
-              hover:text-white
-              active:scale-95
-              disabled:opacity-20
-              sm:px-6
-            "
+            className="flex items-center gap-2 rounded-2xl bg-[#007aff] px-4 py-3 text-sm font-bold text-white shadow-lg shadow-blue-500/15 transition-all hover:bg-[#0062cc] disabled:opacity-20 sm:px-6"
           >
             <span className="hidden sm:inline">
               Next Song
@@ -1800,63 +1517,11 @@ export const StageRehearsalModal: React.FC<
 
             <ChevronRight className="h-4 w-4" />
           </button>
+
         </div>
+
       </div>
 
-      {/* ==================================================
-          STAGE RANGE CONTROL
-      ================================================== */}
-
-      <style>{`
-        .stage-progress {
-          height: 5px;
-          appearance: none;
-          -webkit-appearance: none;
-          border-radius: 9999px;
-          outline: none;
-          border: 1px solid rgba(255,255,255,0.06);
-          box-shadow:
-            0 0 18px rgba(0,122,255,0.06),
-            inset 0 1px 2px rgba(0,0,0,0.25);
-        }
-
-        .stage-progress::-webkit-slider-thumb {
-          appearance: none;
-          -webkit-appearance: none;
-          width: 18px;
-          height: 18px;
-          border-radius: 50%;
-          border: 2px solid rgba(255,255,255,0.72);
-          background: #087fff;
-          box-shadow:
-            0 0 0 4px rgba(0,122,255,0.10),
-            0 5px 18px rgba(0,122,255,0.35);
-          cursor: pointer;
-        }
-
-        .stage-progress::-moz-range-thumb {
-          width: 18px;
-          height: 18px;
-          border-radius: 50%;
-          border: 2px solid rgba(255,255,255,0.72);
-          background: #087fff;
-          box-shadow:
-            0 0 0 4px rgba(0,122,255,0.10),
-            0 5px 18px rgba(0,122,255,0.35);
-          cursor: pointer;
-        }
-
-        .stage-progress::-webkit-slider-runnable-track {
-          height: 5px;
-          border-radius: 9999px;
-        }
-
-        .stage-progress::-moz-range-track {
-          height: 5px;
-          border-radius: 9999px;
-          background: transparent;
-        }
-      `}</style>
     </div>
   );
 };
