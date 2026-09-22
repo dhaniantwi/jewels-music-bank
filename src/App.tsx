@@ -957,7 +957,7 @@ export default function App() {
   // ============================================================
 
   return (
-    <div className="min-h-screen flex flex-col font-sans text-white selection:bg-[#007aff]/30 selection:text-white">
+    <div className="w-full max-w-full min-w-0 min-h-screen overflow-x-hidden flex flex-col font-sans text-white selection:bg-[#007aff]/30 selection:text-white">
       {/* ======================================================
           MD ADMIN PORTAL
       ====================================================== */}
