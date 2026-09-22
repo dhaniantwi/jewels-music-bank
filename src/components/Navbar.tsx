@@ -108,10 +108,10 @@ export const Navbar: React.FC<NavbarProps> = ({
     ) || roleOptions[0];
 
   const navButtonBase =
-    'flex items-center gap-1.5 rounded-2xl border px-3 py-2 text-xs font-semibold transition-colors';
+    'flex shrink-0 items-center justify-center gap-1.5 rounded-2xl border px-2.5 py-2 text-xs font-semibold transition-colors sm:px-3';
 
   const navButtonInactive =
-    `${navButtonBase} border-white/5 bg-white/[0.035] text-white/55 hover:bg-white/[0.08]`;
+    `${navButtonBase} border-white/5 bg-white/[0.035] text-white/55 hover:bg-white/10`;
 
   const navButtonActive =
     `${navButtonBase} border-[#007aff]/30 bg-[#007aff]/15 text-[#4da3ff]`;
@@ -124,26 +124,31 @@ export const Navbar: React.FC<NavbarProps> = ({
         z-40
         mb-4
         w-full
-        px-3
+        min-w-0
+        max-w-full
+        overflow-hidden
+        px-2
         sm:px-6
         no-print
       "
     >
-
       <nav
         className="
           mx-auto
           flex
+          w-full
+          min-w-0
           max-w-7xl
           items-center
-          justify-between
-          gap-2
+          gap-1.5
+          overflow-hidden
           rounded-[28px]
           border
           border-white/10
           bg-[#111113]/90
           p-2
           backdrop-blur-2xl
+          sm:gap-2
         "
       >
 
@@ -152,27 +157,29 @@ export const Navbar: React.FC<NavbarProps> = ({
         <button
           type="button"
           onClick={() => setActiveTab('home')}
+          aria-label="Jewels Music Hub"
           className="
             flex
+            shrink-0
             items-center
-            gap-2.5
             rounded-2xl
             border
             border-white/5
             bg-white/[0.035]
-            px-2.5
-            py-2
+            p-1.5
             text-left
             transition-colors
-            hover:bg-white/[0.08]
+            hover:bg-white/10
+            sm:gap-2.5
+            sm:px-2.5
+            sm:py-2
           "
         >
-
           <div
             className="
               flex
-              h-10
-              w-10
+              h-9
+              w-9
               shrink-0
               items-center
               justify-center
@@ -181,13 +188,14 @@ export const Navbar: React.FC<NavbarProps> = ({
               border-white/10
               bg-[#007aff]/15
               text-[#4da3ff]
+              sm:h-10
+              sm:w-10
             "
           >
             <Music2 className="h-5 w-5" />
           </div>
 
           <div className="hidden sm:block">
-
             <div
               className="
                 flex
@@ -231,9 +239,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               Music Ministry Management
             </p>
-
           </div>
-
         </button>
 
 
@@ -242,8 +248,11 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div
           className="
             flex
+            min-w-0
+            shrink
             items-center
             gap-1
+            overflow-hidden
             rounded-2xl
             border
             border-white/10
@@ -257,13 +266,15 @@ export const Navbar: React.FC<NavbarProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('home')}
+            aria-label="Home"
+            title="Home"
             className={
               activeTab === 'home'
                 ? navButtonActive
                 : navButtonInactive
             }
           >
-            <Home className="h-3.5 w-3.5" />
+            <Home className="h-3.5 w-3.5 shrink-0" />
 
             <span className="hidden md:inline">
               Home
@@ -276,15 +287,17 @@ export const Navbar: React.FC<NavbarProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('songs')}
+            aria-label="Song Bank"
+            title="Song Bank"
             className={
               activeTab === 'songs'
                 ? navButtonActive
                 : navButtonInactive
             }
           >
-            <Music2 className="h-3.5 w-3.5" />
+            <Music2 className="h-3.5 w-3.5 shrink-0" />
 
-            <span>
+            <span className="hidden sm:inline">
               Song Bank
             </span>
 
@@ -313,13 +326,15 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={() =>
               setActiveTab('ministrations')
             }
+            aria-label="Ministrations"
+            title="Ministrations"
             className={
               activeTab === 'ministrations'
                 ? navButtonActive
                 : navButtonInactive
             }
           >
-            <ClipboardList className="h-3.5 w-3.5" />
+            <ClipboardList className="h-3.5 w-3.5 shrink-0" />
 
             <span className="hidden lg:inline">
               Ministrations
@@ -332,13 +347,15 @@ export const Navbar: React.FC<NavbarProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('team')}
+            aria-label="Music Team"
+            title="Music Team"
             className={
               activeTab === 'team'
                 ? navButtonActive
                 : navButtonInactive
             }
           >
-            <Users className="h-3.5 w-3.5" />
+            <Users className="h-3.5 w-3.5 shrink-0" />
 
             <span className="hidden lg:inline">
               Music Team
@@ -368,9 +385,11 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         <div
           className="
+            ml-auto
             flex
+            shrink-0
             items-center
-            gap-1.5
+            gap-1
             sm:gap-2
           "
         >
@@ -381,21 +400,24 @@ export const Navbar: React.FC<NavbarProps> = ({
             type="button"
             onClick={openToolsModal}
             title="Music Director Rehearsal Tools"
+            aria-label="Tools"
             className="
               flex
-              h-10
+              h-9
+              w-9
+              shrink-0
               items-center
-              gap-1.5
+              justify-center
               rounded-2xl
               border
               border-white/5
               bg-white/[0.035]
-              px-2.5
-              text-xs
-              font-semibold
               text-white/80
               transition-colors
-              hover:bg-white/[0.08]
+              hover:bg-white/10
+              sm:h-10
+              sm:w-auto
+              sm:gap-1.5
               sm:px-3
             "
           >
@@ -403,6 +425,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               className="
                 h-3.5
                 w-3.5
+                shrink-0
                 text-[#4da3ff]
               "
             />
@@ -419,14 +442,16 @@ export const Navbar: React.FC<NavbarProps> = ({
             type="button"
             onClick={openStageMode}
             title="Launch Stage & Live Rehearsal Mode"
+            aria-label="Stage View"
             className="
               flex
-              h-10
+              h-9
+              w-9
+              shrink-0
               items-center
-              gap-1.5
+              justify-center
               rounded-2xl
               bg-[#007aff]
-              px-3
               text-xs
               font-semibold
               text-white
@@ -435,9 +460,13 @@ export const Navbar: React.FC<NavbarProps> = ({
               transition-colors
               hover:bg-[#0062cc]
               active:scale-95
+              sm:h-10
+              sm:w-auto
+              sm:gap-1.5
+              sm:px-3
             "
           >
-            <Radio className="h-3.5 w-3.5" />
+            <Radio className="h-3.5 w-3.5 shrink-0" />
 
             <span className="hidden md:inline">
               Stage View
@@ -448,10 +477,9 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* ROLE SWITCHER */}
 
           <div
-            className="relative"
+            className="relative shrink-0"
             ref={dropdownRef}
           >
-
             <button
               type="button"
               onClick={() =>
@@ -459,17 +487,23 @@ export const Navbar: React.FC<NavbarProps> = ({
                   !roleDropdownOpen
                 )
               }
+              aria-label="Role switcher"
+              title="Role switcher"
               className={`
                 flex
-                h-10
+                h-9
+                w-9
+                shrink-0
                 items-center
-                gap-1.5
+                justify-center
                 rounded-2xl
                 border
-                px-2.5
                 text-xs
                 font-semibold
                 transition-colors
+                sm:h-10
+                sm:w-auto
+                sm:gap-1.5
                 sm:px-3
 
                 ${
@@ -484,16 +518,16 @@ export const Navbar: React.FC<NavbarProps> = ({
                       border-white/5
                       bg-white/[0.035]
                       text-white/55
-                      hover:bg-white/[0.08]
+                      hover:bg-white/10
                     `
                 }
               `}
             >
-
               <ShieldCheck
                 className={`
                   h-3.5
                   w-3.5
+                  shrink-0
                   ${
                     isMD
                       ? 'text-amber-300'
@@ -515,6 +549,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
               <span
                 className="
+                  hidden
                   rounded-full
                   border
                   border-white/5
@@ -523,6 +558,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   py-0.5
                   text-[10px]
                   text-white/55
+                  sm:inline
                 "
               >
                 {currentRoleObj.badge}
@@ -530,12 +566,13 @@ export const Navbar: React.FC<NavbarProps> = ({
 
               <ChevronDown
                 className="
+                  hidden
                   h-3
                   w-3
                   text-white/40
+                  sm:inline
                 "
               />
-
             </button>
 
 
@@ -549,6 +586,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   z-50
                   mt-2
                   w-72
+                  max-w-[calc(100vw-1rem)]
                   rounded-2xl
                   border
                   border-white/10
@@ -557,7 +595,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                   backdrop-blur-2xl
                 "
               >
-
                 <div
                   className="
                     mb-1
@@ -567,7 +604,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                     py-2
                   "
                 >
-
                   <p
                     className="
                       text-[11px]
@@ -594,9 +630,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       : 'Restricted Mode: Changes require MD permission.'
                     }
                   </p>
-
                 </div>
-
 
                 <div className="space-y-1">
 
@@ -622,10 +656,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                       font-medium
                       text-white/80
                       transition-colors
-                      hover:bg-white/[0.08]
+                      hover:bg-white/10
                     "
                   >
-
                     <Globe2
                       className="
                         h-4
@@ -636,7 +669,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                     />
 
                     <div>
-
                       <p className="leading-tight">
                         General Music Hub
                       </p>
@@ -651,9 +683,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       >
                         Browse, listen & rehearse
                       </p>
-
                     </div>
-
                   </button>
 
 
@@ -683,7 +713,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                       hover:bg-amber-500/20
                     "
                   >
-
                     <ShieldCheck
                       className="
                         h-4
@@ -694,7 +723,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                     />
 
                     <div>
-
                       <p className="leading-tight">
                         MD Admin Portal
                       </p>
@@ -709,22 +737,17 @@ export const Navbar: React.FC<NavbarProps> = ({
                       >
                         Authorized MD access only
                       </p>
-
                     </div>
-
                   </button>
 
                 </div>
-
               </div>
             )}
-
           </div>
 
         </div>
 
       </nav>
-
     </header>
   );
 };
