@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import { Song, ActiveRole } from '../types';
 import {
   Search,
   Plus,
@@ -8,12 +9,11 @@ import {
   Music,
   Lock,
   X,
-  RotateCcw,
+  RotateCcw
 } from 'lucide-react';
-import { Song, ActiveRole } from '../types';
 import {
   CHROMATIC_KEYS,
-  playPitchTone,
+  playPitchTone
 } from '../utils/audioUtils';
 
 interface SongBankViewProps {
@@ -31,11 +31,15 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
   onSelectSong,
   onAddNewSong,
   onEditSong,
+  onDeleteSong
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [selectedKey, setSelectedKey] = useState('All');
-  const [playingSongId, setPlayingSongId] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] =
+    useState('All');
+  const [selectedKey, setSelectedKey] =
+    useState('All');
+  const [playingSongId, setPlayingSongId] =
+    useState<string | null>(null);
 
   const isMD = activeRole === 'admin_md';
 
@@ -48,7 +52,7 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
     'Medleys',
     'Choir',
     'Contemporary',
-    'Other',
+    'Other'
   ];
 
   const filteredSongs = useMemo(() => {
@@ -66,7 +70,9 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
         title.toLowerCase().includes(search) ||
         artist.toLowerCase().includes(search) ||
         lyrics.toLowerCase().includes(search) ||
-        tags.some(tag => tag.toLowerCase().includes(search));
+        tags.some(tag =>
+          tag.toLowerCase().includes(search)
+        );
 
       const matchesCategory =
         selectedCategory === 'All' ||
@@ -74,7 +80,8 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
 
       const matchesKey =
         selectedKey === 'All' ||
-        key.toLowerCase() === selectedKey.toLowerCase();
+        key.toLowerCase() ===
+          selectedKey.toLowerCase();
 
       return (
         matchesSearch &&
@@ -86,7 +93,7 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
     songs,
     searchTerm,
     selectedCategory,
-    selectedKey,
+    selectedKey
   ]);
 
   const handleQuickPlay = (
@@ -116,81 +123,93 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
     }, 3000);
   };
 
-  const resetFilters = () => {
-    setSearchTerm('');
-    setSelectedCategory('All');
-    setSelectedKey('All');
-  };
-
   return (
-    <div className="w-full min-w-0 max-w-full space-y-5 animate-in fade-in duration-200">
+    <div className="w-full min-w-0 max-w-full space-y-5 bg-[#0f0f11] text-white animate-in fade-in duration-200">
 
       {/* HEADER */}
-      <section className="
-        rounded-[28px]
-        border border-white/10
-        bg-[#111113]/90
-        p-5
-        backdrop-blur-2xl
-        sm:p-6
-      ">
-        <div className="
-          flex flex-col gap-5
-          md:flex-row md:items-center
-          md:justify-between
-        ">
+      <section
+        className="
+          rounded-[28px]
+          border border-white/10
+          bg-[#111113]/90
+          p-5
+          sm:p-6
+          shadow-2xl
+          shadow-black/10
+          backdrop-blur-2xl
+        "
+      >
+        <div
+          className="
+            flex
+            flex-col
+            gap-5
+            md:flex-row
+            md:items-center
+            md:justify-between
+          "
+        >
           <div className="min-w-0">
-
-            <div className="
-              mb-3 inline-flex
-              items-center
-              rounded-xl
-              border border-[#007aff]/20
-              bg-[#007aff]/15
-              px-3 py-1.5
-              text-[11px]
-              font-bold
-              uppercase
-              tracking-wider
-              text-[#4da3ff]
-            ">
-              Music Ministry Repertoire
+            <div
+              className="
+                mb-3
+                inline-flex
+                items-center
+                rounded-xl
+                border border-[#007aff]/20
+                bg-[#007aff]/15
+                px-3
+                py-1.5
+                text-[11px]
+                font-extrabold
+                uppercase
+                tracking-wider
+                text-[#4da3ff]
+              "
+            >
+              MUSIC MINISTRY REPERTOIRE
             </div>
 
-            <h1 className="
-              text-3xl
-              font-bold
-              tracking-tight
-              text-white
-              sm:text-4xl
-            ">
-              Song Bank
+            <h1
+              className="
+                text-3xl
+                font-extrabold
+                tracking-tight
+                text-white
+                sm:text-4xl
+              "
+            >
+              Song Bank Library
             </h1>
 
-            <p className="
-              mt-1
-              max-w-2xl
-              text-sm
-              font-medium
-              text-white/45
-            ">
-              {songs.length} ministry songs loaded with
-              lyrics, chord charts, vocal harmonies, and
-              MD notes.
+            <p
+              className="
+                mt-1
+                max-w-2xl
+                text-sm
+                font-medium
+                text-white/45
+              "
+            >
+              {songs.length} ministry songs loaded
+              with lyrics, chord charts, vocal
+              harmonies, and MD notes.
             </p>
           </div>
 
-          <div className="shrink-0">
+          <div className="flex shrink-0 items-center">
             {isMD ? (
               <button
                 type="button"
                 onClick={onAddNewSong}
                 className="
-                  flex min-h-11
-                  items-center gap-2
+                  flex
+                  items-center
+                  gap-2
                   rounded-2xl
                   bg-[#007aff]
-                  px-5 py-3
+                  px-5
+                  py-3
                   text-xs
                   font-bold
                   text-white
@@ -199,25 +218,30 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
                   transition-colors
                   hover:bg-[#0062cc]
                   active:scale-95
+                  sm:text-sm
                 "
               >
                 <Plus className="h-4 w-4" />
-                Upload New Song
+                <span>Upload New Song</span>
               </button>
             ) : (
-              <div className="
-                flex min-h-11
-                items-center gap-2
-                rounded-2xl
-                border border-white/10
-                bg-white/[0.035]
-                px-4 py-3
-                text-xs
-                font-semibold
-                text-white/40
-              ">
+              <div
+                className="
+                  flex
+                  items-center
+                  gap-2
+                  rounded-2xl
+                  border border-white/10
+                  bg-[#1c1c1f]
+                  px-3.5
+                  py-2.5
+                  text-xs
+                  font-semibold
+                  text-white/40
+                "
+              >
                 <Lock className="h-3.5 w-3.5" />
-                Song uploads restricted to MD
+                <span>Song uploads restricted to MD</span>
               </div>
             )}
           </div>
@@ -225,36 +249,46 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
       </section>
 
       {/* SEARCH + FILTERS */}
-      <section className="
-        rounded-[28px]
-        border border-white/10
-        bg-[#111113]/90
-        p-4
-        backdrop-blur-2xl
-        sm:p-5
-      ">
-
+      <section
+        className="
+          rounded-[28px]
+          border border-white/10
+          bg-[#111113]/90
+          p-4
+          shadow-2xl
+          shadow-black/10
+          backdrop-blur-2xl
+          sm:p-5
+        "
+      >
         <div className="relative">
-          <Search className="
-            absolute
-            left-4 top-1/2
-            h-4 w-4
-            -translate-y-1/2
-            text-white/35
-          " />
+          <Search
+            className="
+              absolute
+              left-4
+              top-1/2
+              h-4
+              w-4
+              -translate-y-1/2
+              text-white/35
+            "
+          />
 
           <input
             type="text"
             placeholder="Search by song title, artist, or lyrics..."
             value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
+            onChange={e =>
+              setSearchTerm(e.target.value)
+            }
             className="
               w-full
               rounded-2xl
               border border-white/10
-              bg-white/[0.035]
+              bg-[#0f0f11]
               py-3
-              pl-11 pr-12
+              pl-11
+              pr-16
               text-sm
               font-medium
               text-white
@@ -270,101 +304,109 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
             <button
               type="button"
               onClick={() => setSearchTerm('')}
-              aria-label="Clear search"
               className="
                 absolute
-                right-3 top-1/2
-                flex h-8 w-8
+                right-3
+                top-1/2
+                flex
+                h-8
+                w-8
                 -translate-y-1/2
                 items-center
                 justify-center
                 rounded-xl
-                text-white/40
-                transition-colors
-                hover:bg-white/10
+                border border-white/5
+                bg-[#1c1c1f]
+                text-white/45
+                hover:bg-white/[0.08]
                 hover:text-white
               "
+              aria-label="Clear search"
             >
-              <X className="h-4 w-4" />
+              <X className="h-3.5 w-3.5" />
             </button>
           )}
         </div>
 
-        <div className="
-          mt-4
-          flex flex-col gap-3
-          sm:flex-row
-          sm:items-center
-          sm:justify-between
-        ">
-
-          {/* CATEGORIES */}
-          <div className="
-            flex min-w-0
-            items-center
-            gap-1.5
-            overflow-x-auto
-            pb-1
-            scrollbar-none
-          ">
-            {categories.map(category => {
-              const selected =
-                selectedCategory === category;
-
-              return (
-                <button
-                  type="button"
-                  key={category}
-                  onClick={() =>
-                    setSelectedCategory(category)
+        <div
+          className="
+            mt-4
+            flex
+            flex-col
+            gap-3
+            sm:flex-row
+            sm:items-center
+            sm:justify-between
+          "
+        >
+          <div
+            className="
+              flex
+              min-w-0
+              items-center
+              gap-1.5
+              overflow-x-auto
+              pb-1
+              scrollbar-none
+            "
+          >
+            {categories.map(category => (
+              <button
+                type="button"
+                key={category}
+                onClick={() =>
+                  setSelectedCategory(category)
+                }
+                className={`
+                  whitespace-nowrap
+                  rounded-xl
+                  border
+                  px-3.5
+                  py-2
+                  text-xs
+                  font-bold
+                  transition-colors
+                  ${
+                    selectedCategory === category
+                      ? `
+                        border-[#007aff]/40
+                        bg-[#007aff]
+                        text-white
+                        shadow-lg
+                        shadow-blue-500/20
+                      `
+                      : `
+                        border-white/5
+                        bg-[#1c1c1f]
+                        text-white/45
+                        hover:bg-white/[0.08]
+                        hover:text-white
+                      `
                   }
-                  className={`
-                    shrink-0
-                    rounded-2xl
-                    border
-                    px-3.5 py-2
-                    text-xs
-                    font-bold
-                    transition-colors
-                    ${
-                      selected
-                        ? `
-                          border-[#007aff]/20
-                          bg-[#007aff]
-                          text-white
-                          shadow-lg
-                          shadow-blue-500/20
-                        `
-                        : `
-                          border-white/5
-                          bg-white/[0.035]
-                          text-white/45
-                          hover:bg-white/[0.08]
-                          hover:text-white
-                        `
-                    }
-                  `}
-                >
-                  {category}
-                </button>
-              );
-            })}
+                `}
+              >
+                {category}
+              </button>
+            ))}
           </div>
 
-          {/* KEY FILTER */}
-          <div className="
-            flex
-            shrink-0
-            items-center
-            gap-2
-            self-start
-            sm:self-auto
-          ">
-            <span className="
-              text-xs
-              font-bold
-              text-white/40
-            ">
+          <div
+            className="
+              flex
+              shrink-0
+              items-center
+              gap-2
+              self-end
+              sm:self-auto
+            "
+          >
+            <span
+              className="
+                text-xs
+                font-bold
+                text-white/35
+              "
+            >
               Key:
             </span>
 
@@ -374,10 +416,11 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
                 setSelectedKey(e.target.value)
               }
               className="
-                rounded-2xl
+                rounded-xl
                 border border-white/10
                 bg-[#1c1c1f]
-                px-3 py-2
+                px-2.5
+                py-1.5
                 text-xs
                 font-bold
                 text-white
@@ -385,15 +428,10 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
                 focus:border-[#007aff]/60
               "
             >
-              <option value="All">
-                All Keys
-              </option>
+              <option value="All">All Keys</option>
 
               {CHROMATIC_KEYS.map(key => (
-                <option
-                  key={key}
-                  value={key}
-                >
+                <option key={key} value={key}>
                   {key}
                 </option>
               ))}
@@ -403,30 +441,37 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
       </section>
 
       {/* RESULTS SUMMARY */}
-      <div className="
-        flex
-        items-center
-        justify-between
-        px-1
-      ">
+      <div
+        className="
+          flex
+          items-center
+          justify-between
+          px-1
+        "
+      >
         <div>
-          <span className="
-            text-[11px]
-            font-extrabold
-            uppercase
-            tracking-wider
-            text-[#4da3ff]
-          ">
-            Repertoire
+          <span
+            className="
+              text-[11px]
+              font-extrabold
+              uppercase
+              tracking-wider
+              text-[#4da3ff]
+            "
+          >
+            REPERTOIRE
           </span>
 
-          <p className="
-            mt-0.5
-            text-xs
-            font-medium
-            text-white/35
-          ">
-            Showing {filteredSongs.length} of {songs.length} songs
+          <p
+            className="
+              mt-0.5
+              text-xs
+              font-medium
+              text-white/35
+            "
+          >
+            Showing {filteredSongs.length} of{' '}
+            {songs.length} songs
           </p>
         </div>
 
@@ -435,20 +480,23 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
           selectedKey !== 'All') && (
           <button
             type="button"
-            onClick={resetFilters}
+            onClick={() => {
+              setSearchTerm('');
+              setSelectedCategory('All');
+              setSelectedKey('All');
+            }}
             className="
               flex
               items-center
               gap-1.5
-              rounded-2xl
+              rounded-xl
               border border-white/5
-              bg-white/[0.035]
+              bg-[#111113]
               px-3
               py-2
               text-xs
               font-bold
-              text-white/55
-              transition-colors
+              text-white/45
               hover:bg-white/[0.08]
               hover:text-white
             "
@@ -461,13 +509,14 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
 
       {/* SONG GRID */}
       {filteredSongs.length > 0 ? (
-        <div className="
-          grid
-          min-w-0
-          grid-cols-1
-          gap-4
-          md:grid-cols-2
-        ">
+        <div
+          className="
+            grid
+            grid-cols-1
+            gap-4
+            md:grid-cols-2
+          "
+        >
           {filteredSongs.map(song => {
             const isPlayingThis =
               playingSongId === song.id;
@@ -497,138 +546,166 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
                 }
                 className="
                   group
+                  relative
                   flex
-                  min-w-0
                   cursor-pointer
                   flex-col
+                  justify-between
                   overflow-hidden
                   rounded-[28px]
-                  border border-white/10
-                  bg-white/[0.035]
+                  border
+                  border-white/10
+                  bg-[#111113]
                   p-5
+                  shadow-2xl
+                  shadow-black/10
                   backdrop-blur-2xl
-                  transition-colors
-                  hover:bg-white/[0.055]
                 "
               >
-
                 {/* SONG HEADER */}
-                <div className="
-                  flex
-                  min-w-0
-                  items-start
-                  justify-between
-                  gap-3
-                ">
-                  <div className="
+                <div
+                  className="
                     flex
-                    min-w-0
-                    items-center
+                    items-start
+                    justify-between
                     gap-3
-                  ">
-                    <div className="
+                  "
+                >
+                  <div
+                    className="
                       flex
-                      h-12 w-12
-                      shrink-0
+                      min-w-0
                       items-center
-                      justify-center
-                      rounded-2xl
-                      border border-white/10
-                      bg-white/[0.035]
-                      text-[#4da3ff]
-                    ">
-                      <Music className="h-5 w-5" />
+                      gap-3
+                    "
+                  >
+                    <div
+                      className="
+                        flex
+                        h-13
+                        w-13
+                        shrink-0
+                        items-center
+                        justify-center
+                        rounded-2xl
+                        border border-white/10
+                        bg-[#0f0f11]
+                      "
+                    >
+                      {song.icon ? (
+                        <span className="text-xl">
+                          {song.icon}
+                        </span>
+                      ) : (
+                        <Music className="h-5 w-5 text-white/45" />
+                      )}
                     </div>
 
                     <div className="min-w-0">
-                      <span className="
-                        block
-                        text-[10px]
-                        font-extrabold
-                        uppercase
-                        tracking-wider
-                        text-[#4da3ff]
-                      ">
+                      <span
+                        className="
+                          block
+                          text-[10px]
+                          font-extrabold
+                          uppercase
+                          tracking-wider
+                          text-[#4da3ff]
+                        "
+                      >
                         {songCategory}
                       </span>
 
-                      <h3 className="
-                        truncate
-                        text-lg
-                        font-bold
-                        tracking-tight
-                        text-white
-                      ">
+                      <h3
+                        className="
+                          truncate
+                          text-lg
+                          font-bold
+                          tracking-tight
+                          text-white
+                        "
+                      >
                         {songTitle}
                       </h3>
 
-                      <p className="
-                        truncate
-                        text-xs
-                        font-semibold
-                        text-white/40
-                      ">
+                      <p
+                        className="
+                          truncate
+                          text-xs
+                          font-semibold
+                          text-white/40
+                        "
+                      >
                         {songArtist}
                       </p>
                     </div>
                   </div>
 
-                  <div className="
-                    flex
-                    shrink-0
-                    flex-col
-                    items-end
-                    gap-1
-                  ">
-                    {songKey && (
-                      <span className="
-                        rounded-2xl
+                  <div
+                    className="
+                      flex
+                      shrink-0
+                      flex-col
+                      items-end
+                      gap-1
+                    "
+                  >
+                    <span
+                      className="
+                        rounded-lg
                         border border-[#007aff]/20
                         bg-[#007aff]/15
-                        px-2.5 py-1
+                        px-2
+                        py-0.5
                         text-xs
-                        font-bold
+                        font-extrabold
                         text-[#4da3ff]
-                      ">
-                        Key: {songKey}
-                      </span>
-                    )}
+                      "
+                    >
+                      Key: {songKey}
+                    </span>
 
-                    <span className="
-                      text-[11px]
-                      font-medium
-                      text-white/35
-                    ">
+                    <span
+                      className="
+                        text-[11px]
+                        font-medium
+                        text-white/35
+                      "
+                    >
                       {tempoDisplay}
                     </span>
                   </div>
                 </div>
 
-                {/* SONG DETAILS */}
-                <div className="
-                  my-4
-                  grid
-                  grid-cols-3
-                  gap-1.5
-                  rounded-2xl
-                  border border-white/10
-                  bg-black/35
-                  p-2.5
-                  text-center
-                  text-[10px]
-                  font-semibold
-                  text-white/45
-                ">
+                {/* VOCAL SUMMARY */}
+                <div
+                  className="
+                    my-3
+                    grid
+                    grid-cols-3
+                    gap-1.5
+                    rounded-2xl
+                    border border-white/10
+                    bg-black/35
+                    p-2.5
+                    text-center
+                    text-[10px]
+                    font-semibold
+                    text-white/40
+                  "
+                >
                   <div className="truncate">
                     Lead:{' '}
-                    <span className="text-emerald-300">
-                      {song.arrangement?.lead
-                        ? 'Ready'
-                        : '—'}
-                    </span>
+                    {song.arrangement?.lead
+                      ? 'Ready'
+                      : '—'}
                   </div>
 
-                  <div className="truncate">
+                  <div
+                    className="
+                      truncate
+                      text-amber-300
+                    "
+                  >
                     SAT Harmonies
                   </div>
 
@@ -638,16 +715,16 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
                 </div>
 
                 {/* FOOTER */}
-                <div className="
-                  mt-auto
-                  flex
-                  items-center
-                  justify-between
-                  gap-3
-                  border-t border-white/10
-                  pt-3
-                ">
-
+                <div
+                  className="
+                    flex
+                    items-center
+                    justify-between
+                    border-t
+                    border-white/10
+                    pt-3
+                  "
+                >
                   <button
                     type="button"
                     onClick={e =>
@@ -655,46 +732,40 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
                     }
                     className={`
                       flex
-                      min-h-9
                       items-center
                       gap-1.5
-                      rounded-2xl
+                      rounded-xl
                       border
                       px-3
-                      py-1.5
+                      py-2
                       text-xs
                       font-bold
-                      transition-colors
                       ${
                         isPlayingThis
                           ? `
-                            border-[#007aff]/20
+                            border-[#007aff]/40
                             bg-[#007aff]
                             text-white
-                            shadow-xl
+                            shadow-lg
                             shadow-blue-500/20
                           `
                           : `
                             border-white/5
-                            bg-white/[0.035]
-                            text-white/55
+                            bg-[#1c1c1f]
+                            text-[#4da3ff]
                             hover:bg-white/[0.08]
                           `
                       }
                     `}
                   >
                     {isPlayingThis ? (
-                      <Pause className="
-                        h-3.5
-                        w-3.5
-                        fill-current
-                      " />
+                      <Pause
+                        className="h-3.5 w-3.5 fill-current"
+                      />
                     ) : (
-                      <Play className="
-                        h-3.5
-                        w-3.5
-                        fill-current
-                      " />
+                      <Play
+                        className="h-3.5 w-3.5 fill-current"
+                      />
                     )}
 
                     <span>
@@ -704,12 +775,13 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
                     </span>
                   </button>
 
-                  <div className="
-                    flex
-                    min-w-0
-                    items-center
-                    gap-1.5
-                  ">
+                  <div
+                    className="
+                      flex
+                      items-center
+                      gap-1.5
+                    "
+                  >
                     {isMD && (
                       <button
                         type="button"
@@ -718,38 +790,39 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
                           onEditSong(song);
                         }}
                         title="Edit Song"
-                        aria-label={`Edit ${songTitle}`}
                         className="
                           flex
-                          h-9 w-9
-                          shrink-0
+                          h-8
+                          w-8
                           items-center
                           justify-center
-                          rounded-2xl
+                          rounded-xl
                           border border-white/5
-                          bg-white/[0.035]
-                          text-white/45
-                          transition-colors
+                          bg-[#1c1c1f]
+                          text-white/40
                           hover:bg-white/[0.08]
                           hover:text-white
                         "
                       >
-                        <Edit className="h-4 w-4" />
+                        <Edit className="h-3.5 w-3.5" />
                       </button>
                     )}
 
-                    <span className="
-                      hidden
-                      truncate
-                      rounded-2xl
-                      border border-white/5
-                      bg-white/[0.035]
-                      px-3 py-2
-                      text-xs
-                      font-bold
-                      text-white/55
-                      sm:inline-flex
-                    ">
+                    <span
+                      className="
+                        flex
+                        items-center
+                        gap-1
+                        rounded-xl
+                        border border-white/5
+                        bg-[#1c1c1f]
+                        px-3
+                        py-2
+                        text-xs
+                        font-bold
+                        text-[#4da3ff]
+                      "
+                    >
                       View Song
                     </span>
                   </div>
@@ -759,74 +832,88 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
           })}
         </div>
       ) : (
-
         /* EMPTY STATE */
-        <div className="
-          rounded-[28px]
-          border border-white/10
-          bg-[#111113]/90
-          p-10
-          text-center
-          backdrop-blur-2xl
-        ">
-          <div className="
-            mx-auto
-            mb-4
-            flex
-            h-14 w-14
-            items-center
-            justify-center
-            rounded-2xl
+        <div
+          className="
+            rounded-[28px]
             border border-white/10
-            bg-white/[0.035]
-          ">
-            <Search className="
-              h-6 w-6
-              text-white/35
-            " />
+            bg-[#111113]
+            px-4
+            py-16
+            text-center
+            shadow-2xl
+            shadow-black/10
+            backdrop-blur-2xl
+          "
+        >
+          <div
+            className="
+              mx-auto
+              mb-4
+              flex
+              h-16
+              w-16
+              items-center
+              justify-center
+              rounded-3xl
+              border border-white/10
+              bg-[#0f0f11]
+            "
+          >
+            <Music className="h-7 w-7 text-white/35" />
           </div>
 
-          <h3 className="
-            text-xl
-            font-bold
-            text-white
-          ">
+          <h3
+            className="
+              text-xl
+              font-bold
+              text-white
+            "
+          >
             No songs found
           </h3>
 
-          <p className="
-            mx-auto
-            mt-1
-            max-w-sm
-            text-sm
-            text-white/40
-          ">
-            Try searching for another song title
-            or artist, or clear your active filters.
+          <p
+            className="
+              mx-auto
+              mt-1
+              max-w-sm
+              text-sm
+              text-white/40
+            "
+          >
+            Try searching for another song
+            title or artist, or clear your
+            active filters.
           </p>
 
-          <div className="
-            mt-5
-            flex
-            flex-wrap
-            justify-center
-            gap-3
-          ">
+          <div
+            className="
+              mt-5
+              flex
+              justify-center
+              gap-3
+            "
+          >
             <button
               type="button"
-              onClick={resetFilters}
+              onClick={() => {
+                setSearchTerm('');
+                setSelectedCategory('All');
+                setSelectedKey('All');
+              }}
               className="
                 flex
                 items-center
-                gap-2
-                rounded-2xl
+                gap-1.5
+                rounded-xl
                 border border-white/5
-                bg-white/[0.035]
-                px-4 py-2.5
+                bg-[#1c1c1f]
+                px-4
+                py-2
                 text-xs
                 font-bold
-                text-white/55
-                transition-colors
+                text-white/70
                 hover:bg-white/[0.08]
                 hover:text-white
               "
@@ -842,16 +929,16 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
                 className="
                   flex
                   items-center
-                  gap-2
-                  rounded-2xl
+                  gap-1.5
+                  rounded-xl
                   bg-[#007aff]
-                  px-4 py-2.5
+                  px-4
+                  py-2
                   text-xs
                   font-bold
                   text-white
-                  shadow-xl
+                  shadow-lg
                   shadow-blue-500/20
-                  transition-colors
                   hover:bg-[#0062cc]
                 "
               >
