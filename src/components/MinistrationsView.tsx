@@ -15,9 +15,12 @@ import {
   ArrowDown,
   Trash2,
   Printer,
-  Radio
+  Radio,
+  Music2,
+  Mic2,
+  X,
+  Edit3
 } from 'lucide-react';
-import confetti from 'canvas-confetti';
 import { CHROMATIC_KEYS } from '../utils/audioUtils';
 
 interface MinistrationsViewProps {
@@ -84,20 +87,6 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
 
     setCurrentMin(updatedMin);
     onUpdateMinistration(updatedMin);
-
-    const allAssigned = updatedSongs.every(
-      s => s.lead !== null
-    );
-
-    if (allAssigned && updatedSongs.length > 0) {
-      try {
-        confetti({
-          particleCount: 50,
-          spread: 60,
-          origin: { y: 0.8 }
-        });
-      } catch {}
-    }
   };
 
   const handleKeyOverride = (
@@ -188,10 +177,9 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
   const handleRemoveSong = (songId: number) => {
     if (!isMD) return;
 
-    const updatedSongs =
-      currentMin.songs.filter(
-        s => s.songId !== songId
-      );
+    const updatedSongs = currentMin.songs.filter(
+      s => s.songId !== songId
+    );
 
     const updatedMin = {
       ...currentMin,
@@ -205,7 +193,7 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
   const handleAddSongToMin = (songId: number) => {
     if (
       currentMin.songs.some(
-        s => s.songId === songId
+        item => item.songId === songId
       )
     ) {
       alert(
@@ -249,18 +237,17 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
     ).length;
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-300">
+    <div className="w-full min-w-0 max-w-full space-y-6 animate-in fade-in duration-200">
 
-      {/* =========================================================
-          PAGE HEADER
-      ========================================================= */}
-      <div className="space-y-5">
+      {/* PAGE HEADER */}
+      <div className="space-y-4">
 
-        <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-5">
+        <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-4">
 
-          <div>
+          <div className="min-w-0">
+
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#4da3ff] bg-[#007aff]/10 border border-[#007aff]/20 px-3 py-1 rounded-full">
+              <span className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#4da3ff] bg-[#007aff]/15 border border-[#007aff]/20 px-3 py-1 rounded-full">
                 Ministry Services & Events
               </span>
 
@@ -277,14 +264,16 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
               Manage event song orders, assign lead vocalists,
               prepare performance keys, and direct rehearsals.
             </p>
+
           </div>
 
-          {/* MD Status */}
-          <div className="ios-glass rounded-2xl px-4 py-3 flex items-center gap-3 w-fit">
+          {/* ACCESS */}
+          <div className="rounded-2xl border border-white/10 bg-white/[0.055] px-4 py-3 flex items-center gap-3 w-fit backdrop-blur-2xl">
+
             <div
               className={`w-2.5 h-2.5 rounded-full ${
                 isMD
-                  ? 'bg-[#007aff] shadow-[0_0_12px_rgba(0,122,255,0.8)]'
+                  ? 'bg-[#007aff] shadow-[0_0_12px_rgba(0,122,255,0.45)]'
                   : 'bg-white/30'
               }`}
             />
@@ -300,13 +289,14 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
                   : 'Read-only Member View'}
               </p>
             </div>
+
           </div>
+
         </div>
 
-        {/* =====================================================
-            MINISTRATION SWITCHER
-        ===================================================== */}
+        {/* MINISTRATION SWITCHER */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1">
+
           {ministrations.map(m => (
             <button
               key={m.id}
@@ -316,8 +306,8 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
               }}
               className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap border ${
                 currentMin.id === m.id
-                  ? 'bg-[#007aff] text-white border-[#007aff] shadow-[0_8px_24px_rgba(0,122,255,0.25)]'
-                  : 'bg-white/[0.045] text-white/50 border-white/10 hover:bg-white/[0.08] hover:text-white'
+                  ? 'bg-[#007aff] text-white border-[#007aff] shadow-lg shadow-blue-500/20'
+                  : 'bg-white/[0.035] text-white/55 border-white/10 hover:bg-white/10 hover:text-white'
               }`}
             >
               <span>{m.name}</span>
@@ -333,32 +323,30 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
               </span>
             </button>
           ))}
+
         </div>
       </div>
 
-      {/* =========================================================
-          MAIN WORKSPACE
-      ========================================================= */}
-      <div className="ios-glass rounded-[32px] p-5 sm:p-7 lg:p-8 space-y-7">
+      {/* MAIN WORKSPACE */}
+      <div className="rounded-[28px] border border-white/10 bg-[#111113]/90 p-4 sm:p-6 lg:p-7 space-y-6 backdrop-blur-2xl">
 
-        {/* =====================================================
-            EVENT HERO
-        ===================================================== */}
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 pb-7 border-b border-white/[0.08]">
+        {/* EVENT HEADER */}
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-5 pb-6 border-b border-white/10">
 
           <div className="min-w-0">
 
             <div className="flex flex-wrap items-center gap-2 mb-3">
 
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#4da3ff] bg-[#007aff]/10 border border-[#007aff]/15 px-2.5 py-1 rounded-full">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#4da3ff] bg-[#007aff]/15 border border-[#007aff]/20 px-2.5 py-1 rounded-full">
                 {currentMin.status}
               </span>
 
               {currentMin.theme && (
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#b18cff] bg-[#7c3aed]/10 border border-[#7c3aed]/15 px-2.5 py-1 rounded-full">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-300 bg-amber-500/15 border border-amber-500/20 px-2.5 py-1 rounded-full">
                   Theme: {currentMin.theme}
                 </span>
               )}
+
             </div>
 
             <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
@@ -378,37 +366,36 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
 
               {currentMin.time && (
                 <div className="flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-[#7c3aed]" />
+                  <Clock className="w-3.5 h-3.5 text-[#007aff]" />
                   <span>{currentMin.time}</span>
                 </div>
               )}
 
               {currentMin.venue && (
                 <div className="flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-rose-400" />
+                  <MapPin className="w-3.5 h-3.5 text-amber-400" />
                   <span>{currentMin.venue}</span>
                 </div>
               )}
 
             </div>
+
           </div>
 
-          {/* =================================================
-              ACTION BAR
-          ================================================= */}
+          {/* ACTION BAR */}
           <div className="flex flex-wrap items-center gap-2.5 flex-shrink-0">
 
             <button
               onClick={openStageMode}
-              className="px-4 py-2.5 rounded-2xl bg-[#007aff] hover:bg-[#1685ff] text-white text-xs font-bold flex items-center gap-2 shadow-[0_10px_30px_rgba(0,122,255,0.25)] active:scale-95 transition-all"
+              className="px-4 py-2.5 rounded-2xl bg-[#007aff] hover:bg-[#0062cc] text-white text-xs font-bold flex items-center gap-2 shadow-xl shadow-blue-500/20 active:scale-95 transition-all"
             >
-              <Radio className="w-4 h-4 animate-pulse" />
+              <Radio className="w-4 h-4" />
               <span>Launch Stage Mode</span>
             </button>
 
             <button
               onClick={handlePrint}
-              className="px-3.5 py-2.5 rounded-2xl bg-white/[0.06] border border-white/10 text-white/65 hover:text-white hover:bg-white/[0.10] text-xs font-bold flex items-center gap-1.5 transition-all"
+              className="px-3.5 py-2.5 rounded-2xl border border-white/10 bg-white/[0.035] text-white/55 hover:bg-white/[0.08] hover:text-white text-xs font-bold flex items-center gap-1.5 transition-all"
             >
               <Printer className="w-4 h-4" />
               <span className="hidden sm:inline">
@@ -421,7 +408,7 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
                 onClick={() =>
                   setIsAddSongModalOpen(true)
                 }
-                className="px-4 py-2.5 rounded-2xl bg-white/[0.06] border border-white/10 hover:bg-white/[0.10] text-white text-xs font-bold flex items-center gap-1.5 transition-all"
+                className="px-4 py-2.5 rounded-2xl border border-white/10 bg-white/[0.035] hover:bg-white/[0.08] text-white text-xs font-bold flex items-center gap-1.5 transition-all"
               >
                 <Plus className="w-4 h-4 text-[#4da3ff]" />
                 <span>Add Song to Set</span>
@@ -429,14 +416,14 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
             )}
 
           </div>
+
         </div>
 
-        {/* =====================================================
-            STATS
-        ===================================================== */}
+        {/* STATS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
-          <div className="jewels-surface rounded-2xl p-4 flex items-center justify-between">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-4 flex items-center justify-between">
+
             <div>
               <p className="text-[10px] font-extrabold uppercase tracking-wider text-white/35">
                 Repertoire Size
@@ -447,14 +434,16 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
               </p>
             </div>
 
-            <div className="w-10 h-10 rounded-xl bg-[#007aff]/10 border border-[#007aff]/15 flex items-center justify-center text-[#4da3ff]">
-              🎵
+            <div className="w-10 h-10 rounded-xl border border-[#007aff]/20 bg-[#007aff]/15 flex items-center justify-center text-[#4da3ff]">
+              <Music2 className="w-5 h-5" />
             </div>
+
           </div>
 
-          <div className="jewels-surface rounded-2xl p-4 flex items-center justify-between">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-4 flex items-center justify-between">
+
             <div>
-              <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#b18cff]">
+              <p className="text-[10px] font-extrabold uppercase tracking-wider text-white/35">
                 Lead Vocalists Allocated
               </p>
 
@@ -467,23 +456,22 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
               </p>
             </div>
 
-            <div className="w-10 h-10 rounded-xl bg-[#7c3aed]/10 border border-[#7c3aed]/15 flex items-center justify-center">
-              🎤
+            <div className="w-10 h-10 rounded-xl border border-amber-500/20 bg-amber-500/15 flex items-center justify-center text-amber-300">
+              <Mic2 className="w-5 h-5" />
             </div>
+
           </div>
 
         </div>
 
-        {/* =====================================================
-            SETLIST
-        ===================================================== */}
+        {/* SETLIST */}
         <div className="space-y-4">
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
 
             <div>
               <h3 className="text-base font-extrabold text-white tracking-tight flex items-center gap-2">
-                <span className="text-[#4da3ff]">♪</span>
+                <Music2 className="w-4 h-4 text-[#4da3ff]" />
                 <span>Setlist Repertoire</span>
               </h3>
 
@@ -493,7 +481,7 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
               </p>
             </div>
 
-            <span className="text-[10px] font-bold text-white/35 bg-white/[0.045] border border-white/10 px-3 py-1.5 rounded-full">
+            <span className="text-[10px] font-bold text-white/35 bg-white/[0.035] border border-white/10 px-3 py-1.5 rounded-full">
               {isMD
                 ? 'MD CONTROL ENABLED'
                 : 'READ-ONLY VIEW'}
@@ -502,6 +490,7 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
           </div>
 
           {currentMin.songs.length > 0 ? (
+
             <div className="space-y-3">
 
               {currentMin.songs.map(
@@ -525,7 +514,7 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
                   return (
                     <div
                       key={item.songId}
-                      className="ios-card p-4 sm:p-5 space-y-4"
+                      className="rounded-[28px] border border-white/10 bg-white/[0.045] p-4 sm:p-5 space-y-4 backdrop-blur-2xl"
                     >
 
                       {/* SONG HEADER */}
@@ -535,7 +524,7 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
 
                           <div className="flex items-center gap-1">
 
-                            <span className="w-8 h-8 rounded-xl bg-[#007aff]/10 border border-[#007aff]/15 text-xs font-extrabold text-[#4da3ff] flex items-center justify-center flex-shrink-0">
+                            <span className="w-8 h-8 rounded-xl border border-[#007aff]/20 bg-[#007aff]/15 text-xs font-extrabold text-[#4da3ff] flex items-center justify-center flex-shrink-0">
                               {String(
                                 index + 1
                               ).padStart(2, '0')}
@@ -569,10 +558,7 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
                                   }
                                   disabled={
                                     index ===
-                                    currentMin
-                                      .songs
-                                      .length -
-                                      1
+                                    currentMin.songs.length - 1
                                   }
                                   title="Move down in order"
                                   className="w-5 h-4 flex items-center justify-center text-white/30 hover:text-[#4da3ff] disabled:opacity-10"
@@ -591,24 +577,21 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
 
                               <h4
                                 onClick={() =>
-                                  onSelectSong(
-                                    song
-                                  )
+                                  onSelectSong(song)
                                 }
                                 className="text-base font-bold text-white hover:text-[#4da3ff] cursor-pointer transition-colors truncate"
                               >
                                 {song.title}
                               </h4>
 
-                              <span className="text-[9px] font-extrabold uppercase tracking-wider text-[#4da3ff] bg-[#007aff]/10 border border-[#007aff]/15 px-2 py-0.5 rounded-full flex-shrink-0">
+                              <span className="text-[9px] font-extrabold uppercase tracking-wider text-[#4da3ff] bg-[#007aff]/15 border border-[#007aff]/20 px-2 py-0.5 rounded-full flex-shrink-0">
                                 {song.category}
                               </span>
 
                             </div>
 
                             <p className="text-xs text-white/35 font-medium truncate mt-0.5">
-                              {song.artist} •{' '}
-                              {song.tempo}
+                              {song.artist} • {song.tempo}
                             </p>
 
                           </div>
@@ -619,13 +602,11 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
 
                           <button
                             onClick={() =>
-                              onSelectSong(
-                                song
-                              )
+                              onSelectSong(song)
                             }
-                            className="px-3 py-1.5 rounded-xl bg-white/[0.05] border border-white/10 hover:bg-[#007aff]/10 hover:border-[#007aff]/20 text-[#4da3ff] text-xs font-bold transition-all"
+                            className="px-3 py-1.5 rounded-xl border border-white/10 bg-white/[0.035] hover:bg-white/[0.08] text-[#4da3ff] text-xs font-bold transition-all"
                           >
-                            View Arrangement →
+                            View Arrangement
                           </button>
 
                           {isMD && (
@@ -636,55 +617,54 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
                                 )
                               }
                               title="Remove from setlist"
-                              className="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/15 hover:bg-rose-500/20 text-rose-400 flex items-center justify-center transition-colors"
+                              className="w-8 h-8 rounded-xl border border-white/10 bg-white/[0.035] hover:bg-white/[0.08] text-white/45 hover:text-white flex items-center justify-center transition-colors"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
                           )}
 
                         </div>
+
                       </div>
 
-                      {/* =================================================
-                          ALLOCATION BAR
-                      ================================================= */}
-                      <div className="p-3.5 sm:p-4 rounded-2xl bg-black/20 border border-white/[0.07] grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                      {/* ALLOCATION BAR */}
+                      <div className="p-3.5 sm:p-4 rounded-2xl border border-white/10 bg-black/35 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
 
                         {/* LEAD */}
                         <div className="md:col-span-5 flex items-center gap-3">
 
-                          <div className="w-8 h-8 rounded-xl bg-[#7c3aed]/10 border border-[#7c3aed]/15 flex items-center justify-center text-sm flex-shrink-0">
-                            🎤
+                          <div className="w-8 h-8 rounded-xl border border-amber-500/20 bg-amber-500/15 flex items-center justify-center text-amber-300 flex-shrink-0">
+                            <Mic2 className="w-4 h-4" />
                           </div>
 
                           <div className="flex-1 min-w-0">
 
-                            <label className="text-[9px] font-extrabold uppercase tracking-[0.15em] text-[#b18cff] block mb-1">
+                            <label className="text-[9px] font-extrabold uppercase tracking-[0.15em] text-amber-300 block mb-1">
                               Lead Vocalist
                             </label>
 
                             {isMD ? (
+
                               <select
                                 value={
-                                  item.lead ||
-                                  ''
+                                  item.lead || ''
                                 }
                                 onChange={e =>
                                   handleAssignLead(
                                     item.songId,
                                     e.target.value
                                       ? Number(
-                                          e.target
-                                            .value
+                                          e.target.value
                                         )
                                       : null
                                   )
                                 }
-                                className="w-full bg-white/[0.06] border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-white outline-none focus:border-[#7c3aed] focus:ring-1 focus:ring-[#7c3aed]/30"
+                                className="w-full bg-[#1c1c1f] border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-white outline-none focus:border-amber-500/40"
                               >
+
                                 <option
                                   value=""
-                                  className="bg-[#17171a]"
+                                  className="bg-[#1c1c1f]"
                                 >
                                   -- Not Assigned --
                                 </option>
@@ -692,15 +672,10 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
                                 {vocalMembers.map(
                                   vm => (
                                     <option
-                                      key={
-                                        vm.id
-                                      }
-                                      value={
-                                        vm.id
-                                      }
-                                      className="bg-[#17171a]"
+                                      key={vm.id}
+                                      value={vm.id}
+                                      className="bg-[#1c1c1f]"
                                     >
-                                      {vm.icon}{' '}
                                       {vm.name}{' '}
                                       (
                                       {vm.voicePart ||
@@ -709,16 +684,21 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
                                     </option>
                                   )
                                 )}
+
                               </select>
+
                             ) : (
+
                               <span className="text-xs font-bold text-white">
                                 {leadMember
-                                  ? `${leadMember.icon} ${leadMember.name}`
-                                  : '⚠️ Pending MD Assignment'}
+                                  ? leadMember.name
+                                  : 'Pending MD Assignment'}
                               </span>
+
                             )}
 
                           </div>
+
                         </div>
 
                         {/* KEY */}
@@ -729,6 +709,7 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
                           </label>
 
                           {isMD ? (
+
                             <select
                               value={
                                 effectiveKey
@@ -739,25 +720,27 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
                                   e.target.value
                                 )
                               }
-                              className="w-full bg-white/[0.06] border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-[#4da3ff] outline-none focus:border-[#007aff] focus:ring-1 focus:ring-[#007aff]/30"
+                              className="w-full bg-[#1c1c1f] border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-[#4da3ff] outline-none focus:border-[#007aff]/50"
                             >
                               {CHROMATIC_KEYS.map(
                                 k => (
                                   <option
                                     key={k}
                                     value={k}
-                                    className="bg-[#17171a]"
+                                    className="bg-[#1c1c1f]"
                                   >
                                     {k} Major
                                   </option>
                                 )
                               )}
                             </select>
+
                           ) : (
+
                             <span className="text-xs font-extrabold text-[#4da3ff]">
-                              Key of{' '}
-                              {effectiveKey}
+                              Key of {effectiveKey}
                             </span>
+
                           )}
 
                         </div>
@@ -765,17 +748,17 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
                         {/* TRANSITION */}
                         <div className="md:col-span-4">
 
-                          <label className="text-[9px] font-extrabold uppercase tracking-[0.15em] text-white/30 block mb-1">
+                          <label className="text-[9px] font-extrabold uppercase tracking-[0.15em] text-white/35 block mb-1">
                             Transition Cue
                           </label>
 
                           {isMD ? (
+
                             <input
                               type="text"
                               placeholder="e.g. Drum swell transition"
                               value={
-                                item.orderNote ||
-                                ''
+                                item.orderNote || ''
                               }
                               onChange={e =>
                                 handleNoteChange(
@@ -783,29 +766,35 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
                                   e.target.value
                                 )
                               }
-                              className="w-full bg-white/[0.06] border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder:text-white/20 outline-none focus:border-[#007aff] focus:ring-1 focus:ring-[#007aff]/30"
+                              className="w-full bg-[#1c1c1f] border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder:text-white/20 outline-none focus:border-[#007aff]/50"
                             />
+
                           ) : (
+
                             <p className="text-xs text-white/40 truncate">
                               {item.orderNote ||
                                 'Standard transition.'}
                             </p>
+
                           )}
 
                         </div>
 
                       </div>
+
                     </div>
                   );
                 }
               )}
 
             </div>
-          ) : (
-            <div className="text-center py-14 px-4 rounded-3xl bg-white/[0.025] border border-dashed border-white/10">
 
-              <div className="w-14 h-14 rounded-2xl bg-[#007aff]/10 border border-[#007aff]/15 flex items-center justify-center mx-auto mb-4 text-2xl">
-                🎵
+          ) : (
+
+            <div className="text-center py-14 px-4 rounded-[28px] bg-white/[0.025] border border-dashed border-white/10">
+
+              <div className="w-14 h-14 rounded-2xl border border-[#007aff]/20 bg-[#007aff]/15 flex items-center justify-center mx-auto mb-4 text-[#4da3ff]">
+                <Music2 className="w-6 h-6" />
               </div>
 
               <p className="text-sm font-bold text-white">
@@ -822,7 +811,7 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
                   onClick={() =>
                     setIsAddSongModalOpen(true)
                   }
-                  className="mt-4 px-4 py-2.5 rounded-xl bg-[#007aff] hover:bg-[#1685ff] text-white text-xs font-bold inline-flex items-center gap-1.5 transition-all"
+                  className="mt-4 px-4 py-2.5 rounded-2xl bg-[#007aff] hover:bg-[#0062cc] text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-xl shadow-blue-500/20 transition-all"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Add Songs Now</span>
@@ -830,29 +819,32 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
               )}
 
             </div>
+
           )}
 
         </div>
 
-        {/* =====================================================
-            MUSIC DIRECTOR NOTES
-        ===================================================== */}
-        <div className="p-5 rounded-2xl bg-amber-400/[0.06] border border-amber-400/15">
+        {/* MUSIC DIRECTOR NOTES */}
+        <div className="p-5 rounded-2xl border border-amber-500/20 bg-amber-500/10">
 
           <div className="flex items-center justify-between mb-3">
 
             <div className="flex items-center gap-2">
-              <span className="text-lg">🎼</span>
+
+              <div className="w-8 h-8 rounded-xl border border-amber-500/20 bg-amber-500/15 flex items-center justify-center text-amber-300">
+                <Edit3 className="w-4 h-4" />
+              </div>
 
               <div>
                 <h4 className="text-sm font-bold text-amber-200">
                   Music Director Ministry Notes
                 </h4>
 
-                <p className="text-[10px] text-amber-200/35 uppercase tracking-wider font-bold mt-0.5">
+                <p className="text-[10px] text-amber-200/40 uppercase tracking-wider font-bold mt-0.5">
                   Global directives for this ministration
                 </p>
               </div>
+
             </div>
 
             {isMD && !isEditingDetails && (
@@ -869,6 +861,7 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
           </div>
 
           {isEditingDetails && isMD ? (
+
             <div className="space-y-3">
 
               <textarea
@@ -888,7 +881,7 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
                     updated
                   );
                 }}
-                className="w-full bg-black/20 border border-amber-400/20 rounded-xl p-3 text-xs text-white placeholder:text-white/20 outline-none focus:border-amber-400/40"
+                className="w-full bg-black/35 border border-amber-500/20 rounded-xl p-3 text-xs text-white placeholder:text-white/20 outline-none focus:border-amber-500/40"
               />
 
               <button
@@ -901,26 +894,28 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
               </button>
 
             </div>
+
           ) : (
+
             <p className="text-xs sm:text-sm text-amber-100/60 leading-relaxed whitespace-pre-wrap">
               {currentMin.mdGlobalNotes ||
                 'Arrival: 1 hour before start time. Sound check, in-ear monitor configuration, and prayer before step up to stage.'}
             </p>
+
           )}
 
         </div>
 
       </div>
 
-      {/* =========================================================
-          ADD SONG MODAL
-      ========================================================= */}
+      {/* ADD SONG MODAL */}
       {isAddSongModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xl animate-in fade-in">
 
-          <div className="ios-glass bg-[#151518]/95 rounded-[30px] max-w-lg w-full p-6 shadow-2xl border border-white/10 max-h-[85vh] flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-2xl animate-in fade-in">
 
-            <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
+          <div className="rounded-[28px] border border-white/10 bg-[#111113]/95 max-w-lg w-full p-5 sm:p-6 shadow-2xl shadow-black/30 max-h-[85vh] flex flex-col backdrop-blur-2xl">
+
+            <div className="flex items-center justify-between pb-4 border-b border-white/10">
 
               <div>
                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#4da3ff]">
@@ -936,9 +931,9 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
                 onClick={() =>
                   setIsAddSongModalOpen(false)
                 }
-                className="w-8 h-8 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 flex items-center justify-center text-white/50 hover:text-white transition-all"
+                className="w-8 h-8 rounded-xl border border-white/10 bg-white/[0.035] hover:bg-white/[0.08] flex items-center justify-center text-white/45 hover:text-white transition-all"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
 
             </div>
@@ -971,8 +966,7 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
 
                       <p className="text-[10px] text-white/35 truncate mt-0.5">
                         {s.artist} • Key:{' '}
-                        {s.key} •{' '}
-                        {s.category}
+                        {s.key} • {s.category}
                       </p>
 
                     </div>
@@ -987,7 +981,7 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
                       className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                         isAlreadyIn
                           ? 'bg-white/[0.05] text-white/25'
-                          : 'bg-[#007aff] hover:bg-[#1685ff] text-white shadow-[0_6px_18px_rgba(0,122,255,0.2)]'
+                          : 'bg-[#007aff] hover:bg-[#0062cc] text-white shadow-lg shadow-blue-500/20'
                       }`}
                     >
                       {isAlreadyIn
@@ -1000,8 +994,11 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
               })}
 
             </div>
+
           </div>
+
         </div>
+
       )}
 
     </div>
