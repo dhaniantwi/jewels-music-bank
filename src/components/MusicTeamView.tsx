@@ -8,7 +8,12 @@ import {
   ShieldCheck,
   UserPlus,
   Camera,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Users,
+  Mic2,
+  Piano,
+  Music2,
+  Lock
 } from 'lucide-react';
 
 interface MusicTeamViewProps {
@@ -89,10 +94,8 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
   ) => {
     const style =
       variant === 'director'
-        ? 'bg-amber-500/10 border-amber-400/20'
-        : variant === 'vocal'
-          ? 'bg-[#7c3aed]/10 border-[#7c3aed]/20'
-          : 'bg-[#007aff]/10 border-[#007aff]/20';
+        ? 'bg-amber-500/15 border-amber-500/20'
+        : 'bg-white/[0.055] border-white/10';
 
     return (
       <div className="relative flex-shrink-0">
@@ -105,9 +108,9 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
               ? `Change photo for ${member.name}`
               : `${member.name}'s profile photo`
           }
-          className={`w-14 h-14 rounded-2xl ${style} border overflow-hidden flex items-center justify-center transition-all ${
+          className={`h-14 w-14 overflow-hidden rounded-2xl border ${style} flex items-center justify-center ${
             isMD
-              ? 'cursor-pointer hover:scale-105 hover:border-white/20'
+              ? 'cursor-pointer hover:bg-white/10'
               : 'cursor-default'
           }`}
         >
@@ -115,22 +118,20 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
             <img
               src={member.photoUrl}
               alt={member.name}
-              className="w-full h-full object-cover"
+              className="h-full w-full object-cover"
             />
           ) : member.icon ? (
-            <span className="text-2xl">
+            <span className="text-xl">
               {member.icon}
             </span>
           ) : (
-            <span className="text-xl">
-              👤
-            </span>
+            <Users className="h-5 w-5 text-white/35" />
           )}
         </button>
 
         {isMD && (
-          <div className="absolute -right-1 -bottom-1 w-5 h-5 rounded-full bg-[#17171a] border border-white/10 shadow-lg flex items-center justify-center pointer-events-none">
-            <Camera className="w-2.5 h-2.5 text-[#4da3ff]" />
+          <div className="pointer-events-none absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border border-white/10 bg-[#1c1c1f]">
+            <Camera className="h-2.5 w-2.5 text-[#4da3ff]" />
           </div>
         )}
       </div>
@@ -140,15 +141,15 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
   const renderContactInfo = (member: TeamMember) => (
     <div className="space-y-1.5 pt-1 text-xs text-white/40">
       {member.phone && (
-        <div className="flex items-center gap-2 min-w-0">
-          <Phone className="w-3 h-3 text-[#007aff] flex-shrink-0" />
+        <div className="flex min-w-0 items-center gap-2">
+          <Phone className="h-3 w-3 flex-shrink-0 text-[#4da3ff]" />
           <span className="truncate">{member.phone}</span>
         </div>
       )}
 
       {member.email && (
-        <div className="flex items-center gap-2 min-w-0">
-          <Mail className="w-3 h-3 text-[#7c3aed] flex-shrink-0" />
+        <div className="flex min-w-0 items-center gap-2">
+          <Mail className="h-3 w-3 flex-shrink-0 text-white/45" />
           <span className="truncate">{member.email}</span>
         </div>
       )}
@@ -162,17 +163,19 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
     if (!isMD) return null;
 
     return (
-      <div className="flex items-center gap-1 flex-shrink-0">
+      <div className="flex flex-shrink-0 items-center gap-1">
         <button
+          type="button"
           onClick={() => onEditMember(member)}
           title="Edit member"
-          className="w-8 h-8 rounded-xl bg-white/[0.05] border border-white/10 hover:bg-white/[0.10] flex items-center justify-center text-white/45 hover:text-white transition-all"
+          className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/[0.035] text-white/45 hover:bg-white/10 hover:text-white"
         >
-          <Edit className="w-3.5 h-3.5" />
+          <Edit className="h-3.5 w-3.5" />
         </button>
 
         {allowDelete && (
           <button
+            type="button"
             onClick={() => {
               if (
                 confirm(
@@ -187,19 +190,31 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
               }
             }}
             title="Delete member"
-            className="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/15 hover:bg-rose-500/20 text-rose-400 flex items-center justify-center transition-all"
+            className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/[0.035] text-white/45 hover:bg-white/10 hover:text-rose-300"
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Trash2 className="h-3.5 w-3.5" />
           </button>
         )}
       </div>
     );
   };
 
-  return (
-    <div className="space-y-8 animate-in fade-in duration-300">
+  const filterButtonClass = (
+    active: boolean,
+    tone: 'blue' | 'amber' = 'blue'
+  ) => {
+    if (active) {
+      return tone === 'amber'
+        ? 'bg-amber-500 text-black'
+        : 'bg-[#007aff] text-white';
+    }
 
-      {/* Hidden photo input */}
+    return 'text-white/40 hover:bg-white/10 hover:text-white';
+  };
+
+  return (
+    <div className="w-full min-w-0 space-y-6 overflow-hidden animate-in fade-in duration-200">
+
       <input
         ref={fileInputRef}
         type="file"
@@ -208,17 +223,15 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
         onChange={handlePhotoChange}
       />
 
-      {/* =========================================================
-          PAGE HEADER
-      ========================================================= */}
-      <div className="space-y-5">
+      {/* PAGE HEADER */}
+      <div className="rounded-[28px] border border-white/10 bg-white/[0.05] p-5 shadow-2xl shadow-black/10 backdrop-blur-2xl sm:p-6">
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
 
-        <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-5">
-
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-300 bg-amber-400/10 border border-amber-400/15 px-3 py-1 rounded-full">
-                People & Ministry Roster
+          <div className="min-w-0">
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <span className="flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/15 px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-300">
+                <Users className="h-3 w-3" />
+                Music Team
               </span>
 
               <span className="text-[10px] font-bold uppercase tracking-wider text-white/35">
@@ -226,427 +239,332 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
               </span>
             </div>
 
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+            <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
               Jewels Music Team
             </h1>
 
-            <p className="text-sm text-white/45 font-medium mt-2 max-w-2xl">
+            <p className="mt-2 max-w-2xl text-sm font-medium text-white/45">
               {team.length} dedicated vocalists, musicians,
               and directors serving in music ministry.
             </p>
           </div>
 
-          {/* MD ACTION */}
-          <div className="flex items-center gap-2">
-
+          <div className="flex flex-shrink-0 items-center gap-2">
             {isMD ? (
               <button
+                type="button"
                 onClick={onAddNewMember}
-                className="px-5 py-2.5 rounded-2xl bg-[#007aff] hover:bg-[#1685ff] text-white text-xs sm:text-sm font-bold flex items-center gap-2 shadow-[0_10px_30px_rgba(0,122,255,0.25)] transition-all active:scale-95"
+                className="flex items-center gap-2 rounded-2xl bg-[#007aff] px-5 py-2.5 text-xs font-bold text-white shadow-xl shadow-blue-500/20 hover:bg-[#0062cc] active:scale-95 sm:text-sm"
               >
-                <UserPlus className="w-4 h-4" />
+                <UserPlus className="h-4 w-4" />
                 <span>Add Team Member</span>
               </button>
             ) : (
-              <div className="px-3.5 py-2.5 rounded-2xl bg-white/[0.045] text-white/35 text-xs font-semibold flex items-center gap-1.5 border border-white/10">
-                <span>
-                  🔒 Member management restricted to MD
-                </span>
+              <div className="flex items-center gap-1.5 rounded-2xl border border-white/10 bg-white/[0.035] px-3.5 py-2.5 text-xs font-semibold text-white/40">
+                <Lock className="h-3.5 w-3.5" />
+                <span>Member management restricted to MD</span>
               </div>
             )}
-
           </div>
         </div>
 
-        {/* =====================================================
-            FILTER TABS
-        ===================================================== */}
-        <div className="flex items-center gap-1.5 bg-white/[0.035] border border-white/10 p-1 rounded-2xl max-w-full overflow-x-auto">
+        {/* FILTERS */}
+        <div className="mt-6 overflow-x-auto">
+          <div className="flex min-w-max items-center gap-1.5 rounded-2xl border border-white/10 bg-white/[0.035] p-1">
+            <button
+              type="button"
+              onClick={() => setActiveFilter('all')}
+              className={`whitespace-nowrap rounded-xl px-3.5 py-2 text-xs font-bold ${filterButtonClass(
+                activeFilter === 'all'
+              )}`}
+            >
+              All Members ({team.length})
+            </button>
 
-          <button
-            onClick={() => setActiveFilter('all')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-              activeFilter === 'all'
-                ? 'bg-[#007aff] text-white shadow-[0_5px_18px_rgba(0,122,255,0.20)]'
-                : 'text-white/40 hover:text-white hover:bg-white/[0.05]'
-            }`}
-          >
-            All Members ({team.length})
-          </button>
+            <button
+              type="button"
+              onClick={() => setActiveFilter('vocal')}
+              className={`flex items-center gap-1.5 whitespace-nowrap rounded-xl px-3.5 py-2 text-xs font-bold ${filterButtonClass(
+                activeFilter === 'vocal'
+              )}`}
+            >
+              <Mic2 className="h-3.5 w-3.5" />
+              Vocalists ({vocalists.length})
+            </button>
 
-          <button
-            onClick={() => setActiveFilter('vocal')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-              activeFilter === 'vocal'
-                ? 'bg-[#7c3aed] text-white shadow-[0_5px_18px_rgba(124,58,237,0.20)]'
-                : 'text-white/40 hover:text-white hover:bg-white/[0.05]'
-            }`}
-          >
-            🎤 Vocalists ({vocalists.length})
-          </button>
+            <button
+              type="button"
+              onClick={() => setActiveFilter('instrument')}
+              className={`flex items-center gap-1.5 whitespace-nowrap rounded-xl px-3.5 py-2 text-xs font-bold ${filterButtonClass(
+                activeFilter === 'instrument'
+              )}`}
+            >
+              <Piano className="h-3.5 w-3.5" />
+              Musicians ({instrumentalists.length})
+            </button>
 
-          <button
-            onClick={() => setActiveFilter('instrument')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-              activeFilter === 'instrument'
-                ? 'bg-[#007aff] text-white shadow-[0_5px_18px_rgba(0,122,255,0.20)]'
-                : 'text-white/40 hover:text-white hover:bg-white/[0.05]'
-            }`}
-          >
-            🎹 Musicians ({instrumentalists.length})
-          </button>
-
-          <button
-            onClick={() => setActiveFilter('director')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-              activeFilter === 'director'
-                ? 'bg-amber-500 text-black shadow-[0_5px_18px_rgba(245,158,11,0.18)]'
-                : 'text-white/40 hover:text-white hover:bg-white/[0.05]'
-            }`}
-          >
-            🎼 Leadership ({directors.length})
-          </button>
-
+            <button
+              type="button"
+              onClick={() => setActiveFilter('director')}
+              className={`flex items-center gap-1.5 whitespace-nowrap rounded-xl px-3.5 py-2 text-xs font-bold ${filterButtonClass(
+                activeFilter === 'director',
+                'amber'
+              )}`}
+            >
+              <Music2 className="h-3.5 w-3.5" />
+              Leadership ({directors.length})
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* =========================================================
-          LEADERSHIP
-      ========================================================= */}
+      {/* LEADERSHIP */}
       {(activeFilter === 'all' ||
         activeFilter === 'director') &&
         directors.length > 0 && (
-
           <section className="space-y-4">
-
             <div className="flex items-center justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-lg">🎼</span>
+                  <ShieldCheck className="h-5 w-5 text-amber-300" />
 
-                  <h2 className="text-xl font-bold text-white tracking-tight">
+                  <h2 className="text-xl font-bold tracking-tight text-white">
                     Music Leadership
                   </h2>
                 </div>
 
-                <p className="text-xs text-white/30 mt-1">
+                <p className="mt-1 text-xs text-white/30">
                   Ministry direction and administration
                 </p>
               </div>
 
-              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300 bg-amber-400/10 border border-amber-400/15 px-2.5 py-1 rounded-full">
+              <span className="rounded-full border border-amber-500/20 bg-amber-500/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-300">
                 {directors.length} Leader
                 {directors.length !== 1 ? 's' : ''}
               </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {directors.map(member => (
-
                 <div
                   key={member.id}
-                  className="ios-card p-5 border-amber-400/15 bg-gradient-to-br from-amber-400/[0.08] via-white/[0.045] to-transparent flex flex-col justify-between"
+                  className="flex flex-col justify-between rounded-[28px] border border-white/10 bg-white/[0.05] p-5 shadow-2xl shadow-black/10 backdrop-blur-2xl"
                 >
-
                   <div>
-
-                    <div className="flex items-start justify-between gap-3 mb-4">
-
-                      <div className="flex items-center gap-3 min-w-0">
-
-                        {renderMemberPhoto(
-                          member,
-                          'director'
-                        )}
+                    <div className="mb-4 flex items-start justify-between gap-3">
+                      <div className="flex min-w-0 items-center gap-3">
+                        {renderMemberPhoto(member, 'director')}
 
                         <div className="min-w-0">
-
                           <div className="flex items-center gap-1.5">
-
-                            <h3 className="text-base font-extrabold text-white truncate">
+                            <h3 className="truncate text-base font-extrabold text-white">
                               {member.name}
                             </h3>
 
-                            <span className="text-[9px] bg-amber-500 text-black font-extrabold px-1.5 py-0.5 rounded-full">
+                            <span className="rounded-full bg-amber-500 px-1.5 py-0.5 text-[9px] font-extrabold text-black">
                               MD
                             </span>
-
                           </div>
 
-                          <p className="text-xs font-semibold text-amber-300 mt-1 truncate">
+                          <p className="mt-1 truncate text-xs font-semibold text-amber-300">
                             {member.role}
                           </p>
-
                         </div>
-
                       </div>
 
-                      {renderMemberActions(
-                        member,
-                        false
-                      )}
-
+                      {renderMemberActions(member, false)}
                     </div>
 
                     {renderContactInfo(member)}
-
                   </div>
 
-                  <div className="mt-5 pt-3 border-t border-white/[0.08] flex items-center justify-between gap-2">
-
-                    <span className="text-[11px] font-bold text-amber-300 flex items-center gap-1">
-                      <ShieldCheck className="w-3.5 h-3.5" />
+                  <div className="mt-5 flex items-center justify-between gap-2 border-t border-white/[0.08] pt-3">
+                    <span className="flex items-center gap-1 text-[11px] font-bold text-amber-300">
+                      <ShieldCheck className="h-3.5 w-3.5" />
                       Full Admin Rights
                     </span>
 
-                    <span className="text-[10px] font-semibold text-emerald-300 bg-emerald-400/10 border border-emerald-400/10 px-2 py-0.5 rounded-full">
+                    <span className="rounded-full border border-emerald-500/10 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
                       Active Leader
                     </span>
-
                   </div>
-
                 </div>
               ))}
-
             </div>
           </section>
         )}
 
-      {/* =========================================================
-          VOCAL TEAM
-      ========================================================= */}
+      {/* VOCAL TEAM */}
       {(activeFilter === 'all' ||
         activeFilter === 'vocal') &&
         vocalists.length > 0 && (
-
           <section className="space-y-4">
-
             <div className="flex items-center justify-between gap-3">
-
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-lg">🎤</span>
+                  <Mic2 className="h-5 w-5 text-[#4da3ff]" />
 
-                  <h2 className="text-xl font-bold text-white tracking-tight">
+                  <h2 className="text-xl font-bold tracking-tight text-white">
                     Vocal Team
                   </h2>
                 </div>
 
-                <p className="text-xs text-white/30 mt-1">
+                <p className="mt-1 text-xs text-white/30">
                   Harmonies, solos and lead vocal assignments
                 </p>
               </div>
 
-              <span className="text-[10px] font-bold text-white/35 bg-white/[0.045] border border-white/10 px-2.5 py-1 rounded-full">
+              <span className="rounded-full border border-white/10 bg-white/[0.035] px-2.5 py-1 text-[10px] font-bold text-white/40">
                 {vocalists.length} Vocalist
                 {vocalists.length !== 1 ? 's' : ''}
               </span>
-
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {vocalists.map(member => (
-
                 <div
                   key={member.id}
-                  className="ios-card p-5 flex flex-col justify-between"
+                  className="flex flex-col justify-between rounded-[28px] border border-white/10 bg-white/[0.05] p-5 shadow-2xl shadow-black/10 backdrop-blur-2xl"
                 >
-
                   <div>
-
-                    <div className="flex items-start justify-between gap-3 mb-4">
-
-                      <div className="flex items-center gap-3 min-w-0">
-
-                        {renderMemberPhoto(
-                          member,
-                          'vocal'
-                        )}
+                    <div className="mb-4 flex items-start justify-between gap-3">
+                      <div className="flex min-w-0 items-center gap-3">
+                        {renderMemberPhoto(member, 'vocal')}
 
                         <div className="min-w-0">
-
-                          <h3 className="text-base font-bold text-white truncate">
+                          <h3 className="truncate text-base font-bold text-white">
                             {member.name}
                           </h3>
 
-                          <p className="text-xs font-semibold text-[#b18cff] truncate mt-1">
-                            {member.voicePart ||
-                              member.role}
+                          <p className="mt-1 truncate text-xs font-semibold text-[#4da3ff]">
+                            {member.voicePart || member.role}
                           </p>
-
                         </div>
-
                       </div>
 
-                      {renderMemberActions(
-                        member,
-                        true
-                      )}
-
+                      {renderMemberActions(member, true)}
                     </div>
 
                     {renderContactInfo(member)}
-
                   </div>
 
-                  <div className="mt-5 pt-3 border-t border-white/[0.08] flex items-center justify-between gap-2">
-
-                    <span className="text-[10px] font-bold text-[#b18cff] bg-[#7c3aed]/10 border border-[#7c3aed]/15 px-2.5 py-1 rounded-full">
-                      {member.voicePart ||
-                        'Vocal Section'}
+                  <div className="mt-5 flex items-center justify-between gap-2 border-t border-white/[0.08] pt-3">
+                    <span className="rounded-full border border-[#007aff]/20 bg-[#007aff]/15 px-2.5 py-1 text-[10px] font-bold text-[#4da3ff]">
+                      {member.voicePart || 'Vocal Section'}
                     </span>
 
                     {isMD && (
                       <button
+                        type="button"
                         onClick={() =>
-                          onTogglePermission(
-                            member.id
-                          )
+                          onTogglePermission(member.id)
                         }
-                        className={`text-[10px] font-bold px-2.5 py-1 rounded-full border transition-all ${
+                        className={`rounded-full border px-2.5 py-1 text-[10px] font-bold ${
                           member.canEdit
-                            ? 'bg-emerald-400/10 border-emerald-400/15 text-emerald-300'
-                            : 'bg-white/[0.04] border-white/10 text-white/35 hover:text-white/60'
+                            ? 'border-emerald-500/10 bg-emerald-500/10 text-emerald-300'
+                            : 'border-white/10 bg-white/[0.035] text-white/40 hover:bg-white/10 hover:text-white/70'
                         }`}
                       >
                         {member.canEdit
-                          ? '✓ Upload Access'
-                          : '+ Grant Uploads'}
+                          ? 'Upload Access'
+                          : 'Grant Uploads'}
                       </button>
                     )}
-
                   </div>
-
                 </div>
               ))}
-
             </div>
           </section>
         )}
 
-      {/* =========================================================
-          INSTRUMENTALISTS
-      ========================================================= */}
+      {/* INSTRUMENTALISTS */}
       {(activeFilter === 'all' ||
         activeFilter === 'instrument') &&
         instrumentalists.length > 0 && (
-
           <section className="space-y-4">
-
             <div className="flex items-center justify-between gap-3">
-
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-lg">🎹</span>
+                  <Piano className="h-5 w-5 text-[#4da3ff]" />
 
-                  <h2 className="text-xl font-bold text-white tracking-tight">
+                  <h2 className="text-xl font-bold tracking-tight text-white">
                     Band & Instrumentalists
                   </h2>
                 </div>
 
-                <p className="text-xs text-white/30 mt-1">
+                <p className="mt-1 text-xs text-white/30">
                   Musicians and instrumental sections
                 </p>
               </div>
 
-              <span className="text-[10px] font-bold text-white/35 bg-white/[0.045] border border-white/10 px-2.5 py-1 rounded-full">
+              <span className="rounded-full border border-white/10 bg-white/[0.035] px-2.5 py-1 text-[10px] font-bold text-white/40">
                 {instrumentalists.length} Musician
                 {instrumentalists.length !== 1 ? 's' : ''}
               </span>
-
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {instrumentalists.map(member => (
-
                 <div
                   key={member.id}
-                  className="ios-card p-5 flex flex-col justify-between"
+                  className="flex flex-col justify-between rounded-[28px] border border-white/10 bg-white/[0.05] p-5 shadow-2xl shadow-black/10 backdrop-blur-2xl"
                 >
-
                   <div>
-
-                    <div className="flex items-start justify-between gap-3 mb-4">
-
-                      <div className="flex items-center gap-3 min-w-0">
-
-                        {renderMemberPhoto(
-                          member,
-                          'instrument'
-                        )}
+                    <div className="mb-4 flex items-start justify-between gap-3">
+                      <div className="flex min-w-0 items-center gap-3">
+                        {renderMemberPhoto(member, 'instrument')}
 
                         <div className="min-w-0">
-
-                          <h3 className="text-base font-bold text-white truncate">
+                          <h3 className="truncate text-base font-bold text-white">
                             {member.name}
                           </h3>
 
-                          <p className="text-xs font-semibold text-[#4da3ff] truncate mt-1">
-                            {member.instrumentType ||
-                              member.role}
+                          <p className="mt-1 truncate text-xs font-semibold text-[#4da3ff]">
+                            {member.instrumentType || member.role}
                           </p>
-
                         </div>
-
                       </div>
 
-                      {renderMemberActions(
-                        member,
-                        true
-                      )}
-
+                      {renderMemberActions(member, true)}
                     </div>
 
                     {renderContactInfo(member)}
-
                   </div>
 
-                  <div className="mt-5 pt-3 border-t border-white/[0.08] flex items-center justify-between gap-2">
-
-                    <span className="text-[10px] font-bold text-[#4da3ff] bg-[#007aff]/10 border border-[#007aff]/15 px-2.5 py-1 rounded-full">
-                      {member.instrumentType ||
-                        'Band'}
+                  <div className="mt-5 flex items-center justify-between gap-2 border-t border-white/[0.08] pt-3">
+                    <span className="rounded-full border border-[#007aff]/20 bg-[#007aff]/15 px-2.5 py-1 text-[10px] font-bold text-[#4da3ff]">
+                      {member.instrumentType || 'Band'}
                     </span>
 
                     {isMD && (
                       <button
+                        type="button"
                         onClick={() =>
-                          onTogglePermission(
-                            member.id
-                          )
+                          onTogglePermission(member.id)
                         }
-                        className={`text-[10px] font-bold px-2.5 py-1 rounded-full border transition-all ${
+                        className={`rounded-full border px-2.5 py-1 text-[10px] font-bold ${
                           member.canEdit
-                            ? 'bg-emerald-400/10 border-emerald-400/15 text-emerald-300'
-                            : 'bg-white/[0.04] border-white/10 text-white/35 hover:text-white/60'
+                            ? 'border-emerald-500/10 bg-emerald-500/10 text-emerald-300'
+                            : 'border-white/10 bg-white/[0.035] text-white/40 hover:bg-white/10 hover:text-white/70'
                         }`}
                       >
                         {member.canEdit
-                          ? '✓ Upload Access'
-                          : '+ Grant Uploads'}
+                          ? 'Upload Access'
+                          : 'Grant Uploads'}
                       </button>
                     )}
-
                   </div>
-
                 </div>
               ))}
-
             </div>
           </section>
         )}
 
-      {/* =========================================================
-          PHOTO INFORMATION
-      ========================================================= */}
+      {/* PHOTO INFORMATION */}
       {isMD && (
-        <div className="ios-glass rounded-2xl p-4 flex items-start gap-3 border border-[#007aff]/15">
-
-          <div className="w-10 h-10 rounded-xl bg-[#007aff]/10 border border-[#007aff]/15 flex items-center justify-center flex-shrink-0">
-            <ImageIcon className="w-4 h-4 text-[#4da3ff]" />
+        <div className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-[#007aff]/20 bg-[#007aff]/15">
+            <ImageIcon className="h-4 w-4 text-[#4da3ff]" />
           </div>
 
           <div>
@@ -654,16 +572,14 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
               Team photos
             </p>
 
-            <p className="text-[11px] text-white/35 mt-1 leading-relaxed">
+            <p className="mt-1 text-[11px] leading-relaxed text-white/35">
               Click a member's photo area to choose a
               profile image. Photos should be JPG, PNG,
               WebP, or GIF and under 5 MB.
             </p>
           </div>
-
         </div>
       )}
-
     </div>
   );
 };
