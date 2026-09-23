@@ -7,17 +7,18 @@ import {
   ActiveRole
 } from '../types';
 import {
+  Music,
+  Calendar,
+  Users,
   Radio,
   Wrench,
-  Music2,
+  Sparkles,
   ArrowRight,
-  Calendar,
+  Mic,
   Clock,
   MapPin,
-  ChevronRight,
-  ClipboardList,
-  Users,
-  Mic2
+  CheckCircle2,
+  ChevronRight
 } from 'lucide-react';
 
 interface DashboardViewProps {
@@ -27,7 +28,7 @@ interface DashboardViewProps {
   activeRole: ActiveRole;
   setActiveTab: (tab: ActiveTab) => void;
   onSelectSong: (song: Song) => void;
-  onSelectMinistration: (ministration: Ministration) => void;
+  onSelectMinistration: (min: Ministration) => void;
   openToolsModal: () => void;
   openStageMode: () => void;
 }
@@ -51,557 +52,1258 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   const totalAssignedLeads =
     nextMinistration?.songs.filter(
-      s => s.lead !== null
+      song => song.lead !== null
     ).length || 0;
 
   const totalMinSongs =
     nextMinistration?.songs.length || 0;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
+    <div className="w-full min-w-0 max-w-full space-y-5 bg-[#0f0f11] text-white animate-in fade-in duration-200">
 
-      {/* =========================================================
-          WELCOME
-      ========================================================= */}
-
-      <section className="rounded-[28px] border border-white/10 bg-white/[0.05] p-5 sm:p-6 shadow-2xl shadow-black/10 backdrop-blur-2xl">
-
-        <div className="flex items-start gap-4">
-
-          <div className="w-12 h-12 rounded-2xl border border-[#007aff]/20 bg-[#007aff]/15 text-[#4da3ff] flex items-center justify-center flex-shrink-0">
-            <Music2 className="w-6 h-6" />
-          </div>
-
-          <div className="min-w-0">
-
-            <div className="flex flex-wrap items-center gap-2 mb-2">
-
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#4da3ff]">
-                JEWELS MUSIC MINISTRY PORTAL
-              </span>
-
-              {isMD && (
-                <span className="text-[10px] font-bold text-amber-300 border border-amber-500/20 bg-amber-500/15 px-2 py-1 rounded-lg">
-                  MD ADMIN
-                </span>
-              )}
-
-            </div>
-
-            <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight">
-              Welcome, Music Team
-            </h1>
-
-            <p className="text-sm sm:text-base text-white/55 font-medium leading-relaxed max-w-2xl mt-2">
-              Everything you need to prepare,
-              organize, and deliver our
-              ministrations in one place.
-            </p>
-
-          </div>
-
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2.5 mt-5">
-
-          <button
-            onClick={() => setActiveTab('songs')}
-            className="px-4 py-2.5 rounded-2xl bg-[#007aff] hover:bg-[#0062cc] text-white text-xs sm:text-sm font-bold flex items-center gap-2 shadow-xl shadow-blue-500/20 active:scale-95 transition-all"
+      {/* WELCOME HERO */}
+      <section
+        className="
+          rounded-[28px]
+          border border-white/10
+          bg-[#111113]/90
+          p-5
+          shadow-2xl
+          shadow-black/10
+          backdrop-blur-2xl
+          sm:p-6
+        "
+      >
+        <div className="max-w-3xl">
+          <div
+            className="
+              mb-3
+              inline-flex
+              items-center
+              gap-2
+              rounded-xl
+              border border-[#007aff]/20
+              bg-[#007aff]/15
+              px-3
+              py-1.5
+              text-[11px]
+              font-extrabold
+              uppercase
+              tracking-wider
+              text-[#4da3ff]
+            "
           >
-            <Music2 className="w-4 h-4" />
-            <span>Explore Song Bank</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>JEWELS MUSIC MINISTRY PORTAL</span>
+          </div>
 
-          <button
-            onClick={() => {
-              if (nextMinistration) {
-                onSelectMinistration(nextMinistration);
-                setActiveTab('ministrations');
+          <h1
+            className="
+              text-3xl
+              font-extrabold
+              leading-tight
+              tracking-tight
+              text-white
+              sm:text-5xl
+            "
+          >
+            Welcome, Music Team
+          </h1>
+
+          <p
+            className="
+              mt-3
+              max-w-2xl
+              text-sm
+              font-medium
+              leading-relaxed
+              text-white/45
+              sm:text-base
+            "
+          >
+            Everything you need to prepare,
+            organize, and deliver our
+            ministrations in one place.
+          </p>
+
+          <div
+            className="
+              mt-5
+              flex
+              flex-wrap
+              items-center
+              gap-2
+            "
+          >
+            <button
+              type="button"
+              onClick={() =>
+                setActiveTab('songs')
               }
-            }}
-            disabled={!nextMinistration}
-            className="px-4 py-2.5 rounded-2xl border border-white/10 bg-white/[0.055] hover:bg-white/10 text-white/80 text-xs sm:text-sm font-bold flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-          >
-            <ClipboardList className="w-4 h-4" />
-            <span>
-              View {nextMinistration?.name || 'Setlist'}
-            </span>
-          </button>
+              className="
+                flex
+                items-center
+                gap-2
+                rounded-2xl
+                bg-[#007aff]
+                px-5
+                py-3
+                text-xs
+                font-bold
+                text-white
+                shadow-xl
+                shadow-blue-500/20
+                transition-colors
+                hover:bg-[#0062cc]
+                active:scale-95
+                sm:text-sm
+              "
+            >
+              <Music className="h-4 w-4" />
+              <span>Explore Song Bank</span>
+              <ArrowRight className="h-4 w-4" />
+            </button>
 
-          <button
-            onClick={openToolsModal}
-            className="px-4 py-2.5 rounded-2xl border border-white/10 bg-white/[0.035] hover:bg-white/[0.08] text-white/55 hover:text-white text-xs sm:text-sm font-bold flex items-center gap-2 transition-all"
-          >
-            <Wrench className="w-4 h-4 text-[#4da3ff]" />
-            <span>Pitch Pipe & Metronome</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (nextMinistration) {
+                  onSelectMinistration(
+                    nextMinistration
+                  );
+                  setActiveTab('ministrations');
+                }
+              }}
+              className="
+                flex
+                items-center
+                gap-2
+                rounded-2xl
+                border border-white/5
+                bg-[#1c1c1f]
+                px-5
+                py-3
+                text-xs
+                font-bold
+                text-white/70
+                transition-colors
+                hover:bg-white/[0.08]
+                hover:text-white
+                active:scale-95
+                sm:text-sm
+              "
+            >
+              <Calendar className="h-4 w-4 text-[#4da3ff]" />
+              <span>
+                View {nextMinistration?.name || 'Setlist'}
+              </span>
+            </button>
 
+            <button
+              type="button"
+              onClick={openToolsModal}
+              className="
+                flex
+                items-center
+                gap-2
+                rounded-2xl
+                border border-white/5
+                bg-[#1c1c1f]
+                px-4
+                py-3
+                text-xs
+                font-bold
+                text-white/55
+                transition-colors
+                hover:bg-white/[0.08]
+                hover:text-white
+              "
+            >
+              <Wrench className="h-3.5 w-3.5 text-[#4da3ff]" />
+              <span>Pitch Pipe & Metronome</span>
+            </button>
+          </div>
         </div>
-
       </section>
 
-
-      {/* =========================================================
-          NEXT MINISTRATION
-      ========================================================= */}
-
+      {/* NEXT MINISTRATION */}
       {nextMinistration && (
-        <section className="rounded-[28px] border border-white/10 bg-white/[0.05] p-5 sm:p-6 shadow-2xl shadow-black/10 backdrop-blur-2xl">
-
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-5 pb-5 border-b border-white/10">
-
+        <section
+          className="
+            rounded-[28px]
+            border border-white/10
+            bg-[#111113]
+            p-5
+            shadow-2xl
+            shadow-black/10
+            backdrop-blur-2xl
+            sm:p-6
+          "
+        >
+          <div
+            className="
+              flex
+              flex-col
+              gap-5
+              border-b
+              border-white/10
+              pb-5
+              md:flex-row
+              md:items-center
+              md:justify-between
+            "
+          >
             <div className="min-w-0">
-
-              <div className="flex flex-wrap items-center gap-2 mb-2">
-
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#4da3ff] border border-[#007aff]/20 bg-[#007aff]/15 px-2.5 py-1 rounded-lg">
+              <div
+                className="
+                  mb-2
+                  flex
+                  flex-wrap
+                  items-center
+                  gap-2
+                "
+              >
+                <span
+                  className="
+                    rounded-xl
+                    border border-[#007aff]/20
+                    bg-[#007aff]/15
+                    px-2.5
+                    py-1
+                    text-[11px]
+                    font-extrabold
+                    uppercase
+                    tracking-wider
+                    text-[#4da3ff]
+                  "
+                >
                   NEXT MINISTRATION
                 </span>
 
-                <span className="text-[10px] font-bold text-emerald-300 border border-emerald-500/20 bg-emerald-500/10 px-2 py-1 rounded-lg flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                <span
+                  className="
+                    flex
+                    items-center
+                    gap-1.5
+                    rounded-xl
+                    border border-emerald-500/20
+                    bg-emerald-500/10
+                    px-2.5
+                    py-1
+                    text-[11px]
+                    font-bold
+                    text-emerald-300
+                  "
+                >
+                  <span
+                    className="
+                      h-1.5
+                      w-1.5
+                      rounded-full
+                      bg-emerald-400
+                    "
+                  />
                   {nextMinistration.status}
                 </span>
-
               </div>
 
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+              <h2
+                className="
+                  text-2xl
+                  font-extrabold
+                  tracking-tight
+                  text-white
+                  sm:text-3xl
+                "
+              >
                 {nextMinistration.name}
               </h2>
 
-              <p className="text-sm text-white/50 font-medium mt-1 max-w-xl">
+              <p
+                className="
+                  mt-1
+                  max-w-xl
+                  text-sm
+                  font-medium
+                  text-white/45
+                "
+              >
                 {nextMinistration.description}
               </p>
 
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-4 text-xs text-white/40 font-semibold">
-
+              <div
+                className="
+                  mt-3
+                  flex
+                  flex-wrap
+                  items-center
+                  gap-x-4
+                  gap-y-2
+                  text-xs
+                  font-semibold
+                  text-white/40
+                "
+              >
                 <div className="flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5 text-[#4da3ff]" />
+                  <Calendar className="h-3.5 w-3.5 text-[#4da3ff]" />
                   <span>{nextMinistration.date}</span>
                 </div>
 
                 {nextMinistration.time && (
                   <div className="flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5 text-amber-300" />
-                    <span>{nextMinistration.time}</span>
+                    <Clock className="h-3.5 w-3.5 text-amber-300" />
+                    <span>
+                      {nextMinistration.time}
+                    </span>
                   </div>
                 )}
 
                 {nextMinistration.venue && (
                   <div className="flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5 text-amber-300" />
-                    <span>{nextMinistration.venue}</span>
+                    <MapPin className="h-3.5 w-3.5 text-white/55" />
+                    <span>
+                      {nextMinistration.venue}
+                    </span>
                   </div>
                 )}
-
               </div>
-
             </div>
 
-
-            <div className="flex items-center gap-2 flex-shrink-0">
-
+            <div
+              className="
+                flex
+                shrink-0
+                flex-wrap
+                items-center
+                gap-2
+              "
+            >
               <button
+                type="button"
                 onClick={() => {
-                  onSelectMinistration(nextMinistration);
+                  onSelectMinistration(
+                    nextMinistration
+                  );
                   setActiveTab('ministrations');
                 }}
-                className="px-4 py-3 rounded-2xl border border-white/10 bg-white/[0.055] hover:bg-white/10 text-white/80 text-xs sm:text-sm font-bold flex items-center gap-2 transition-all"
+                className="
+                  flex
+                  items-center
+                  gap-2
+                  rounded-2xl
+                  bg-[#007aff]
+                  px-5
+                  py-3
+                  text-xs
+                  font-bold
+                  text-white
+                  shadow-xl
+                  shadow-blue-500/20
+                  transition-colors
+                  hover:bg-[#0062cc]
+                  active:scale-95
+                  sm:text-sm
+                "
               >
-                <span className="hidden sm:inline">
-                  View Setlist & Allocations
-                </span>
-
-                <span className="sm:hidden">
-                  Setlist
-                </span>
-
-                <ArrowRight className="w-4 h-4" />
+                <span>View Setlist & Allocations</span>
+                <ArrowRight className="h-4 w-4" />
               </button>
 
               <button
+                type="button"
                 onClick={openStageMode}
                 title="Rehearse setlist in stage mode"
-                className="px-4 py-3 rounded-2xl border border-[#007aff]/20 bg-[#007aff]/15 hover:bg-[#007aff]/25 text-[#4da3ff] text-xs sm:text-sm font-bold flex items-center gap-1.5 active:scale-95 transition-all"
+                className="
+                  flex
+                  items-center
+                  gap-1.5
+                  rounded-2xl
+                  border border-amber-500/20
+                  bg-amber-500/15
+                  px-4
+                  py-3
+                  text-xs
+                  font-bold
+                  text-amber-200
+                  transition-colors
+                  hover:bg-amber-500/20
+                  active:scale-95
+                  sm:text-sm
+                "
               >
-                <Radio className="w-4 h-4" />
-
+                <Radio className="h-4 w-4 text-amber-300" />
                 <span className="hidden sm:inline">
                   Stage Mode
                 </span>
               </button>
-
             </div>
-
           </div>
 
-
           {/* STATS */}
-
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 mt-5">
-
-            <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-4 flex items-center gap-3">
-
-              <div className="w-11 h-11 rounded-xl border border-[#007aff]/20 bg-[#007aff]/15 text-[#4da3ff] flex items-center justify-center flex-shrink-0">
-                <Music2 className="w-5 h-5" />
+          <div
+            className="
+              mt-5
+              grid
+              grid-cols-2
+              gap-3
+            "
+          >
+            <div
+              className="
+                flex
+                items-center
+                gap-3.5
+                rounded-2xl
+                border border-white/10
+                bg-black/35
+                p-4
+                sm:p-5
+              "
+            >
+              <div
+                className="
+                  flex
+                  h-12
+                  w-12
+                  shrink-0
+                  items-center
+                  justify-center
+                  rounded-2xl
+                  border border-white/10
+                  bg-[#0f0f11]
+                "
+              >
+                <Music className="h-5 w-5 text-[#4da3ff]" />
               </div>
 
-              <div>
-
-                <span className="text-2xl sm:text-3xl font-extrabold text-white block leading-tight">
+              <div className="min-w-0">
+                <span
+                  className="
+                    block
+                    text-2xl
+                    font-extrabold
+                    leading-tight
+                    text-white
+                    sm:text-3xl
+                  "
+                >
                   {totalMinSongs}
                 </span>
 
-                <span className="text-[10px] sm:text-xs font-bold text-white/35 uppercase tracking-wider">
+                <span
+                  className="
+                    text-[10px]
+                    font-bold
+                    uppercase
+                    tracking-wider
+                    text-white/40
+                    sm:text-xs
+                  "
+                >
                   Repertoire Songs
                 </span>
-
               </div>
-
             </div>
 
-
-            <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-4 flex items-center gap-3">
-
-              <div className="w-11 h-11 rounded-xl border border-amber-500/20 bg-amber-500/15 text-amber-300 flex items-center justify-center flex-shrink-0">
-                <Mic2 className="w-5 h-5" />
+            <div
+              className="
+                flex
+                items-center
+                gap-3.5
+                rounded-2xl
+                border border-white/10
+                bg-black/35
+                p-4
+                sm:p-5
+              "
+            >
+              <div
+                className="
+                  flex
+                  h-12
+                  w-12
+                  shrink-0
+                  items-center
+                  justify-center
+                  rounded-2xl
+                  border border-amber-500/20
+                  bg-amber-500/15
+                "
+              >
+                <Mic className="h-5 w-5 text-amber-300" />
               </div>
 
-              <div>
-
-                <span className="text-2xl sm:text-3xl font-extrabold text-white block leading-tight">
+              <div className="min-w-0">
+                <span
+                  className="
+                    block
+                    text-2xl
+                    font-extrabold
+                    leading-tight
+                    text-amber-200
+                    sm:text-3xl
+                  "
+                >
                   {totalAssignedLeads} / {totalMinSongs}
                 </span>
 
-                <span className="text-[10px] sm:text-xs font-bold text-white/35 uppercase tracking-wider">
+                <span
+                  className="
+                    text-[10px]
+                    font-bold
+                    uppercase
+                    tracking-wider
+                    text-white/40
+                    sm:text-xs
+                  "
+                >
                   Lead Vocalists Allocated
                 </span>
-
               </div>
-
             </div>
-
           </div>
 
-
-          {/* SETLIST PREVIEW */}
-
-          <div className="mt-5 pt-5 border-t border-white/10">
-
-            <div className="flex items-center justify-between gap-3 mb-3">
-
-              <span className="text-[10px] font-bold text-white/35 uppercase tracking-wider">
+          {/* PLANNED SETLIST */}
+          <div
+            className="
+              mt-5
+              border-t
+              border-white/10
+              pt-5
+            "
+          >
+            <div
+              className="
+                mb-3
+                flex
+                items-center
+                justify-between
+                gap-3
+              "
+            >
+              <span
+                className="
+                  text-[11px]
+                  font-extrabold
+                  uppercase
+                  tracking-wider
+                  text-white/40
+                "
+              >
                 Planned Setlist Order
               </span>
 
               <button
+                type="button"
                 onClick={() => {
-                  onSelectMinistration(nextMinistration);
+                  onSelectMinistration(
+                    nextMinistration
+                  );
                   setActiveTab('ministrations');
                 }}
-                className="text-xs font-bold text-[#4da3ff] hover:text-white transition-colors"
+                className="
+                  rounded-xl
+                  border border-white/5
+                  bg-[#1c1c1f]
+                  px-3
+                  py-2
+                  text-xs
+                  font-bold
+                  text-[#4da3ff]
+                  hover:bg-white/[0.08]
+                  hover:text-white
+                "
               >
                 Manage Setlist & Leads
               </button>
-
             </div>
 
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-
+            <div
+              className="
+                grid
+                grid-cols-1
+                gap-2.5
+                sm:grid-cols-2
+                lg:grid-cols-4
+              "
+            >
               {nextMinistration.songs
                 .slice(0, 4)
                 .map((item, idx) => {
-
                   const song = songs.find(
                     s => s.id === item.songId
                   );
 
                   const leadMember = team.find(
-                    m => m.id === item.lead
+                    member => member.id === item.lead
                   );
 
                   if (!song) return null;
 
                   return (
-                    <button
-                      type="button"
+                    <div
                       key={item.songId}
-                      onClick={() => onSelectSong(song)}
-                      className="text-left p-3 rounded-2xl border border-white/10 bg-white/[0.035] hover:bg-white/[0.08] transition-all cursor-pointer flex items-center justify-between gap-2"
+                      onClick={() =>
+                        onSelectSong(song)
+                      }
+                      className="
+                        flex
+                        cursor-pointer
+                        items-center
+                        justify-between
+                        gap-2
+                        rounded-2xl
+                        border border-white/10
+                        bg-black/35
+                        p-3
+                        hover:bg-white/[0.055]
+                      "
                     >
-
-                      <div className="flex items-center gap-2.5 min-w-0">
-
-                        <span className="w-6 h-6 rounded-lg border border-[#007aff]/20 bg-[#007aff]/15 text-[11px] font-extrabold text-[#4da3ff] flex items-center justify-center flex-shrink-0">
+                      <div
+                        className="
+                          flex
+                          min-w-0
+                          items-center
+                          gap-2.5
+                        "
+                      >
+                        <span
+                          className="
+                            flex
+                            h-6
+                            w-6
+                            shrink-0
+                            items-center
+                            justify-center
+                            rounded-lg
+                            border border-white/10
+                            bg-[#111113]
+                            text-[11px]
+                            font-extrabold
+                            text-[#4da3ff]
+                          "
+                        >
                           {idx + 1}
                         </span>
 
                         <div className="min-w-0">
-
-                          <h4 className="text-xs font-bold text-white truncate">
+                          <h4
+                            className="
+                              truncate
+                              text-xs
+                              font-bold
+                              text-white
+                            "
+                          >
                             {song.title}
                           </h4>
 
-                          <p className="text-[10px] text-white/35 truncate flex items-center gap-1">
-                            <Mic2 className="w-3 h-3 flex-shrink-0" />
-
+                          <p
+                            className="
+                              truncate
+                              text-[10px]
+                              text-white/40
+                            "
+                          >
                             {leadMember
                               ? `Lead: ${leadMember.name}`
                               : 'Lead: Unassigned'}
                           </p>
-
                         </div>
-
                       </div>
 
-                      <span className="text-[10px] font-bold text-[#4da3ff] border border-[#007aff]/20 bg-[#007aff]/15 px-1.5 py-0.5 rounded-md flex-shrink-0">
+                      <span
+                        className="
+                          shrink-0
+                          rounded-lg
+                          border border-[#007aff]/20
+                          bg-[#007aff]/15
+                          px-2
+                          py-1
+                          text-[10px]
+                          font-bold
+                          text-[#4da3ff]
+                        "
+                      >
                         {item.keyOverride || song.key}
                       </span>
-
-                    </button>
+                    </div>
                   );
                 })}
-
             </div>
-
           </div>
-
         </section>
       )}
 
-
-      {/* =========================================================
-          QUICK ACCESS
-      ========================================================= */}
-
+      {/* QUICK ACCESS */}
       <section className="space-y-4">
-
         <div>
-
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#4da3ff]">
+          <span
+            className="
+              text-[11px]
+              font-extrabold
+              uppercase
+              tracking-wider
+              text-[#4da3ff]
+            "
+          >
             QUICK ACCESS
           </span>
 
-          <h2 className="text-2xl font-bold text-white tracking-tight mt-1">
+          <h2
+            className="
+              mt-1
+              text-2xl
+              font-bold
+              tracking-tight
+              text-white
+            "
+          >
             Ministry Departments
           </h2>
-
         </div>
 
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-
+        <div
+          className="
+            grid
+            grid-cols-1
+            gap-4
+            md:grid-cols-3
+          "
+        >
           {/* SONG BANK */}
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('songs')}
-            className="text-left rounded-[28px] border border-white/10 bg-white/[0.045] p-5 shadow-2xl shadow-black/10 backdrop-blur-2xl hover:bg-white/[0.07] transition-all"
+          <div
+            onClick={() =>
+              setActiveTab('songs')
+            }
+            className="
+              flex
+              cursor-pointer
+              flex-col
+              justify-between
+              rounded-[28px]
+              border border-white/10
+              bg-[#111113]
+              p-5
+              shadow-2xl
+              shadow-black/10
+              backdrop-blur-2xl
+            "
           >
+            <div>
+              <div
+                className="
+                  mb-4
+                  flex
+                  h-12
+                  w-12
+                  items-center
+                  justify-center
+                  rounded-2xl
+                  border border-white/10
+                  bg-[#0f0f11]
+                "
+              >
+                <Music className="h-5 w-5 text-[#4da3ff]" />
+              </div>
 
-            <div className="w-12 h-12 rounded-2xl border border-[#007aff]/20 bg-[#007aff]/15 text-[#4da3ff] flex items-center justify-center mb-4">
-              <Music2 className="w-6 h-6" />
+              <span
+                className="
+                  mb-1
+                  block
+                  text-[10px]
+                  font-extrabold
+                  uppercase
+                  tracking-wider
+                  text-[#4da3ff]
+                "
+              >
+                REPERTOIRE LIBRARY
+              </span>
+
+              <h3
+                className="
+                  text-xl
+                  font-bold
+                  tracking-tight
+                  text-white
+                "
+              >
+                Song Bank
+              </h3>
+
+              <p
+                className="
+                  mt-1
+                  text-xs
+                  font-medium
+                  leading-relaxed
+                  text-white/45
+                "
+              >
+                Browse praise and worship songs,
+                lyrics, vocal charts, band cues,
+                and audio references.
+              </p>
             </div>
 
-            <span className="text-[10px] font-extrabold text-[#4da3ff] uppercase tracking-wider block mb-1">
-              REPERTOIRE LIBRARY
-            </span>
-
-            <h3 className="text-xl font-bold text-white tracking-tight">
-              Song Bank
-            </h3>
-
-            <p className="text-xs text-white/45 font-medium mt-1 leading-relaxed">
-              Browse praise and worship songs,
-              lyrics, multi-part vocal charts,
-              band cues, and audio references.
-            </p>
-
-            <div className="flex items-center justify-between pt-4 mt-4 border-t border-white/10">
-
-              <span className="text-xs font-bold text-white/70">
+            <div
+              className="
+                mt-4
+                flex
+                items-center
+                justify-between
+                border-t
+                border-white/10
+                pt-4
+              "
+            >
+              <span
+                className="
+                  text-xs
+                  font-bold
+                  text-white/55
+                "
+              >
                 {songs.length} Songs Loaded
               </span>
 
-              <ChevronRight className="w-4 h-4 text-white/40" />
-
+              <div
+                className="
+                  flex
+                  h-8
+                  w-8
+                  items-center
+                  justify-center
+                  rounded-xl
+                  border border-white/5
+                  bg-[#1c1c1f]
+                  text-white/45
+                "
+              >
+                <ChevronRight className="h-4 w-4" />
+              </div>
             </div>
-
-          </button>
-
+          </div>
 
           {/* MINISTRATIONS */}
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('ministrations')}
-            className="text-left rounded-[28px] border border-white/10 bg-white/[0.045] p-5 shadow-2xl shadow-black/10 backdrop-blur-2xl hover:bg-white/[0.07] transition-all"
+          <div
+            onClick={() =>
+              setActiveTab('ministrations')
+            }
+            className="
+              flex
+              cursor-pointer
+              flex-col
+              justify-between
+              rounded-[28px]
+              border border-white/10
+              bg-[#111113]
+              p-5
+              shadow-2xl
+              shadow-black/10
+              backdrop-blur-2xl
+            "
           >
+            <div>
+              <div
+                className="
+                  mb-4
+                  flex
+                  h-12
+                  w-12
+                  items-center
+                  justify-center
+                  rounded-2xl
+                  border border-amber-500/20
+                  bg-amber-500/15
+                "
+              >
+                <Calendar className="h-5 w-5 text-amber-300" />
+              </div>
 
-            <div className="w-12 h-12 rounded-2xl border border-white/10 bg-white/[0.055] text-white/80 flex items-center justify-center mb-4">
-              <ClipboardList className="w-6 h-6" />
+              <span
+                className="
+                  mb-1
+                  block
+                  text-[10px]
+                  font-extrabold
+                  uppercase
+                  tracking-wider
+                  text-amber-300
+                "
+              >
+                SERVICES & EVENTS
+              </span>
+
+              <h3
+                className="
+                  text-xl
+                  font-bold
+                  tracking-tight
+                  text-white
+                "
+              >
+                Ministrations & Setlists
+              </h3>
+
+              <p
+                className="
+                  mt-1
+                  text-xs
+                  font-medium
+                  leading-relaxed
+                  text-white/45
+                "
+              >
+                Build service setlists, assign
+                lead vocalists, configure keys,
+                and manage ministry notes.
+              </p>
             </div>
 
-            <span className="text-[10px] font-extrabold text-white/55 uppercase tracking-wider block mb-1">
-              SERVICES & EVENTS
-            </span>
-
-            <h3 className="text-xl font-bold text-white tracking-tight">
-              Ministrations & Setlists
-            </h3>
-
-            <p className="text-xs text-white/45 font-medium mt-1 leading-relaxed">
-              Build Sunday setlists,
-              assign lead vocalists,
-              configure key modulations
-              and notes.
-            </p>
-
-            <div className="flex items-center justify-between pt-4 mt-4 border-t border-white/10">
-
-              <span className="text-xs font-bold text-white/70">
+            <div
+              className="
+                mt-4
+                flex
+                items-center
+                justify-between
+                border-t
+                border-white/10
+                pt-4
+              "
+            >
+              <span
+                className="
+                  text-xs
+                  font-bold
+                  text-white/55
+                "
+              >
                 {ministrations.length} Events Scheduled
               </span>
 
-              <ChevronRight className="w-4 h-4 text-white/40" />
-
+              <div
+                className="
+                  flex
+                  h-8
+                  w-8
+                  items-center
+                  justify-center
+                  rounded-xl
+                  border border-white/5
+                  bg-[#1c1c1f]
+                  text-white/45
+                "
+              >
+                <ChevronRight className="h-4 w-4" />
+              </div>
             </div>
-
-          </button>
-
+          </div>
 
           {/* MUSIC TEAM */}
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('team')}
-            className="text-left rounded-[28px] border border-white/10 bg-white/[0.045] p-5 shadow-2xl shadow-black/10 backdrop-blur-2xl hover:bg-white/[0.07] transition-all"
+          <div
+            onClick={() =>
+              setActiveTab('team')
+            }
+            className="
+              flex
+              cursor-pointer
+              flex-col
+              justify-between
+              rounded-[28px]
+              border border-white/10
+              bg-[#111113]
+              p-5
+              shadow-2xl
+              shadow-black/10
+              backdrop-blur-2xl
+            "
           >
+            <div>
+              <div
+                className="
+                  mb-4
+                  flex
+                  h-12
+                  w-12
+                  items-center
+                  justify-center
+                  rounded-2xl
+                  border border-white/10
+                  bg-[#0f0f11]
+                "
+              >
+                <Users className="h-5 w-5 text-[#4da3ff]" />
+              </div>
 
-            <div className="w-12 h-12 rounded-2xl border border-amber-500/20 bg-amber-500/15 text-amber-300 flex items-center justify-center mb-4">
-              <Users className="w-6 h-6" />
+              <span
+                className="
+                  mb-1
+                  block
+                  text-[10px]
+                  font-extrabold
+                  uppercase
+                  tracking-wider
+                  text-[#4da3ff]
+                "
+              >
+                PEOPLE & ROSTER
+              </span>
+
+              <h3
+                className="
+                  text-xl
+                  font-bold
+                  tracking-tight
+                  text-white
+                "
+              >
+                Music Team
+              </h3>
+
+              <p
+                className="
+                  mt-1
+                  text-xs
+                  font-medium
+                  leading-relaxed
+                  text-white/45
+                "
+              >
+                View vocalists, instrumentalists,
+                contacts, roles, and team members.
+              </p>
             </div>
 
-            <span className="text-[10px] font-extrabold text-amber-300 uppercase tracking-wider block mb-1">
-              PEOPLE & ROSTER
-            </span>
-
-            <h3 className="text-xl font-bold text-white tracking-tight">
-              Music Team
-            </h3>
-
-            <p className="text-xs text-white/45 font-medium mt-1 leading-relaxed">
-              View vocal team,
-              band instrumentalists,
-              manage contacts,
-              and add new members.
-            </p>
-
-            <div className="flex items-center justify-between pt-4 mt-4 border-t border-white/10">
-
-              <span className="text-xs font-bold text-white/70">
+            <div
+              className="
+                mt-4
+                flex
+                items-center
+                justify-between
+                border-t
+                border-white/10
+                pt-4
+              "
+            >
+              <span
+                className="
+                  text-xs
+                  font-bold
+                  text-white/55
+                "
+              >
                 {team.length} Active Members
               </span>
 
-              <ChevronRight className="w-4 h-4 text-white/40" />
-
+              <div
+                className="
+                  flex
+                  h-8
+                  w-8
+                  items-center
+                  justify-center
+                  rounded-xl
+                  border border-white/5
+                  bg-[#1c1c1f]
+                  text-white/45
+                "
+              >
+                <ChevronRight className="h-4 w-4" />
+              </div>
             </div>
-
-          </button>
-
+          </div>
         </div>
-
       </section>
 
-
-      {/* =========================================================
-          RECENT SONG REPERTOIRE
-      ========================================================= */}
-
+      {/* RECENT SONGS */}
       <section className="space-y-4">
-
-        <div className="flex items-center justify-between gap-3">
-
+        <div
+          className="
+            flex
+            items-end
+            justify-between
+            gap-3
+          "
+        >
           <div>
-
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#4da3ff]">
+            <span
+              className="
+                text-[11px]
+                font-extrabold
+                uppercase
+                tracking-wider
+                text-[#4da3ff]
+              "
+            >
               RECENT ADDITIONS
             </span>
 
-            <h2 className="text-2xl font-bold text-white tracking-tight mt-1">
+            <h2
+              className="
+                mt-1
+                text-2xl
+                font-bold
+                tracking-tight
+                text-white
+              "
+            >
               Featured Ministry Songs
             </h2>
-
           </div>
 
           <button
-            onClick={() => setActiveTab('songs')}
-            className="text-xs font-bold text-[#4da3ff] hover:text-white transition-colors"
+            type="button"
+            onClick={() =>
+              setActiveTab('songs')
+            }
+            className="
+              rounded-xl
+              border border-white/5
+              bg-[#1c1c1f]
+              px-3
+              py-2
+              text-xs
+              font-bold
+              text-[#4da3ff]
+              hover:bg-white/[0.08]
+              hover:text-white
+            "
           >
             View All {songs.length} Songs
           </button>
-
         </div>
 
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-
+        <div
+          className="
+            grid
+            grid-cols-1
+            gap-3
+            sm:grid-cols-2
+            lg:grid-cols-3
+          "
+        >
           {songs.slice(0, 3).map(song => (
-
-            <button
-              type="button"
+            <div
               key={song.id}
-              onClick={() => onSelectSong(song)}
-              className="text-left rounded-2xl border border-white/10 bg-white/[0.045] p-4 hover:bg-white/[0.08] transition-all flex items-center justify-between gap-3"
+              onClick={() =>
+                onSelectSong(song)
+              }
+              className="
+                flex
+                cursor-pointer
+                items-center
+                justify-between
+                gap-3
+                rounded-[28px]
+                border border-white/10
+                bg-[#111113]
+                p-4
+                shadow-2xl
+                shadow-black/10
+                backdrop-blur-2xl
+              "
             >
-
-              <div className="flex items-center gap-3 min-w-0">
-
-                <div className="w-11 h-11 rounded-2xl border border-white/10 bg-white/[0.055] flex items-center justify-center text-white/80 flex-shrink-0">
-                  <Music2 className="w-5 h-5" />
+              <div
+                className="
+                  flex
+                  min-w-0
+                  items-center
+                  gap-3
+                "
+              >
+                <div
+                  className="
+                    flex
+                    h-12
+                    w-12
+                    shrink-0
+                    items-center
+                    justify-center
+                    rounded-2xl
+                    border border-white/10
+                    bg-[#0f0f11]
+                  "
+                >
+                  {song.icon ? (
+                    <span className="text-xl">
+                      {song.icon}
+                    </span>
+                  ) : (
+                    <Music className="h-5 w-5 text-white/40" />
+                  )}
                 </div>
 
                 <div className="min-w-0">
-
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#4da3ff] block">
+                  <span
+                    className="
+                      block
+                      text-[10px]
+                      font-bold
+                      uppercase
+                      tracking-wider
+                      text-[#4da3ff]
+                    "
+                  >
                     {song.category}
                   </span>
 
-                  <h4 className="text-sm font-bold text-white truncate">
+                  <h4
+                    className="
+                      truncate
+                      text-sm
+                      font-bold
+                      text-white
+                    "
+                  >
                     {song.title}
                   </h4>
 
-                  <p className="text-xs text-white/35 truncate">
+                  <p
+                    className="
+                      truncate
+                      text-xs
+                      text-white/40
+                    "
+                  >
                     {song.artist}
                   </p>
-
                 </div>
-
               </div>
 
-
-              <div className="text-right flex-shrink-0">
-
-                <span className="text-xs font-extrabold text-[#4da3ff] block">
+              <div
+                className="
+                  shrink-0
+                  text-right
+                "
+              >
+                <span
+                  className="
+                    block
+                    text-xs
+                    font-extrabold
+                    text-[#4da3ff]
+                  "
+                >
                   Key: {song.key}
                 </span>
 
-                <span className="text-[10px] text-white/35 font-medium">
+                <span
+                  className="
+                    text-[10px]
+                    font-medium
+                    text-white/35
+                  "
+                >
                   {typeof song.tempo === 'string'
                     ? song.tempo.split(' ')[0]
                     : 'Tempo N/A'}
                 </span>
-
               </div>
-
-            </button>
-
+            </div>
           ))}
-
         </div>
-
       </section>
 
     </div>
