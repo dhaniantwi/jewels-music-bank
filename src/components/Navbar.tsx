@@ -1,3 +1,4 @@
+```tsx
 import React from 'react';
 
 import {
@@ -107,14 +108,40 @@ export const Navbar: React.FC<NavbarProps> = ({
       role => role.id === activeRole
     ) || roleOptions[0];
 
-  const navButtonBase =
-    'flex shrink-0 items-center justify-center gap-1.5 rounded-2xl border px-2.5 py-2 text-xs font-semibold transition-colors sm:px-3';
+  const navButtonBase = `
+    flex
+    shrink-0
+    items-center
+    justify-center
+    gap-1.5
+    rounded-xl
+    border
+    px-2.5
+    py-2
+    text-xs
+    font-semibold
+    transition-all
+    duration-200
+    active:scale-[0.98]
+  `;
 
-  const navButtonInactive =
-    `${navButtonBase} border-white/5 bg-white/[0.035] text-white/55 hover:bg-white/10`;
+  const navButtonInactive = `
+    ${navButtonBase}
+    border-white/[0.06]
+    bg-white/[0.025]
+    text-white/45
+    hover:border-white/10
+    hover:bg-white/[0.07]
+    hover:text-white/80
+  `;
 
-  const navButtonActive =
-    `${navButtonBase} border-[#007aff]/30 bg-[#007aff]/15 text-[#4da3ff]`;
+  const navButtonActive = `
+    ${navButtonBase}
+    border-[#007aff]/25
+    bg-[#007aff]/12
+    text-[#4da3ff]
+    shadow-[inset_0_0_20px_rgba(0,122,255,0.04)]
+  `;
 
   return (
     <header
@@ -126,9 +153,8 @@ export const Navbar: React.FC<NavbarProps> = ({
         w-full
         min-w-0
         max-w-full
-        overflow-hidden
         px-2
-        sm:px-6
+        sm:px-5
         no-print
       "
     >
@@ -139,11 +165,12 @@ export const Navbar: React.FC<NavbarProps> = ({
           max-w-7xl
           overflow-x-auto
           overflow-y-visible
-          rounded-[28px]
+          rounded-[24px]
           border
-          border-white/10
-          bg-[#111113]/90
-          p-2
+          border-white/[0.08]
+          bg-[#101012]/90
+          p-1.5
+          shadow-[0_18px_50px_rgba(0,0,0,0.24)]
           backdrop-blur-2xl
           scrollbar-hide
         "
@@ -160,27 +187,32 @@ export const Navbar: React.FC<NavbarProps> = ({
           "
         >
 
-          {/* BRAND */}
+          {/* =====================================================
+              BRAND
+          ====================================================== */}
 
           <button
             type="button"
             onClick={() => setActiveTab('home')}
             aria-label="Jewels Music Hub"
             className="
+              group
               flex
               shrink-0
               items-center
-              rounded-2xl
+              rounded-xl
               border
-              border-white/5
-              bg-white/[0.035]
+              border-white/[0.06]
+              bg-white/[0.025]
               p-1.5
               text-left
-              transition-colors
-              hover:bg-white/10
+              transition-all
+              duration-200
+              hover:border-white/10
+              hover:bg-white/[0.06]
               sm:gap-2.5
-              sm:px-2.5
-              sm:py-2
+              sm:px-2
+              sm:py-1.5
             "
           >
             <div
@@ -191,16 +223,19 @@ export const Navbar: React.FC<NavbarProps> = ({
                 shrink-0
                 items-center
                 justify-center
-                rounded-2xl
+                rounded-xl
                 border
-                border-white/10
-                bg-[#007aff]/15
+                border-[#007aff]/20
+                bg-[#007aff]/10
                 text-[#4da3ff]
-                sm:h-10
-                sm:w-10
+                transition-all
+                duration-200
+                group-hover:bg-[#007aff]/15
+                sm:h-9
+                sm:w-9
               "
             >
-              <Music2 className="h-5 w-5" />
+              <Music2 className="h-4.5 w-4.5" />
             </div>
 
             <div className="hidden sm:block">
@@ -209,8 +244,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                   flex
                   items-center
                   gap-1.5
-                  text-[15px]
-                  font-bold
+                  text-[14px]
+                  font-extrabold
                   leading-tight
                   tracking-tight
                   text-white
@@ -223,10 +258,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                     rounded-full
                     border
                     border-[#007aff]/20
-                    bg-[#007aff]/15
+                    bg-[#007aff]/10
                     px-1.5
                     py-0.5
-                    text-[9px]
+                    text-[8px]
                     font-extrabold
                     uppercase
                     tracking-wider
@@ -240,9 +275,9 @@ export const Navbar: React.FC<NavbarProps> = ({
               <p
                 className="
                   mt-0.5
-                  text-[11px]
+                  text-[10px]
                   leading-none
-                  text-white/40
+                  text-white/30
                 "
               >
                 Music Ministry Management
@@ -250,7 +285,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           </button>
 
-          {/* NAVIGATION */}
+          {/* =====================================================
+              MAIN NAVIGATION
+          ====================================================== */}
 
           <div
             className="
@@ -258,12 +295,13 @@ export const Navbar: React.FC<NavbarProps> = ({
               min-w-max
               shrink-0
               items-center
-              gap-1
-              rounded-2xl
+              gap-0.5
+              rounded-xl
               border
-              border-white/10
-              bg-white/[0.045]
+              border-white/[0.06]
+              bg-black/20
               p-1
+              sm:gap-1
             "
           >
 
@@ -308,13 +346,15 @@ export const Navbar: React.FC<NavbarProps> = ({
 
               <span
                 className="
+                  min-w-[20px]
                   rounded-full
                   border
-                  border-[#007aff]/20
-                  bg-[#007aff]/15
+                  border-[#007aff]/15
+                  bg-[#007aff]/10
                   px-1.5
                   py-0.5
-                  text-[10px]
+                  text-center
+                  text-[9px]
                   font-bold
                   text-[#4da3ff]
                 "
@@ -366,24 +406,27 @@ export const Navbar: React.FC<NavbarProps> = ({
 
               <span
                 className="
+                  min-w-[20px]
                   rounded-full
                   border
-                  border-white/5
+                  border-white/[0.06]
                   bg-white/[0.035]
                   px-1.5
                   py-0.5
-                  text-[10px]
+                  text-center
+                  text-[9px]
                   font-bold
-                  text-white/55
+                  text-white/45
                 "
               >
                 {team.length}
               </span>
             </button>
-
           </div>
 
-          {/* RIGHT ACTIONS */}
+          {/* =====================================================
+              RIGHT ACTIONS
+          ====================================================== */}
 
           <div
             className="
@@ -392,7 +435,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               items-center
               gap-1
               sm:ml-auto
-              sm:gap-2
+              sm:gap-1.5
             "
           >
 
@@ -410,14 +453,18 @@ export const Navbar: React.FC<NavbarProps> = ({
                 shrink-0
                 items-center
                 justify-center
-                rounded-2xl
+                rounded-xl
                 border
-                border-white/5
-                bg-white/[0.035]
-                text-white/80
-                transition-colors
-                hover:bg-white/10
-                sm:h-10
+                border-white/[0.06]
+                bg-white/[0.025]
+                text-white/65
+                transition-all
+                duration-200
+                hover:border-white/10
+                hover:bg-white/[0.07]
+                hover:text-white
+                active:scale-[0.97]
+                sm:h-9
                 sm:w-auto
                 sm:gap-1.5
                 sm:px-3
@@ -445,23 +492,27 @@ export const Navbar: React.FC<NavbarProps> = ({
               title="Launch Stage & Live Rehearsal Mode"
               aria-label="Stage View"
               className="
+                group
                 flex
                 h-9
                 w-9
                 shrink-0
                 items-center
                 justify-center
-                rounded-2xl
+                rounded-xl
+                border
+                border-[#007aff]/30
                 bg-[#007aff]
                 text-xs
-                font-semibold
+                font-bold
                 text-white
-                shadow-xl
-                shadow-blue-500/20
-                transition-colors
-                hover:bg-[#0062cc]
-                active:scale-95
-                sm:h-10
+                shadow-[0_8px_24px_rgba(0,122,255,0.22)]
+                transition-all
+                duration-200
+                hover:bg-[#006ee6]
+                hover:shadow-[0_10px_30px_rgba(0,122,255,0.30)]
+                active:scale-[0.97]
+                sm:h-9
                 sm:w-auto
                 sm:gap-1.5
                 sm:px-3
@@ -474,7 +525,9 @@ export const Navbar: React.FC<NavbarProps> = ({
               </span>
             </button>
 
-            {/* ROLE SWITCHER */}
+            {/* =================================================
+                ROLE SWITCHER
+            ================================================== */}
 
             <div
               className="relative shrink-0"
@@ -496,12 +549,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                   shrink-0
                   items-center
                   justify-center
-                  rounded-2xl
+                  rounded-xl
                   border
                   text-xs
                   font-semibold
-                  transition-colors
-                  sm:h-10
+                  transition-all
+                  duration-200
+                  active:scale-[0.97]
+                  sm:h-9
                   sm:w-auto
                   sm:gap-1.5
                   sm:px-3
@@ -509,16 +564,19 @@ export const Navbar: React.FC<NavbarProps> = ({
                   ${
                     isMD
                       ? `
-                        border-amber-500/20
-                        bg-amber-500/15
+                        border-amber-400/15
+                        bg-amber-400/10
                         text-amber-300
-                        hover:bg-amber-500/20
+                        hover:border-amber-400/25
+                        hover:bg-amber-400/15
                       `
                       : `
-                        border-white/5
-                        bg-white/[0.035]
-                        text-white/55
-                        hover:bg-white/10
+                        border-white/[0.06]
+                        bg-white/[0.025]
+                        text-white/50
+                        hover:border-white/10
+                        hover:bg-white/[0.07]
+                        hover:text-white/80
                       `
                   }
                 `}
@@ -531,7 +589,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     ${
                       isMD
                         ? 'text-amber-300'
-                        : 'text-white/45'
+                        : 'text-white/40'
                     }
                   `}
                 />
@@ -552,12 +610,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                     hidden
                     rounded-full
                     border
-                    border-white/5
+                    border-white/[0.06]
                     bg-white/[0.035]
                     px-1.5
                     py-0.5
-                    text-[10px]
-                    text-white/55
+                    text-[9px]
+                    font-bold
+                    text-white/45
                     sm:inline
                   "
                 >
@@ -569,13 +628,15 @@ export const Navbar: React.FC<NavbarProps> = ({
                     hidden
                     h-3
                     w-3
-                    text-white/40
+                    text-white/30
                     sm:inline
                   "
                 />
               </button>
 
-              {/* ROLE DROPDOWN */}
+              {/* =================================================
+                  ROLE DROPDOWN
+              ================================================== */}
 
               {roleDropdownOpen && (
                 <div
@@ -586,11 +647,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                     mt-2
                     w-72
                     max-w-[calc(100vw-1rem)]
+                    overflow-hidden
                     rounded-2xl
                     border
-                    border-white/10
-                    bg-[#1c1c1f]/95
-                    p-2
+                    border-white/[0.08]
+                    bg-[#151517]/95
+                    p-1.5
+                    shadow-[0_20px_60px_rgba(0,0,0,0.45)]
                     backdrop-blur-2xl
                   "
                 >
@@ -598,18 +661,18 @@ export const Navbar: React.FC<NavbarProps> = ({
                     className="
                       mb-1
                       border-b
-                      border-white/10
+                      border-white/[0.07]
                       px-3
-                      py-2
+                      py-2.5
                     "
                   >
                     <p
                       className="
-                        text-[11px]
-                        font-bold
+                        text-[9px]
+                        font-extrabold
                         uppercase
-                        tracking-wider
-                        text-white/40
+                        tracking-[0.16em]
+                        text-white/30
                       "
                     >
                       Role & Permission Switcher
@@ -617,11 +680,11 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                     <p
                       className="
-                        mt-1
-                        text-xs
+                        mt-1.5
+                        text-[11px]
                         font-medium
                         leading-relaxed
-                        text-white/80
+                        text-white/65
                       "
                     >
                       {isMD
@@ -645,27 +708,44 @@ export const Navbar: React.FC<NavbarProps> = ({
                         w-full
                         items-center
                         gap-2.5
-                        rounded-2xl
+                        rounded-xl
                         border
-                        border-white/5
-                        bg-white/[0.035]
+                        border-white/[0.05]
+                        bg-white/[0.025]
                         p-2.5
                         text-left
                         text-xs
                         font-medium
-                        text-white/80
-                        transition-colors
-                        hover:bg-white/10
+                        text-white/75
+                        transition-all
+                        duration-200
+                        hover:border-white/10
+                        hover:bg-white/[0.07]
+                        hover:text-white
                       "
                     >
-                      <Globe2
+                      <div
                         className="
-                          h-4
-                          w-4
+                          flex
+                          h-8
+                          w-8
                           shrink-0
-                          text-[#4da3ff]
+                          items-center
+                          justify-center
+                          rounded-lg
+                          border
+                          border-[#007aff]/15
+                          bg-[#007aff]/10
                         "
-                      />
+                      >
+                        <Globe2
+                          className="
+                            h-4
+                            w-4
+                            text-[#4da3ff]
+                          "
+                        />
+                      </div>
 
                       <div>
                         <p className="leading-tight">
@@ -674,10 +754,10 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                         <p
                           className="
-                            mt-0.5
+                            mt-1
                             text-[10px]
                             font-normal
-                            text-white/40
+                            text-white/30
                           "
                         >
                           Browse, listen & rehearse
@@ -698,27 +778,43 @@ export const Navbar: React.FC<NavbarProps> = ({
                         w-full
                         items-center
                         gap-2.5
-                        rounded-2xl
+                        rounded-xl
                         border
-                        border-amber-500/20
-                        bg-amber-500/15
+                        border-amber-400/15
+                        bg-amber-400/[0.08]
                         p-2.5
                         text-left
                         text-xs
                         font-medium
                         text-amber-200
-                        transition-colors
-                        hover:bg-amber-500/20
+                        transition-all
+                        duration-200
+                        hover:border-amber-400/25
+                        hover:bg-amber-400/[0.12]
                       "
                     >
-                      <ShieldCheck
+                      <div
                         className="
-                          h-4
-                          w-4
+                          flex
+                          h-8
+                          w-8
                           shrink-0
-                          text-amber-300
+                          items-center
+                          justify-center
+                          rounded-lg
+                          border
+                          border-amber-400/15
+                          bg-amber-400/10
                         "
-                      />
+                      >
+                        <ShieldCheck
+                          className="
+                            h-4
+                            w-4
+                            text-amber-300
+                          "
+                        />
+                      </div>
 
                       <div>
                         <p className="leading-tight">
@@ -727,10 +823,10 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                         <p
                           className="
-                            mt-0.5
+                            mt-1
                             text-[10px]
                             font-normal
-                            text-amber-300/60
+                            text-amber-300/50
                           "
                         >
                           Authorized MD access only
@@ -744,9 +840,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
 
           </div>
-
         </div>
       </nav>
     </header>
   );
 };
+```
