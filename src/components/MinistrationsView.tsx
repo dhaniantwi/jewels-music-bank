@@ -237,57 +237,70 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
     ).length;
 
   return (
-    <div className="w-full min-w-0 max-w-full space-y-6 animate-in fade-in duration-200">
+    <div className="w-full min-w-0 max-w-full space-y-7 animate-in fade-in duration-300">
 
-      {/* PAGE HEADER */}
-      <div className="space-y-4">
+      {/* =========================================================
+          PAGE HEADER
+      ========================================================== */}
 
-        <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-4">
+      <section className="relative overflow-hidden rounded-[30px] border border-white/10 bg-[#0d0d0f]/90 p-5 sm:p-7 lg:p-8 backdrop-blur-2xl shadow-2xl shadow-black/20">
+
+        <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-[#007aff]/10 blur-3xl pointer-events-none" />
+
+        <div className="absolute -bottom-28 left-1/3 w-64 h-64 rounded-full bg-amber-500/[0.04] blur-3xl pointer-events-none" />
+
+        <div className="relative flex flex-col xl:flex-row xl:items-end xl:justify-between gap-6">
 
           <div className="min-w-0">
 
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#4da3ff] bg-[#007aff]/15 border border-[#007aff]/20 px-3 py-1 rounded-full">
-                Ministry Services & Events
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#4da3ff] bg-[#007aff]/10 border border-[#007aff]/20 px-3 py-1.5 rounded-full">
+                <Music2 className="w-3 h-3" />
+                Ministry Services
               </span>
 
-              <span className="text-[10px] font-bold uppercase tracking-wider text-white/40">
+              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/30">
                 Setlist Control
               </span>
+
             </div>
 
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+            <h1 className="text-3xl sm:text-4xl lg:text-[42px] font-extrabold text-white tracking-[-0.03em] leading-tight">
               Ministrations & Setlists
             </h1>
 
-            <p className="text-sm text-white/45 font-medium mt-2 max-w-2xl">
+            <p className="text-sm sm:text-[15px] text-white/40 font-medium mt-3 max-w-2xl leading-relaxed">
               Manage event song orders, assign lead vocalists,
               prepare performance keys, and direct rehearsals.
             </p>
 
           </div>
 
-          {/* ACCESS */}
-          <div className="rounded-2xl border border-white/10 bg-white/[0.055] px-4 py-3 flex items-center gap-3 w-fit backdrop-blur-2xl">
+          {/* ACCESS STATUS */}
+
+          <div className="w-full xl:w-auto rounded-2xl border border-white/10 bg-white/[0.045] px-4 py-3.5 flex items-center gap-3 backdrop-blur-xl">
 
             <div
-              className={`w-2.5 h-2.5 rounded-full ${
+              className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
                 isMD
-                  ? 'bg-[#007aff] shadow-[0_0_12px_rgba(0,122,255,0.45)]'
+                  ? 'bg-[#007aff] shadow-[0_0_16px_rgba(0,122,255,0.55)]'
                   : 'bg-white/30'
               }`}
             />
 
-            <div>
-              <p className="text-[10px] uppercase tracking-wider font-extrabold text-white/35">
-                Access
+            <div className="min-w-0">
+
+              <p className="text-[9px] uppercase tracking-[0.18em] font-extrabold text-white/30">
+                Current Access
               </p>
 
-              <p className="text-xs font-bold text-white">
+              <p className="text-xs font-bold text-white mt-0.5 truncate">
                 {isMD
                   ? 'Music Director Control'
                   : 'Read-only Member View'}
               </p>
+
             </div>
 
           </div>
@@ -295,78 +308,90 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
         </div>
 
         {/* MINISTRATION SWITCHER */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1">
 
-          {ministrations.map(m => (
-            <button
-              key={m.id}
-              onClick={() => {
-                setCurrentMin(m);
-                onSelectMinistration(m);
-              }}
-              className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap border ${
-                currentMin.id === m.id
-                  ? 'bg-[#007aff] text-white border-[#007aff] shadow-lg shadow-blue-500/20'
-                  : 'bg-white/[0.035] text-white/55 border-white/10 hover:bg-white/10 hover:text-white'
-              }`}
-            >
-              <span>{m.name}</span>
+        <div className="relative mt-7 pt-5 border-t border-white/[0.07]">
 
-              <span
-                className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
+
+            {ministrations.map(m => (
+              <button
+                key={m.id}
+                onClick={() => {
+                  setCurrentMin(m);
+                  onSelectMinistration(m);
+                }}
+                className={`group px-4 py-2.5 rounded-2xl text-xs font-bold transition-all duration-200 flex items-center gap-2 whitespace-nowrap border ${
                   currentMin.id === m.id
-                    ? 'bg-white/20 text-white'
-                    : 'bg-white/[0.08] text-white/40'
+                    ? 'bg-[#007aff] text-white border-[#007aff] shadow-lg shadow-blue-500/20'
+                    : 'bg-white/[0.025] text-white/45 border-white/10 hover:bg-white/[0.07] hover:text-white hover:border-white/15'
                 }`}
               >
-                {m.songs.length}
-              </span>
-            </button>
-          ))}
+
+                <span>{m.name}</span>
+
+                <span
+                  className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                    currentMin.id === m.id
+                      ? 'bg-white/20 text-white'
+                      : 'bg-white/[0.07] text-white/35 group-hover:text-white/60'
+                  }`}
+                >
+                  {m.songs.length}
+                </span>
+
+              </button>
+            ))}
+
+          </div>
 
         </div>
-      </div>
 
-      {/* MAIN WORKSPACE */}
-      <div className="rounded-[28px] border border-white/10 bg-[#111113]/90 p-4 sm:p-6 lg:p-7 space-y-6 backdrop-blur-2xl">
+      </section>
+
+      {/* =========================================================
+          MAIN WORKSPACE
+      ========================================================== */}
+
+      <section className="rounded-[30px] border border-white/10 bg-[#111113]/90 p-4 sm:p-6 lg:p-7 space-y-7 backdrop-blur-2xl shadow-2xl shadow-black/20">
 
         {/* EVENT HEADER */}
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-5 pb-6 border-b border-white/10">
+
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 pb-6 border-b border-white/[0.08]">
 
           <div className="min-w-0">
 
             <div className="flex flex-wrap items-center gap-2 mb-3">
 
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#4da3ff] bg-[#007aff]/15 border border-[#007aff]/20 px-2.5 py-1 rounded-full">
+              <span className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-[#4da3ff] bg-[#007aff]/10 border border-[#007aff]/20 px-2.5 py-1.5 rounded-full">
                 {currentMin.status}
               </span>
 
               {currentMin.theme && (
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-300 bg-amber-500/15 border border-amber-500/20 px-2.5 py-1 rounded-full">
+                <span className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1.5 rounded-full">
                   Theme: {currentMin.theme}
                 </span>
               )}
 
             </div>
 
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-[-0.025em]">
               {currentMin.name}
             </h2>
 
-            <p className="text-sm text-white/45 font-medium mt-2 max-w-2xl leading-relaxed">
+            <p className="text-sm text-white/40 font-medium mt-2 max-w-2xl leading-relaxed">
               {currentMin.description}
             </p>
 
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-4 text-xs text-white/40 font-semibold">
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2.5 mt-4 text-xs text-white/35 font-semibold">
 
               <div className="flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-[#007aff]" />
+                <Calendar className="w-3.5 h-3.5 text-[#4da3ff]" />
                 <span>{currentMin.date}</span>
               </div>
 
               {currentMin.time && (
                 <div className="flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-[#007aff]" />
+                  <Clock className="w-3.5 h-3.5 text-[#4da3ff]" />
                   <span>{currentMin.time}</span>
                 </div>
               )}
@@ -383,11 +408,12 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
           </div>
 
           {/* ACTION BAR */}
+
           <div className="flex flex-wrap items-center gap-2.5 flex-shrink-0">
 
             <button
               onClick={openStageMode}
-              className="px-4 py-2.5 rounded-2xl bg-[#007aff] hover:bg-[#0062cc] text-white text-xs font-bold flex items-center gap-2 shadow-xl shadow-blue-500/20 active:scale-95 transition-all"
+              className="px-4 py-2.5 rounded-2xl bg-[#007aff] hover:bg-[#0062cc] text-white text-xs font-bold flex items-center gap-2 shadow-xl shadow-blue-500/20 active:scale-[0.97] transition-all"
             >
               <Radio className="w-4 h-4" />
               <span>Launch Stage Mode</span>
@@ -395,7 +421,7 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
 
             <button
               onClick={handlePrint}
-              className="px-3.5 py-2.5 rounded-2xl border border-white/10 bg-white/[0.035] text-white/55 hover:bg-white/[0.08] hover:text-white text-xs font-bold flex items-center gap-1.5 transition-all"
+              className="px-3.5 py-2.5 rounded-2xl border border-white/10 bg-white/[0.035] text-white/50 hover:bg-white/[0.08] hover:text-white text-xs font-bold flex items-center gap-1.5 transition-all"
             >
               <Printer className="w-4 h-4" />
               <span className="hidden sm:inline">
@@ -408,7 +434,7 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
                 onClick={() =>
                   setIsAddSongModalOpen(true)
                 }
-                className="px-4 py-2.5 rounded-2xl border border-white/10 bg-white/[0.035] hover:bg-white/[0.08] text-white text-xs font-bold flex items-center gap-1.5 transition-all"
+                className="px-4 py-2.5 rounded-2xl border border-white/10 bg-white/[0.035] hover:bg-white/[0.08] hover:border-[#007aff]/30 text-white text-xs font-bold flex items-center gap-1.5 transition-all"
               >
                 <Plus className="w-4 h-4 text-[#4da3ff]" />
                 <span>Add Song to Set</span>
@@ -419,44 +445,55 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
 
         </div>
 
-        {/* STATS */}
+        {/* =========================================================
+            STATS
+        ========================================================== */}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
-          <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-4 flex items-center justify-between">
+          <div className="group rounded-2xl border border-white/10 bg-white/[0.035] p-4.5 flex items-center justify-between hover:bg-white/[0.05] transition-colors">
 
             <div>
-              <p className="text-[10px] font-extrabold uppercase tracking-wider text-white/35">
+              <p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-white/30">
                 Repertoire Size
               </p>
 
-              <p className="text-xl font-extrabold text-white mt-1">
+              <p className="text-2xl font-extrabold text-white mt-1 tracking-tight">
                 {currentMin.songs.length}
+              </p>
+
+              <p className="text-[10px] text-white/25 font-medium mt-0.5">
+                Songs in current set
               </p>
             </div>
 
-            <div className="w-10 h-10 rounded-xl border border-[#007aff]/20 bg-[#007aff]/15 flex items-center justify-center text-[#4da3ff]">
+            <div className="w-11 h-11 rounded-2xl border border-[#007aff]/20 bg-[#007aff]/10 flex items-center justify-center text-[#4da3ff] group-hover:bg-[#007aff]/15 transition-colors">
               <Music2 className="w-5 h-5" />
             </div>
 
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-4 flex items-center justify-between">
+          <div className="group rounded-2xl border border-white/10 bg-white/[0.035] p-4.5 flex items-center justify-between hover:bg-white/[0.05] transition-colors">
 
             <div>
-              <p className="text-[10px] font-extrabold uppercase tracking-wider text-white/35">
+              <p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-white/30">
                 Lead Vocalists Allocated
               </p>
 
-              <p className="text-xl font-extrabold text-white mt-1">
+              <p className="text-2xl font-extrabold text-white mt-1 tracking-tight">
                 {assignedLeadsCount}
-                <span className="text-sm text-white/35">
+                <span className="text-sm text-white/25">
                   {' '}
                   / {currentMin.songs.length}
                 </span>
               </p>
+
+              <p className="text-[10px] text-white/25 font-medium mt-0.5">
+                Vocal assignments completed
+              </p>
             </div>
 
-            <div className="w-10 h-10 rounded-xl border border-amber-500/20 bg-amber-500/15 flex items-center justify-center text-amber-300">
+            <div className="w-11 h-11 rounded-2xl border border-amber-500/20 bg-amber-500/10 flex items-center justify-center text-amber-300 group-hover:bg-amber-500/15 transition-colors">
               <Mic2 className="w-5 h-5" />
             </div>
 
@@ -464,24 +501,32 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
 
         </div>
 
-        {/* SETLIST */}
+        {/* =========================================================
+            SETLIST
+        ========================================================== */}
+
         <div className="space-y-4">
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
 
             <div>
+
               <h3 className="text-base font-extrabold text-white tracking-tight flex items-center gap-2">
-                <Music2 className="w-4 h-4 text-[#4da3ff]" />
+                <span className="w-7 h-7 rounded-lg bg-[#007aff]/10 border border-[#007aff]/15 flex items-center justify-center">
+                  <Music2 className="w-3.5 h-3.5 text-[#4da3ff]" />
+                </span>
+
                 <span>Setlist Repertoire</span>
               </h3>
 
-              <p className="text-xs text-white/35 mt-1">
+              <p className="text-xs text-white/30 mt-1.5">
                 Direct song order, vocalist allocation,
                 performance key and transition cues.
               </p>
+
             </div>
 
-            <span className="text-[10px] font-bold text-white/35 bg-white/[0.035] border border-white/10 px-3 py-1.5 rounded-full">
+            <span className="w-fit text-[9px] font-extrabold tracking-[0.15em] text-white/30 bg-white/[0.025] border border-white/10 px-3 py-1.5 rounded-full">
               {isMD
                 ? 'MD CONTROL ENABLED'
                 : 'READ-ONLY VIEW'}
@@ -512,19 +557,20 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
                     song.key;
 
                   return (
-                    <div
+                    <article
                       key={item.songId}
-                      className="rounded-[28px] border border-white/10 bg-white/[0.045] p-4 sm:p-5 space-y-4 backdrop-blur-2xl"
+                      className="group rounded-[26px] border border-white/10 bg-white/[0.035] hover:bg-white/[0.045] hover:border-white/[0.14] p-4 sm:p-5 space-y-4 backdrop-blur-xl transition-all duration-200"
                     >
 
                       {/* SONG HEADER */}
+
                       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
 
                         <div className="flex items-center gap-3 min-w-0">
 
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1 flex-shrink-0">
 
-                            <span className="w-8 h-8 rounded-xl border border-[#007aff]/20 bg-[#007aff]/15 text-xs font-extrabold text-[#4da3ff] flex items-center justify-center flex-shrink-0">
+                            <span className="w-9 h-9 rounded-xl border border-[#007aff]/20 bg-[#007aff]/10 text-[11px] font-extrabold text-[#4da3ff] flex items-center justify-center">
                               {String(
                                 index + 1
                               ).padStart(2, '0')}
@@ -544,7 +590,7 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
                                     index === 0
                                   }
                                   title="Move up in order"
-                                  className="w-5 h-4 flex items-center justify-center text-white/30 hover:text-[#4da3ff] disabled:opacity-10"
+                                  className="w-5 h-4 flex items-center justify-center text-white/25 hover:text-[#4da3ff] disabled:opacity-10 transition-colors"
                                 >
                                   <ArrowUp className="w-3 h-3" />
                                 </button>
@@ -561,7 +607,7 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
                                     currentMin.songs.length - 1
                                   }
                                   title="Move down in order"
-                                  className="w-5 h-4 flex items-center justify-center text-white/30 hover:text-[#4da3ff] disabled:opacity-10"
+                                  className="w-5 h-4 flex items-center justify-center text-white/25 hover:text-[#4da3ff] disabled:opacity-10 transition-colors"
                                 >
                                   <ArrowDown className="w-3 h-3" />
                                 </button>
@@ -573,7 +619,7 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
 
                           <div className="min-w-0">
 
-                            <div className="flex items-center gap-2 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2 min-w-0">
 
                               <h4
                                 onClick={() =>
@@ -584,13 +630,13 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
                                 {song.title}
                               </h4>
 
-                              <span className="text-[9px] font-extrabold uppercase tracking-wider text-[#4da3ff] bg-[#007aff]/15 border border-[#007aff]/20 px-2 py-0.5 rounded-full flex-shrink-0">
+                              <span className="text-[8px] font-extrabold uppercase tracking-[0.14em] text-[#4da3ff] bg-[#007aff]/10 border border-[#007aff]/20 px-2 py-1 rounded-full flex-shrink-0">
                                 {song.category}
                               </span>
 
                             </div>
 
-                            <p className="text-xs text-white/35 font-medium truncate mt-0.5">
+                            <p className="text-[11px] text-white/30 font-medium truncate mt-1">
                               {song.artist} • {song.tempo}
                             </p>
 
@@ -604,7 +650,7 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
                             onClick={() =>
                               onSelectSong(song)
                             }
-                            className="px-3 py-1.5 rounded-xl border border-white/10 bg-white/[0.035] hover:bg-white/[0.08] text-[#4da3ff] text-xs font-bold transition-all"
+                            className="px-3.5 py-2 rounded-xl border border-white/10 bg-white/[0.025] hover:bg-white/[0.07] hover:border-[#007aff]/25 text-[#4da3ff] text-[11px] font-bold transition-all"
                           >
                             View Arrangement
                           </button>
@@ -617,7 +663,7 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
                                 )
                               }
                               title="Remove from setlist"
-                              className="w-8 h-8 rounded-xl border border-white/10 bg-white/[0.035] hover:bg-white/[0.08] text-white/45 hover:text-white flex items-center justify-center transition-colors"
+                              className="w-9 h-9 rounded-xl border border-white/10 bg-white/[0.025] hover:bg-red-500/10 hover:border-red-500/20 text-white/30 hover:text-red-300 flex items-center justify-center transition-all"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -628,18 +674,20 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
                       </div>
 
                       {/* ALLOCATION BAR */}
-                      <div className="p-3.5 sm:p-4 rounded-2xl border border-white/10 bg-black/35 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+
+                      <div className="p-3.5 sm:p-4 rounded-2xl border border-white/[0.08] bg-black/30 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
 
                         {/* LEAD */}
+
                         <div className="md:col-span-5 flex items-center gap-3">
 
-                          <div className="w-8 h-8 rounded-xl border border-amber-500/20 bg-amber-500/15 flex items-center justify-center text-amber-300 flex-shrink-0">
+                          <div className="w-9 h-9 rounded-xl border border-amber-500/20 bg-amber-500/10 flex items-center justify-center text-amber-300 flex-shrink-0">
                             <Mic2 className="w-4 h-4" />
                           </div>
 
                           <div className="flex-1 min-w-0">
 
-                            <label className="text-[9px] font-extrabold uppercase tracking-[0.15em] text-amber-300 block mb-1">
+                            <label className="text-[8px] font-extrabold uppercase tracking-[0.16em] text-amber-300 block mb-1.5">
                               Lead Vocalist
                             </label>
 
@@ -659,12 +707,12 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
                                       : null
                                   )
                                 }
-                                className="w-full bg-[#1c1c1f] border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-white outline-none focus:border-amber-500/40"
+                                className="w-full bg-[#1a1a1d] border border-white/10 rounded-xl px-3 py-2.5 text-xs font-bold text-white outline-none focus:border-amber-500/40 focus:ring-1 focus:ring-amber-500/10 transition-all"
                               >
 
                                 <option
                                   value=""
-                                  className="bg-[#1c1c1f]"
+                                  className="bg-[#1a1a1d]"
                                 >
                                   -- Not Assigned --
                                 </option>
@@ -674,7 +722,7 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
                                     <option
                                       key={vm.id}
                                       value={vm.id}
-                                      className="bg-[#1c1c1f]"
+                                      className="bg-[#1a1a1d]"
                                     >
                                       {vm.name}{' '}
                                       (
@@ -702,9 +750,10 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
                         </div>
 
                         {/* KEY */}
+
                         <div className="md:col-span-3">
 
-                          <label className="text-[9px] font-extrabold uppercase tracking-[0.15em] text-[#4da3ff] block mb-1">
+                          <label className="text-[8px] font-extrabold uppercase tracking-[0.16em] text-[#4da3ff] block mb-1.5">
                             Performance Key
                           </label>
 
@@ -720,14 +769,14 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
                                   e.target.value
                                 )
                               }
-                              className="w-full bg-[#1c1c1f] border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-[#4da3ff] outline-none focus:border-[#007aff]/50"
+                              className="w-full bg-[#1a1a1d] border border-white/10 rounded-xl px-3 py-2.5 text-xs font-bold text-[#4da3ff] outline-none focus:border-[#007aff]/50 focus:ring-1 focus:ring-[#007aff]/10 transition-all"
                             >
                               {CHROMATIC_KEYS.map(
                                 k => (
                                   <option
                                     key={k}
                                     value={k}
-                                    className="bg-[#1c1c1f]"
+                                    className="bg-[#1a1a1d]"
                                   >
                                     {k} Major
                                   </option>
@@ -746,9 +795,10 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
                         </div>
 
                         {/* TRANSITION */}
+
                         <div className="md:col-span-4">
 
-                          <label className="text-[9px] font-extrabold uppercase tracking-[0.15em] text-white/35 block mb-1">
+                          <label className="text-[8px] font-extrabold uppercase tracking-[0.16em] text-white/30 block mb-1.5">
                             Transition Cue
                           </label>
 
@@ -766,7 +816,7 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
                                   e.target.value
                                 )
                               }
-                              className="w-full bg-[#1c1c1f] border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder:text-white/20 outline-none focus:border-[#007aff]/50"
+                              className="w-full bg-[#1a1a1d] border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white placeholder:text-white/20 outline-none focus:border-[#007aff]/50 focus:ring-1 focus:ring-[#007aff]/10 transition-all"
                             />
 
                           ) : (
@@ -782,7 +832,7 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
 
                       </div>
 
-                    </div>
+                    </article>
                   );
                 }
               )}
@@ -791,17 +841,17 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
 
           ) : (
 
-            <div className="text-center py-14 px-4 rounded-[28px] bg-white/[0.025] border border-dashed border-white/10">
+            <div className="text-center py-16 px-4 rounded-[28px] bg-white/[0.02] border border-dashed border-white/10">
 
-              <div className="w-14 h-14 rounded-2xl border border-[#007aff]/20 bg-[#007aff]/15 flex items-center justify-center mx-auto mb-4 text-[#4da3ff]">
-                <Music2 className="w-6 h-6" />
+              <div className="w-16 h-16 rounded-2xl border border-[#007aff]/20 bg-[#007aff]/10 flex items-center justify-center mx-auto mb-4 text-[#4da3ff]">
+                <Music2 className="w-7 h-7" />
               </div>
 
               <p className="text-sm font-bold text-white">
                 No songs in this setlist yet
               </p>
 
-              <p className="text-xs text-white/35 mt-1">
+              <p className="text-xs text-white/30 mt-1.5 max-w-sm mx-auto leading-relaxed">
                 Add songs from the repertoire to
                 build this service setlist.
               </p>
@@ -811,7 +861,7 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
                   onClick={() =>
                     setIsAddSongModalOpen(true)
                   }
-                  className="mt-4 px-4 py-2.5 rounded-2xl bg-[#007aff] hover:bg-[#0062cc] text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-xl shadow-blue-500/20 transition-all"
+                  className="mt-5 px-4 py-2.5 rounded-2xl bg-[#007aff] hover:bg-[#0062cc] text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-xl shadow-blue-500/20 transition-all"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Add Songs Now</span>
@@ -824,25 +874,32 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
 
         </div>
 
-        {/* MUSIC DIRECTOR NOTES */}
-        <div className="p-5 rounded-2xl border border-amber-500/20 bg-amber-500/10">
+        {/* =========================================================
+            MUSIC DIRECTOR NOTES
+        ========================================================== */}
 
-          <div className="flex items-center justify-between mb-3">
+        <div className="relative overflow-hidden p-5 sm:p-6 rounded-[24px] border border-amber-500/20 bg-amber-500/[0.07]">
 
-            <div className="flex items-center gap-2">
+          <div className="absolute -right-12 -top-12 w-32 h-32 rounded-full bg-amber-500/[0.06] blur-2xl pointer-events-none" />
 
-              <div className="w-8 h-8 rounded-xl border border-amber-500/20 bg-amber-500/15 flex items-center justify-center text-amber-300">
+          <div className="relative flex items-center justify-between gap-3 mb-4">
+
+            <div className="flex items-center gap-3 min-w-0">
+
+              <div className="w-9 h-9 rounded-xl border border-amber-500/20 bg-amber-500/10 flex items-center justify-center text-amber-300 flex-shrink-0">
                 <Edit3 className="w-4 h-4" />
               </div>
 
-              <div>
+              <div className="min-w-0">
+
                 <h4 className="text-sm font-bold text-amber-200">
                   Music Director Ministry Notes
                 </h4>
 
-                <p className="text-[10px] text-amber-200/40 uppercase tracking-wider font-bold mt-0.5">
+                <p className="text-[9px] text-amber-200/35 uppercase tracking-[0.15em] font-bold mt-1">
                   Global directives for this ministration
                 </p>
+
               </div>
 
             </div>
@@ -852,7 +909,7 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
                 onClick={() =>
                   setIsEditingDetails(true)
                 }
-                className="text-xs font-bold text-amber-300 hover:text-amber-200 transition-colors"
+                className="text-[11px] font-bold text-amber-300 hover:text-amber-200 transition-colors flex-shrink-0"
               >
                 Edit Directives
               </button>
@@ -862,7 +919,7 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
 
           {isEditingDetails && isMD ? (
 
-            <div className="space-y-3">
+            <div className="relative space-y-3">
 
               <textarea
                 rows={3}
@@ -881,14 +938,14 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
                     updated
                   );
                 }}
-                className="w-full bg-black/35 border border-amber-500/20 rounded-xl p-3 text-xs text-white placeholder:text-white/20 outline-none focus:border-amber-500/40"
+                className="w-full bg-black/30 border border-amber-500/20 rounded-xl p-3.5 text-xs text-white placeholder:text-white/20 outline-none focus:border-amber-500/40 focus:ring-1 focus:ring-amber-500/10 transition-all"
               />
 
               <button
                 onClick={() =>
                   setIsEditingDetails(false)
                 }
-                className="px-3.5 py-2 rounded-xl bg-amber-500 text-black text-xs font-extrabold hover:bg-amber-400 transition-colors"
+                className="px-4 py-2.5 rounded-xl bg-amber-500 text-black text-xs font-extrabold hover:bg-amber-400 transition-colors"
               >
                 Done Editing
               </button>
@@ -897,7 +954,7 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
 
           ) : (
 
-            <p className="text-xs sm:text-sm text-amber-100/60 leading-relaxed whitespace-pre-wrap">
+            <p className="relative text-xs sm:text-sm text-amber-100/55 leading-relaxed whitespace-pre-wrap">
               {currentMin.mdGlobalNotes ||
                 'Arrival: 1 hour before start time. Sound check, in-ear monitor configuration, and prayer before step up to stage.'}
             </p>
@@ -906,39 +963,46 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
 
         </div>
 
-      </div>
+      </section>
 
-      {/* ADD SONG MODAL */}
+      {/* =========================================================
+          ADD SONG MODAL
+      ========================================================== */}
+
       {isAddSongModalOpen && (
 
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-2xl animate-in fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/75 backdrop-blur-2xl animate-in fade-in duration-200">
 
-          <div className="rounded-[28px] border border-white/10 bg-[#111113]/95 max-w-lg w-full p-5 sm:p-6 shadow-2xl shadow-black/30 max-h-[85vh] flex flex-col backdrop-blur-2xl">
+          <div className="relative rounded-[28px] border border-white/10 bg-[#101012]/95 max-w-lg w-full p-5 sm:p-6 shadow-2xl shadow-black/40 max-h-[88vh] flex flex-col backdrop-blur-2xl">
 
-            <div className="flex items-center justify-between pb-4 border-b border-white/10">
+            <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full bg-[#007aff]/10 blur-3xl pointer-events-none" />
+
+            <div className="relative flex items-center justify-between pb-5 border-b border-white/[0.08]">
 
               <div>
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#4da3ff]">
+
+                <span className="text-[9px] font-extrabold uppercase tracking-[0.18em] text-[#4da3ff]">
                   Add to Setlist
                 </span>
 
-                <h3 className="text-lg font-bold text-white mt-0.5">
+                <h3 className="text-lg font-extrabold text-white mt-1 tracking-tight">
                   Select Repertoire Song
                 </h3>
+
               </div>
 
               <button
                 onClick={() =>
                   setIsAddSongModalOpen(false)
                 }
-                className="w-8 h-8 rounded-xl border border-white/10 bg-white/[0.035] hover:bg-white/[0.08] flex items-center justify-center text-white/45 hover:text-white transition-all"
+                className="w-9 h-9 rounded-xl border border-white/10 bg-white/[0.035] hover:bg-white/[0.08] hover:text-white flex items-center justify-center text-white/40 transition-all"
               >
                 <X className="w-4 h-4" />
               </button>
 
             </div>
 
-            <div className="flex-1 overflow-y-auto py-4 space-y-2">
+            <div className="relative flex-1 overflow-y-auto py-4 space-y-2">
 
               {songs.map(s => {
 
@@ -953,8 +1017,8 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
                     key={s.id}
                     className={`p-3.5 rounded-2xl border flex items-center justify-between gap-3 transition-all ${
                       isAlreadyIn
-                        ? 'bg-white/[0.02] border-white/[0.05] opacity-50'
-                        : 'bg-white/[0.035] border-white/10 hover:border-[#007aff]/30 hover:bg-white/[0.06]'
+                        ? 'bg-white/[0.015] border-white/[0.05] opacity-45'
+                        : 'bg-white/[0.03] border-white/10 hover:border-[#007aff]/30 hover:bg-white/[0.055]'
                     }`}
                   >
 
@@ -964,7 +1028,7 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
                         {s.title}
                       </h4>
 
-                      <p className="text-[10px] text-white/35 truncate mt-0.5">
+                      <p className="text-[10px] text-white/30 truncate mt-1">
                         {s.artist} • Key:{' '}
                         {s.key} • {s.category}
                       </p>
@@ -978,9 +1042,9 @@ export const MinistrationsView: React.FC<MinistrationsViewProps> = ({
                           s.id
                         )
                       }
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                      className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all flex-shrink-0 ${
                         isAlreadyIn
-                          ? 'bg-white/[0.05] text-white/25'
+                          ? 'bg-white/[0.05] text-white/20'
                           : 'bg-[#007aff] hover:bg-[#0062cc] text-white shadow-lg shadow-blue-500/20'
                       }`}
                     >
