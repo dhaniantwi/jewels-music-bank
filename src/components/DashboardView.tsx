@@ -58,204 +58,247 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     nextMinistration?.songs.length || 0;
 
   return (
-    <div className="w-full min-w-0 max-w-full space-y-6 bg-[#0f0f11] pb-6 text-white animate-in fade-in duration-200">
+    <div className="w-full min-w-0 max-w-full space-y-5 pb-8 text-white">
 
       {/* =========================================================
-          WELCOME / COMMAND HERO
+          HERO
       ========================================================= */}
       <section
         className="
           relative
           overflow-hidden
-          rounded-[30px]
-          border border-white/10
-          bg-[#111113]/95
-          p-5
+          rounded-[28px]
+          border
+          border-white/10
+          bg-[#111113]/90
           shadow-2xl
           shadow-black/20
           backdrop-blur-2xl
-          sm:p-7
         "
       >
-        {/* subtle background glow */}
+        {/* ambient glow */}
         <div
           className="
             pointer-events-none
             absolute
-            -right-24
-            -top-24
-            h-64
-            w-64
+            -right-28
+            -top-28
+            h-72
+            w-72
             rounded-full
             bg-[#007aff]/10
             blur-3xl
           "
         />
 
-        <div className="relative max-w-3xl">
+        <div
+          className="
+            pointer-events-none
+            absolute
+            bottom-0
+            left-1/3
+            h-32
+            w-64
+            rounded-full
+            bg-[#007aff]/[0.025]
+            blur-3xl
+          "
+        />
 
+        <div
+          className="
+            relative
+            p-5
+            sm:p-7
+            lg:p-8
+          "
+        >
           <div
             className="
-              mb-4
-              inline-flex
-              items-center
-              gap-2
-              rounded-xl
-              border border-[#007aff]/20
-              bg-[#007aff]/10
-              px-3
-              py-1.5
-              text-[10px]
-              font-extrabold
-              uppercase
-              tracking-[0.16em]
-              text-[#4da3ff]
-            "
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            <span>JEWELS MUSIC MINISTRY PORTAL</span>
-          </div>
-
-          <h1
-            className="
-              text-3xl
-              font-extrabold
-              leading-tight
-              tracking-[-0.03em]
-              text-white
-              sm:text-5xl
-            "
-          >
-            Welcome, Music Team
-          </h1>
-
-          <p
-            className="
-              mt-3
-              max-w-2xl
-              text-sm
-              font-medium
-              leading-relaxed
-              text-white/40
-              sm:text-base
-            "
-          >
-            Everything you need to prepare,
-            organize, and deliver our
-            ministrations in one place.
-          </p>
-
-          {/* Quick actions */}
-          <div
-            className="
-              mt-6
               flex
-              flex-wrap
-              items-center
-              gap-2.5
+              max-w-4xl
+              flex-col
             "
           >
-            <button
-              type="button"
-              onClick={() => setActiveTab('songs')}
+            {/* Eyebrow */}
+            <div
               className="
-                group
+                mb-5
                 flex
+                w-fit
                 items-center
                 gap-2
-                rounded-2xl
-                bg-[#007aff]
-                px-5
-                py-3
-                text-xs
-                font-bold
-                text-white
-                shadow-xl
-                shadow-blue-500/20
-                transition-all
-                duration-200
-                hover:bg-[#006fe6]
-                hover:shadow-blue-500/30
-                active:scale-[0.97]
-                sm:text-sm
+                rounded-xl
+                border
+                border-[#007aff]/20
+                bg-[#007aff]/10
+                px-3
+                py-1.5
               "
             >
-              <Music className="h-4 w-4" />
+              <Sparkles className="h-3.5 w-3.5 text-[#4da3ff]" />
 
-              <span>Explore Song Bank</span>
-
-              <ArrowRight
+              <span
                 className="
-                  h-4
-                  w-4
-                  transition-transform
-                  duration-200
-                  group-hover:translate-x-0.5
+                  text-[9px]
+                  font-extrabold
+                  uppercase
+                  tracking-[0.18em]
+                  text-[#4da3ff]
                 "
-              />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                if (nextMinistration) {
-                  onSelectMinistration(nextMinistration);
-                  setActiveTab('ministrations');
-                }
-              }}
-              className="
-                flex
-                items-center
-                gap-2
-                rounded-2xl
-                border border-white/10
-                bg-white/[0.045]
-                px-5
-                py-3
-                text-xs
-                font-bold
-                text-white/65
-                transition-all
-                duration-200
-                hover:border-white/15
-                hover:bg-white/[0.075]
-                hover:text-white
-                active:scale-[0.97]
-                sm:text-sm
-              "
-            >
-              <Calendar className="h-4 w-4 text-[#4da3ff]" />
-
-              <span>
-                View {nextMinistration?.name || 'Setlist'}
+              >
+                Jewels Music Ministry Portal
               </span>
-            </button>
+            </div>
 
-            <button
-              type="button"
-              onClick={openToolsModal}
+            {/* Heading */}
+            <h1
               className="
-                flex
-                items-center
-                gap-2
-                rounded-2xl
-                border border-white/10
-                bg-white/[0.025]
-                px-4
-                py-3
-                text-xs
-                font-bold
-                text-white/45
-                transition-all
-                duration-200
-                hover:bg-white/[0.06]
-                hover:text-white
-                active:scale-[0.97]
+                max-w-3xl
+                text-3xl
+                font-extrabold
+                leading-[1.05]
+                tracking-[-0.04em]
+                text-white
+                sm:text-5xl
+                lg:text-[52px]
               "
             >
-              <Wrench className="h-3.5 w-3.5 text-[#4da3ff]" />
-              <span>Pitch Pipe & Metronome</span>
-            </button>
+              Welcome, Music Team
+            </h1>
+
+            <p
+              className="
+                mt-4
+                max-w-2xl
+                text-sm
+                font-medium
+                leading-7
+                text-white/40
+                sm:text-base
+              "
+            >
+              Everything you need to prepare,
+              organize, rehearse, and deliver
+              your ministrations in one place.
+            </p>
+
+            {/* Actions */}
+            <div
+              className="
+                mt-7
+                flex
+                flex-wrap
+                gap-2.5
+              "
+            >
+              <button
+                type="button"
+                onClick={() => setActiveTab('songs')}
+                className="
+                  group
+                  flex
+                  items-center
+                  gap-2
+                  rounded-2xl
+                  bg-[#007aff]
+                  px-5
+                  py-3
+                  text-xs
+                  font-bold
+                  text-white
+                  shadow-xl
+                  shadow-blue-500/20
+                  transition-all
+                  duration-200
+                  hover:bg-[#087ff2]
+                  hover:shadow-blue-500/30
+                  active:scale-[0.97]
+                  sm:text-sm
+                "
+              >
+                <Music className="h-4 w-4" />
+
+                <span>Explore Song Bank</span>
+
+                <ArrowRight
+                  className="
+                    h-4
+                    w-4
+                    transition-transform
+                    duration-200
+                    group-hover:translate-x-1
+                  "
+                />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (nextMinistration) {
+                    onSelectMinistration(nextMinistration);
+                    setActiveTab('ministrations');
+                  }
+                }}
+                className="
+                  flex
+                  items-center
+                  gap-2
+                  rounded-2xl
+                  border
+                  border-white/10
+                  bg-white/[0.045]
+                  px-5
+                  py-3
+                  text-xs
+                  font-bold
+                  text-white/65
+                  transition-all
+                  duration-200
+                  hover:border-white/15
+                  hover:bg-white/[0.07]
+                  hover:text-white
+                  active:scale-[0.97]
+                  sm:text-sm
+                "
+              >
+                <Calendar className="h-4 w-4 text-[#4da3ff]" />
+
+                <span>
+                  {nextMinistration
+                    ? `View ${nextMinistration.name}`
+                    : 'View Ministrations'}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={openToolsModal}
+                className="
+                  flex
+                  items-center
+                  gap-2
+                  rounded-2xl
+                  border
+                  border-white/10
+                  bg-white/[0.025]
+                  px-4
+                  py-3
+                  text-xs
+                  font-bold
+                  text-white/40
+                  transition-all
+                  duration-200
+                  hover:border-white/15
+                  hover:bg-white/[0.055]
+                  hover:text-white
+                  active:scale-[0.97]
+                "
+              >
+                <Wrench className="h-3.5 w-3.5 text-[#4da3ff]" />
+                <span>Music Tools</span>
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -268,15 +311,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <section
           className="
             overflow-hidden
-            rounded-[30px]
-            border border-white/10
-            bg-[#111113]/95
+            rounded-[28px]
+            border
+            border-white/10
+            bg-[#111113]/90
             shadow-2xl
             shadow-black/20
             backdrop-blur-2xl
           "
         >
-          {/* Main information */}
+          {/* Section header */}
           <div
             className="
               flex
@@ -284,16 +328,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               gap-5
               p-5
               sm:p-6
-              md:flex-row
-              md:items-center
-              md:justify-between
+              lg:flex-row
+              lg:items-center
+              lg:justify-between
             "
           >
             <div className="min-w-0">
-
               <div
                 className="
-                  mb-2.5
+                  mb-3
                   flex
                   flex-wrap
                   items-center
@@ -303,18 +346,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <span
                   className="
                     rounded-lg
-                    border border-[#007aff]/20
+                    border
+                    border-[#007aff]/20
                     bg-[#007aff]/10
                     px-2.5
                     py-1
-                    text-[10px]
+                    text-[9px]
                     font-extrabold
                     uppercase
-                    tracking-[0.14em]
+                    tracking-[0.15em]
                     text-[#4da3ff]
                   "
                 >
-                  NEXT MINISTRATION
+                  Next Ministration
                 </span>
 
                 <span
@@ -323,33 +367,27 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     items-center
                     gap-1.5
                     rounded-lg
-                    border border-emerald-500/20
+                    border
+                    border-emerald-500/20
                     bg-emerald-500/10
                     px-2.5
                     py-1
-                    text-[10px]
+                    text-[9px]
                     font-bold
                     text-emerald-300
                   "
                 >
-                  <span
-                    className="
-                      h-1.5
-                      w-1.5
-                      rounded-full
-                      bg-emerald-400
-                    "
-                  />
-
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                   {nextMinistration.status}
                 </span>
               </div>
 
               <h2
                 className="
+                  truncate
                   text-2xl
                   font-extrabold
-                  tracking-[-0.025em]
+                  tracking-[-0.03em]
                   text-white
                   sm:text-3xl
                 "
@@ -359,12 +397,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
               <p
                 className="
-                  mt-1.5
-                  max-w-xl
+                  mt-2
+                  max-w-2xl
                   text-sm
-                  font-medium
-                  leading-relaxed
-                  text-white/40
+                  leading-6
+                  text-white/35
                 "
               >
                 {nextMinistration.description}
@@ -378,27 +415,51 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   items-center
                   gap-x-4
                   gap-y-2
-                  text-xs
-                  font-semibold
-                  text-white/35
                 "
               >
-                <div className="flex items-center gap-1.5">
+                <div
+                  className="
+                    flex
+                    items-center
+                    gap-1.5
+                    text-xs
+                    font-semibold
+                    text-white/40
+                  "
+                >
                   <Calendar className="h-3.5 w-3.5 text-[#4da3ff]" />
-                  <span>{nextMinistration.date}</span>
+                  {nextMinistration.date}
                 </div>
 
                 {nextMinistration.time && (
-                  <div className="flex items-center gap-1.5">
+                  <div
+                    className="
+                      flex
+                      items-center
+                      gap-1.5
+                      text-xs
+                      font-semibold
+                      text-white/40
+                    "
+                  >
                     <Clock className="h-3.5 w-3.5 text-amber-300" />
-                    <span>{nextMinistration.time}</span>
+                    {nextMinistration.time}
                   </div>
                 )}
 
                 {nextMinistration.venue && (
-                  <div className="flex items-center gap-1.5">
-                    <MapPin className="h-3.5 w-3.5 text-white/50" />
-                    <span>{nextMinistration.venue}</span>
+                  <div
+                    className="
+                      flex
+                      items-center
+                      gap-1.5
+                      text-xs
+                      font-semibold
+                      text-white/40
+                    "
+                  >
+                    <MapPin className="h-3.5 w-3.5 text-white/30" />
+                    {nextMinistration.venue}
                   </div>
                 )}
               </div>
@@ -410,7 +471,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 flex
                 shrink-0
                 flex-wrap
-                items-center
                 gap-2
               "
             >
@@ -426,22 +486,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   gap-2
                   rounded-2xl
                   bg-[#007aff]
-                  px-5
+                  px-4
                   py-3
                   text-xs
                   font-bold
                   text-white
-                  shadow-xl
-                  shadow-blue-500/20
+                  shadow-lg
+                  shadow-blue-500/15
                   transition-all
-                  duration-200
-                  hover:bg-[#006fe6]
-                  hover:shadow-blue-500/30
+                  hover:bg-[#087ff2]
                   active:scale-[0.97]
-                  sm:text-sm
+                  sm:px-5
                 "
               >
-                <span>View Setlist & Allocations</span>
+                <span>View Setlist</span>
                 <ArrowRight className="h-4 w-4" />
               </button>
 
@@ -452,9 +510,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 className="
                   flex
                   items-center
-                  gap-1.5
+                  gap-2
                   rounded-2xl
-                  border border-amber-500/20
+                  border
+                  border-amber-500/20
                   bg-amber-500/10
                   px-4
                   py-3
@@ -462,10 +521,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   font-bold
                   text-amber-200
                   transition-all
-                  duration-200
                   hover:bg-amber-500/15
                   active:scale-[0.97]
-                  sm:text-sm
                 "
               >
                 <Radio className="h-4 w-4 text-amber-300" />
@@ -477,10 +534,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
 
-
-          {/* =====================================================
-              STATS
-          ===================================================== */}
+          {/* Stats */}
           <div
             className="
               grid
@@ -504,23 +558,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <div
                 className="
                   flex
-                  h-11
-                  w-11
+                  h-10
+                  w-10
                   shrink-0
                   items-center
                   justify-center
                   rounded-xl
-                  border border-[#007aff]/15
+                  border
+                  border-[#007aff]/15
                   bg-[#007aff]/10
+                  sm:h-11
+                  sm:w-11
                 "
               >
                 <Music className="h-5 w-5 text-[#4da3ff]" />
               </div>
 
               <div className="min-w-0">
-                <span
+                <div
                   className="
-                    block
                     text-2xl
                     font-extrabold
                     leading-none
@@ -529,22 +585,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   "
                 >
                   {totalMinSongs}
-                </span>
+                </div>
 
-                <span
+                <div
                   className="
-                    mt-1
-                    block
-                    text-[9px]
+                    mt-1.5
+                    text-[8px]
                     font-bold
                     uppercase
                     tracking-[0.12em]
-                    text-white/35
-                    sm:text-[10px]
+                    text-white/30
+                    sm:text-[9px]
                   "
                 >
                   Repertoire Songs
-                </span>
+                </div>
               </div>
             </div>
 
@@ -561,23 +616,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <div
                 className="
                   flex
-                  h-11
-                  w-11
+                  h-10
+                  w-10
                   shrink-0
                   items-center
                   justify-center
                   rounded-xl
-                  border border-amber-500/20
+                  border
+                  border-amber-500/20
                   bg-amber-500/10
+                  sm:h-11
+                  sm:w-11
                 "
               >
                 <Mic className="h-5 w-5 text-amber-300" />
               </div>
 
               <div className="min-w-0">
-                <span
+                <div
                   className="
-                    block
                     text-2xl
                     font-extrabold
                     leading-none
@@ -586,52 +643,54 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   "
                 >
                   {totalAssignedLeads} / {totalMinSongs}
-                </span>
+                </div>
 
-                <span
+                <div
                   className="
-                    mt-1
-                    block
-                    text-[9px]
+                    mt-1.5
+                    text-[8px]
                     font-bold
                     uppercase
                     tracking-[0.12em]
-                    text-white/35
-                    sm:text-[10px]
+                    text-white/30
+                    sm:text-[9px]
                   "
                 >
-                  Lead Vocalists Allocated
-                </span>
+                  Leads Allocated
+                </div>
               </div>
             </div>
           </div>
 
-
-          {/* =====================================================
-              PLANNED SETLIST
-          ===================================================== */}
+          {/* Setlist */}
           <div className="p-5 sm:p-6">
-
             <div
               className="
                 mb-3
                 flex
+                flex-wrap
                 items-center
                 justify-between
                 gap-3
               "
             >
-              <span
-                className="
-                  text-[10px]
-                  font-extrabold
-                  uppercase
-                  tracking-[0.14em]
-                  text-white/35
-                "
-              >
-                Planned Setlist Order
-              </span>
+              <div>
+                <span
+                  className="
+                    text-[9px]
+                    font-extrabold
+                    uppercase
+                    tracking-[0.16em]
+                    text-white/30
+                  "
+                >
+                  Planned Setlist
+                </span>
+
+                <p className="mt-1 text-xs text-white/20">
+                  First four songs in performance order
+                </p>
+              </div>
 
               <button
                 type="button"
@@ -640,20 +699,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   setActiveTab('ministrations');
                 }}
                 className="
+                  flex
+                  items-center
+                  gap-1.5
                   rounded-xl
-                  border border-white/10
-                  bg-white/[0.035]
+                  border
+                  border-white/10
+                  bg-white/[0.025]
                   px-3
                   py-2
-                  text-[10px]
+                  text-[9px]
                   font-bold
                   text-[#4da3ff]
                   transition-all
-                  hover:bg-white/[0.07]
+                  hover:border-white/15
+                  hover:bg-white/[0.06]
                   hover:text-white
                 "
               >
-                Manage Setlist & Leads
+                Manage Setlist
+                <ChevronRight className="h-3.5 w-3.5" />
               </button>
             </div>
 
@@ -686,17 +751,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       className="
                         group
                         flex
+                        min-w-0
                         cursor-pointer
                         items-center
                         justify-between
-                        gap-2.5
+                        gap-2
                         rounded-2xl
-                        border border-white/10
+                        border
+                        border-white/10
                         bg-white/[0.025]
                         p-3
                         transition-all
                         duration-200
-                        hover:border-white/15
+                        hover:border-[#007aff]/20
                         hover:bg-white/[0.055]
                       "
                     >
@@ -717,7 +784,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                             items-center
                             justify-center
                             rounded-lg
-                            border border-white/10
+                            border
+                            border-white/10
                             bg-[#0d0d0f]
                             text-[10px]
                             font-extrabold
@@ -743,8 +811,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                             className="
                               mt-0.5
                               truncate
-                              text-[10px]
-                              text-white/35
+                              text-[9px]
+                              text-white/30
                             "
                           >
                             {leadMember
@@ -758,11 +826,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         className="
                           shrink-0
                           rounded-lg
-                          border border-[#007aff]/20
+                          border
+                          border-[#007aff]/20
                           bg-[#007aff]/10
                           px-2
                           py-1
-                          text-[10px]
+                          text-[9px]
                           font-bold
                           text-[#4da3ff]
                         "
@@ -781,28 +850,28 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* =========================================================
           QUICK ACCESS
       ========================================================= */}
-      <section className="space-y-4">
-
-        <div>
+      <section>
+        <div className="mb-4">
           <span
             className="
-              text-[10px]
+              text-[9px]
               font-extrabold
               uppercase
-              tracking-[0.16em]
+              tracking-[0.18em]
               text-[#4da3ff]
             "
           >
-            QUICK ACCESS
+            Quick Access
           </span>
 
           <h2
             className="
               mt-1
-              text-2xl
-              font-bold
-              tracking-tight
+              text-xl
+              font-extrabold
+              tracking-[-0.025em]
               text-white
+              sm:text-2xl
             "
           >
             Ministry Departments
@@ -817,8 +886,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             md:grid-cols-3
           "
         >
-
-          {/* SONG BANK */}
+          {/* Song Bank */}
           <div
             onClick={() => setActiveTab('songs')}
             className="
@@ -827,9 +895,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               cursor-pointer
               flex-col
               justify-between
-              rounded-[26px]
-              border border-white/10
-              bg-[#111113]/90
+              rounded-[24px]
+              border
+              border-white/10
+              bg-[#111113]/85
               p-5
               shadow-xl
               shadow-black/10
@@ -844,14 +913,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div>
               <div
                 className="
-                  mb-4
+                  mb-5
                   flex
-                  h-11
-                  w-11
+                  h-10
+                  w-10
                   items-center
                   justify-center
                   rounded-xl
-                  border border-[#007aff]/15
+                  border
+                  border-[#007aff]/15
                   bg-[#007aff]/10
                 "
               >
@@ -860,21 +930,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
               <span
                 className="
-                  mb-1
-                  block
-                  text-[9px]
+                  text-[8px]
                   font-extrabold
                   uppercase
-                  tracking-[0.15em]
+                  tracking-[0.17em]
                   text-[#4da3ff]
                 "
               >
-                REPERTOIRE LIBRARY
+                Repertoire Library
               </span>
 
               <h3
                 className="
-                  text-xl
+                  mt-1
+                  text-lg
                   font-bold
                   tracking-tight
                   text-white
@@ -885,11 +954,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
               <p
                 className="
-                  mt-1
+                  mt-2
                   text-xs
-                  font-medium
-                  leading-relaxed
-                  text-white/40
+                  leading-6
+                  text-white/35
                 "
               >
                 Browse praise and worship songs,
@@ -909,34 +977,35 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 pt-4
               "
             >
-              <span className="text-xs font-bold text-white/45">
+              <span className="text-[10px] font-bold text-white/35">
                 {songs.length} Songs Loaded
               </span>
 
               <div
                 className="
                   flex
-                  h-8
-                  w-8
+                  h-7
+                  w-7
                   items-center
                   justify-center
-                  rounded-xl
-                  border border-white/10
-                  bg-white/[0.035]
-                  text-white/35
+                  rounded-lg
+                  border
+                  border-white/10
+                  bg-white/[0.025]
+                  text-white/25
                   transition-all
                   group-hover:border-[#007aff]/20
                   group-hover:bg-[#007aff]/10
                   group-hover:text-[#4da3ff]
                 "
               >
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-3.5 w-3.5" />
               </div>
             </div>
           </div>
 
 
-          {/* MINISTRATIONS */}
+          {/* Ministrations */}
           <div
             onClick={() => setActiveTab('ministrations')}
             className="
@@ -945,9 +1014,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               cursor-pointer
               flex-col
               justify-between
-              rounded-[26px]
-              border border-white/10
-              bg-[#111113]/90
+              rounded-[24px]
+              border
+              border-white/10
+              bg-[#111113]/85
               p-5
               shadow-xl
               shadow-black/10
@@ -962,14 +1032,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div>
               <div
                 className="
-                  mb-4
+                  mb-5
                   flex
-                  h-11
-                  w-11
+                  h-10
+                  w-10
                   items-center
                   justify-center
                   rounded-xl
-                  border border-amber-500/20
+                  border
+                  border-amber-500/20
                   bg-amber-500/10
                 "
               >
@@ -978,21 +1049,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
               <span
                 className="
-                  mb-1
-                  block
-                  text-[9px]
+                  text-[8px]
                   font-extrabold
                   uppercase
-                  tracking-[0.15em]
+                  tracking-[0.17em]
                   text-amber-300
                 "
               >
-                SERVICES & EVENTS
+                Services & Events
               </span>
 
               <h3
                 className="
-                  text-xl
+                  mt-1
+                  text-lg
                   font-bold
                   tracking-tight
                   text-white
@@ -1003,11 +1073,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
               <p
                 className="
-                  mt-1
+                  mt-2
                   text-xs
-                  font-medium
-                  leading-relaxed
-                  text-white/40
+                  leading-6
+                  text-white/35
                 "
               >
                 Build service setlists, assign
@@ -1027,34 +1096,35 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 pt-4
               "
             >
-              <span className="text-xs font-bold text-white/45">
+              <span className="text-[10px] font-bold text-white/35">
                 {ministrations.length} Events Scheduled
               </span>
 
               <div
                 className="
                   flex
-                  h-8
-                  w-8
+                  h-7
+                  w-7
                   items-center
                   justify-center
-                  rounded-xl
-                  border border-white/10
-                  bg-white/[0.035]
-                  text-white/35
+                  rounded-lg
+                  border
+                  border-white/10
+                  bg-white/[0.025]
+                  text-white/25
                   transition-all
                   group-hover:border-amber-500/20
                   group-hover:bg-amber-500/10
                   group-hover:text-amber-300
                 "
               >
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-3.5 w-3.5" />
               </div>
             </div>
           </div>
 
 
-          {/* MUSIC TEAM */}
+          {/* Music Team */}
           <div
             onClick={() => setActiveTab('team')}
             className="
@@ -1063,9 +1133,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               cursor-pointer
               flex-col
               justify-between
-              rounded-[26px]
-              border border-white/10
-              bg-[#111113]/90
+              rounded-[24px]
+              border
+              border-white/10
+              bg-[#111113]/85
               p-5
               shadow-xl
               shadow-black/10
@@ -1080,14 +1151,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div>
               <div
                 className="
-                  mb-4
+                  mb-5
                   flex
-                  h-11
-                  w-11
+                  h-10
+                  w-10
                   items-center
                   justify-center
                   rounded-xl
-                  border border-[#007aff]/15
+                  border
+                  border-[#007aff]/15
                   bg-[#007aff]/10
                 "
               >
@@ -1096,21 +1168,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
               <span
                 className="
-                  mb-1
-                  block
-                  text-[9px]
+                  text-[8px]
                   font-extrabold
                   uppercase
-                  tracking-[0.15em]
+                  tracking-[0.17em]
                   text-[#4da3ff]
                 "
               >
-                PEOPLE & ROSTER
+                People & Roster
               </span>
 
               <h3
                 className="
-                  text-xl
+                  mt-1
+                  text-lg
                   font-bold
                   tracking-tight
                   text-white
@@ -1121,11 +1192,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
               <p
                 className="
-                  mt-1
+                  mt-2
                   text-xs
-                  font-medium
-                  leading-relaxed
-                  text-white/40
+                  leading-6
+                  text-white/35
                 "
               >
                 View vocalists, instrumentalists,
@@ -1144,32 +1214,32 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 pt-4
               "
             >
-              <span className="text-xs font-bold text-white/45">
+              <span className="text-[10px] font-bold text-white/35">
                 {team.length} Active Members
               </span>
 
               <div
                 className="
                   flex
-                  h-8
-                  w-8
+                  h-7
+                  w-7
                   items-center
                   justify-center
-                  rounded-xl
-                  border border-white/10
-                  bg-white/[0.035]
-                  text-white/35
+                  rounded-lg
+                  border
+                  border-white/10
+                  bg-white/[0.025]
+                  text-white/25
                   transition-all
                   group-hover:border-[#007aff]/20
                   group-hover:bg-[#007aff]/10
                   group-hover:text-[#4da3ff]
                 "
               >
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-3.5 w-3.5" />
               </div>
             </div>
           </div>
-
         </div>
       </section>
 
@@ -1177,10 +1247,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* =========================================================
           RECENT SONGS
       ========================================================= */}
-      <section className="space-y-4">
-
+      <section>
         <div
           className="
+            mb-4
             flex
             items-end
             justify-between
@@ -1190,23 +1260,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div>
             <span
               className="
-                text-[10px]
+                text-[9px]
                 font-extrabold
                 uppercase
-                tracking-[0.16em]
+                tracking-[0.18em]
                 text-[#4da3ff]
               "
             >
-              RECENT ADDITIONS
+              Recent Additions
             </span>
 
             <h2
               className="
                 mt-1
-                text-2xl
-                font-bold
-                tracking-tight
+                text-xl
+                font-extrabold
+                tracking-[-0.025em]
                 text-white
+                sm:text-2xl
               "
             >
               Featured Ministry Songs
@@ -1217,20 +1288,28 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             type="button"
             onClick={() => setActiveTab('songs')}
             className="
+              hidden
+              shrink-0
+              items-center
+              gap-1
               rounded-xl
-              border border-white/10
-              bg-white/[0.035]
+              border
+              border-white/10
+              bg-white/[0.025]
               px-3
               py-2
-              text-[10px]
+              text-[9px]
               font-bold
               text-[#4da3ff]
               transition-all
-              hover:bg-white/[0.07]
+              hover:border-white/15
+              hover:bg-white/[0.06]
               hover:text-white
+              sm:flex
             "
           >
-            View All {songs.length} Songs
+            View All
+            <ChevronRight className="h-3.5 w-3.5" />
           </button>
         </div>
 
@@ -1254,9 +1333,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 items-center
                 justify-between
                 gap-3
-                rounded-[26px]
-                border border-white/10
-                bg-[#111113]/90
+                rounded-[24px]
+                border
+                border-white/10
+                bg-[#111113]/85
                 p-4
                 shadow-xl
                 shadow-black/10
@@ -1285,7 +1365,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     items-center
                     justify-center
                     rounded-xl
-                    border border-white/10
+                    border
+                    border-white/10
                     bg-[#0d0d0f]
                   "
                 >
@@ -1294,7 +1375,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       {song.icon}
                     </span>
                   ) : (
-                    <Music className="h-5 w-5 text-white/30" />
+                    <Music className="h-5 w-5 text-white/25" />
                   )}
                 </div>
 
@@ -1302,10 +1383,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <span
                     className="
                       block
-                      text-[9px]
-                      font-bold
+                      text-[8px]
+                      font-extrabold
                       uppercase
-                      tracking-[0.13em]
+                      tracking-[0.14em]
                       text-[#4da3ff]
                     "
                   >
@@ -1327,8 +1408,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <p
                     className="
                       truncate
-                      text-xs
-                      text-white/35
+                      text-[10px]
+                      text-white/30
                     "
                   >
                     {song.artist}
@@ -1340,7 +1421,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <span
                   className="
                     block
-                    text-xs
+                    text-[10px]
                     font-extrabold
                     text-[#4da3ff]
                   "
@@ -1350,9 +1431,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
                 <span
                   className="
-                    text-[10px]
+                    text-[9px]
                     font-medium
-                    text-white/30
+                    text-white/25
                   "
                 >
                   {typeof song.tempo === 'string'
@@ -1363,6 +1444,36 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           ))}
         </div>
+
+        {/* Mobile view-all */}
+        <button
+          type="button"
+          onClick={() => setActiveTab('songs')}
+          className="
+            mt-3
+            flex
+            w-full
+            items-center
+            justify-center
+            gap-1.5
+            rounded-xl
+            border
+            border-white/10
+            bg-white/[0.025]
+            px-3
+            py-2.5
+            text-[9px]
+            font-bold
+            text-[#4da3ff]
+            transition-all
+            hover:bg-white/[0.06]
+            hover:text-white
+            sm:hidden
+          "
+        >
+          View All {songs.length} Songs
+          <ChevronRight className="h-3.5 w-3.5" />
+        </button>
       </section>
 
     </div>
