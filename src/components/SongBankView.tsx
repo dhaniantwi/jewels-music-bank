@@ -1,8 +1,5 @@
-
-import React, {
-  useEffect,
+ import React, {
   useMemo,
-  useRef,
   useState,
 } from 'react';
 import { Song, ActiveRole } from '../types';
@@ -10,7 +7,6 @@ import {
   Search,
   Plus,
   Play,
-  Pause,
   Edit,
   Music,
   Lock,
@@ -27,6 +23,7 @@ import {
   Command,
 } from 'lucide-react';
 import { CHROMATIC_KEYS } from '../utils/audioUtils';
+import SongAudioPlayer from './SongAudioPlayer';
 
 interface SongBankViewProps {
   songs: Song[];
@@ -50,8 +47,6 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
   const [selectedKey, setSelectedKey] = useState('All');
   const [playingSongId, setPlayingSongId] = useState<string | null>(null);
 
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
   const isMD = activeRole === 'admin_md';
 
   const categories = [
@@ -65,16 +60,6 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
     'Contemporary',
     'Other',
   ];
-
-  useEffect(() => {
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
-        audioRef.current = null;
-      }
-    };
-  }, []);
 
   const filteredSongs = useMemo(() => {
     const search = searchTerm.toLowerCase().trim();
@@ -128,81 +113,34 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
     setSelectedKey('All');
   };
 
-  const handleQuickPlay = async (
+  const handleQuickPlay = (
     e: React.MouseEvent,
     song: Song
   ) => {
     e.stopPropagation();
 
-    /*
-     * No audio attached to this song.
-     */
     if (!song.audioUrl) {
       return;
     }
 
     /*
-     * If this song is already playing,
-     * pause it.
+     * Pressing the same song's button closes
+     * the expanded player.
      */
-    if (
-      playingSongId === song.id &&
-      audioRef.current
-    ) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-      audioRef.current = null;
+    if (playingSongId === song.id) {
       setPlayingSongId(null);
       return;
     }
 
     /*
-     * Stop any song that is currently playing.
+     * Opening another song automatically
+     * replaces the previous player.
      */
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-      audioRef.current = null;
-    }
-
-    /*
-     * Create the actual audio player using
-     * the song's stored audioUrl.
-     */
-    const audio = new Audio(song.audioUrl);
-
-    audio.preload = 'metadata';
-
-    audio.onended = () => {
-      if (audioRef.current === audio) {
-        audioRef.current = null;
-        setPlayingSongId(null);
-      }
-    };
-
-    audio.onerror = () => {
-      if (audioRef.current === audio) {
-        audioRef.current = null;
-        setPlayingSongId(null);
-      }
-    };
-
-    audioRef.current = audio;
     setPlayingSongId(song.id);
+  };
 
-    try {
-      await audio.play();
-    } catch (error) {
-      console.error(
-        'Unable to play song:',
-        error
-      );
-
-      if (audioRef.current === audio) {
-        audioRef.current = null;
-        setPlayingSongId(null);
-      }
-    }
+  const handleClosePlayer = () => {
+    setPlayingSongId(null);
   };
 
   const getSongCapabilities = (song: Song) => {
@@ -791,7 +729,7 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
                 song.category || 'Other';
 
               const songKey =
-                song.key || '—';
+                song.key || 'C';
 
               const tempoDisplay =
                 typeof song.tempo === 'string'
@@ -990,126 +928,147 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
                   </div>
 
                   {/* FOOTER */}
-                  <div className="relative flex flex-col gap-3 border-t border-white/[0.05] pt-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="relative flex flex-col gap-3 border-t border-white/[0.05] pt-3">
 
-                    <button
-                      type="button"
-                      disabled={!song.audioUrl}
-                      onClick={e =>
-                        handleQuickPlay(e, song)
-                      }
-                      className={`
-                        flex
-                        items-center
-                        justify-center
-                        gap-1.5
-                        rounded-xl
-                        border
-                        px-3
-                        py-2
-                        text-xs
-                        font-bold
-                        transition-all
-                        active:scale-[0.97]
-                        ${
-                          !song.audioUrl
-                            ? `
-                              cursor-not-allowed
-                              border-white/[0.05]
-                              bg-white/[0.02]
-                              text-white/20
-                            `
-                            : isPlayingThis
-                              ? `
-                                border-[#007aff]/40
-                                bg-[#007aff]
-                                text-white
-                                shadow-lg
-                                shadow-blue-500/20
-                              `
-                              : `
-                                border-white/[0.06]
-                                bg-white/[0.03]
-                                text-[#4da3ff]
-                                hover:border-[#007aff]/25
-                                hover:bg-[#007aff]/[0.09]
-                              `
-                        }
-                      `}
-                    >
-                      {isPlayingThis ? (
-                        <Pause className="h-3.5 w-3.5 fill-current" />
-                      ) : (
-                        <Play className="h-3.5 w-3.5 fill-current" />
-                      )}
-
-                      {!song.audioUrl
-                        ? 'No Audio'
-                        : isPlayingThis
-                          ? 'Playing...'
-                          : 'Play Song'}
-                    </button>
-
-                    <div className="flex items-center justify-end gap-1.5">
-
-                      {isMD && (
-                        <button
-                          type="button"
-                          onClick={e => {
-                            e.stopPropagation();
-                            onEditSong(song);
-                          }}
-                          title="Edit Song"
-                          className="
-                            flex
-                            h-9
-                            w-9
-                            items-center
-                            justify-center
-                            rounded-xl
-                            border
-                            border-white/[0.06]
-                            bg-white/[0.03]
-                            text-white/30
-                            transition-all
-                            hover:border-white/[0.12]
-                            hover:bg-white/[0.08]
-                            hover:text-white
-                          "
-                        >
-                          <Edit className="h-3.5 w-3.5" />
-                        </button>
-                      )}
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 
                       <button
                         type="button"
-                        onClick={e => {
-                          e.stopPropagation();
-                          onSelectSong(song);
-                        }}
-                        className="
+                        disabled={!song.audioUrl}
+                        onClick={e =>
+                          handleQuickPlay(e, song)
+                        }
+                        className={`
                           flex
                           items-center
-                          gap-1
+                          justify-center
+                          gap-1.5
                           rounded-xl
                           border
-                          border-white/[0.06]
-                          bg-white/[0.03]
                           px-3
                           py-2
                           text-xs
                           font-bold
-                          text-white/50
                           transition-all
-                          hover:border-[#007aff]/25
-                          hover:bg-[#007aff]/[0.09]
-                          hover:text-[#4da3ff]
-                        "
+                          active:scale-[0.97]
+                          ${
+                            !song.audioUrl
+                              ? `
+                                cursor-not-allowed
+                                border-white/[0.05]
+                                bg-white/[0.02]
+                                text-white/20
+                              `
+                              : isPlayingThis
+                                ? `
+                                  border-[#007aff]/40
+                                  bg-[#007aff]
+                                  text-white
+                                  shadow-lg
+                                  shadow-blue-500/20
+                                `
+                                : `
+                                  border-white/[0.06]
+                                  bg-white/[0.03]
+                                  text-[#4da3ff]
+                                  hover:border-[#007aff]/25
+                                  hover:bg-[#007aff]/[0.09]
+                                `
+                          }
+                        `}
                       >
-                        View Song
-                        <ChevronRight className="h-3.5 w-3.5" />
+                        {isPlayingThis ? (
+                          <span className="h-3.5 w-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                        ) : (
+                          <Play className="h-3.5 w-3.5 fill-current" />
+                        )}
+
+                        {!song.audioUrl
+                          ? 'No Audio'
+                          : isPlayingThis
+                            ? 'Playing...'
+                            : 'Play Song'}
                       </button>
+
+                      <div className="flex items-center justify-end gap-1.5">
+
+                        {isMD && (
+                          <button
+                            type="button"
+                            onClick={e => {
+                              e.stopPropagation();
+                              onEditSong(song);
+                            }}
+                            title="Edit Song"
+                            className="
+                              flex
+                              h-9
+                              w-9
+                              items-center
+                              justify-center
+                              rounded-xl
+                              border
+                              border-white/[0.06]
+                              bg-white/[0.03]
+                              text-white/30
+                              transition-all
+                              hover:border-white/[0.12]
+                              hover:bg-white/[0.08]
+                              hover:text-white
+                            "
+                          >
+                            <Edit className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={e => {
+                            e.stopPropagation();
+                            onSelectSong(song);
+                          }}
+                          className="
+                            flex
+                            items-center
+                            gap-1
+                            rounded-xl
+                            border
+                            border-white/[0.06]
+                            bg-white/[0.03]
+                            px-3
+                            py-2
+                            text-xs
+                            font-bold
+                            text-white/50
+                            transition-all
+                            hover:border-[#007aff]/25
+                            hover:bg-[#007aff]/[0.09]
+                            hover:text-[#4da3ff]
+                          "
+                        >
+                          View Song
+                          <ChevronRight className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </div>
+
+                    {/* =====================================================
+                        EXPANDED AUDIO PLAYER
+                    ===================================================== */}
+
+                    {isPlayingThis && song.audioUrl && (
+                      <div
+                        onClick={e => e.stopPropagation()}
+                      >
+                        <SongAudioPlayer
+                          audioUrl={song.audioUrl}
+                          title={songTitle}
+                          originalKey={song.key || 'C'}
+                          isOpen={true}
+                          onClose={handleClosePlayer}
+                        />
+                      </div>
+                    )}
                   </div>
                 </article>
               );
@@ -1257,3 +1216,5 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
   );
 };
 
+export default SongBankView;
+ 
