@@ -4,20 +4,24 @@ import {
   Ministration,
   TeamMember,
   ActiveTab,
-  ActiveRole
+  ActiveRole,
 } from '../types';
 import {
-  Music,
-  Calendar,
-  Users,
-  Radio,
-  Wrench,
-  Sparkles,
-  ArrowRight,
-  Mic,
-  Clock,
+  ArrowUpRight,
+  CalendarDays,
+  ChevronRight,
+  Clock3,
+  Disc3,
+  Headphones,
   MapPin,
-  ChevronRight
+  Mic2,
+  Music2,
+  Play,
+  Radio,
+  Sparkles,
+  Users,
+  Waves,
+  Zap,
 } from 'lucide-react';
 
 interface DashboardViewProps {
@@ -27,12 +31,12 @@ interface DashboardViewProps {
   activeRole: ActiveRole;
   setActiveTab: (tab: ActiveTab) => void;
   onSelectSong: (song: Song) => void;
-  onSelectMinistration: (min: Ministration) => void;
+  onSelectMinistration: (ministration: Ministration) => void;
   openToolsModal: () => void;
   openStageMode: () => void;
 }
 
-export const DashboardView: React.FC<DashboardViewProps> = ({
+const DashboardView: React.FC<DashboardViewProps> = ({
   songs,
   ministrations,
   team,
@@ -41,2098 +45,794 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onSelectSong,
   onSelectMinistration,
   openToolsModal,
-  openStageMode
+  openStageMode,
 }) => {
   const isMD = activeRole === 'admin_md';
 
-  const nextMinistration =
-    ministrations.find(m => m.status === 'Upcoming') ||
-    ministrations[0];
+  const nextMinistration = ministrations?.[0];
+  const recentSongs = [...(songs || [])].slice(-6).reverse();
+  const featuredTeam = [...(team || [])].slice(0, 6);
 
-  const totalAssignedLeads =
-    nextMinistration?.songs.filter(
-      song => song.lead !== null
-    ).length || 0;
-
-  const totalMinSongs =
-    nextMinistration?.songs.length || 0;
+  const totalSongs = songs?.length || 0;
+  const totalMinistrations = ministrations?.length || 0;
+  const totalTeam = team?.length || 0;
 
   return (
-    <div className="w-full min-w-0 max-w-full space-y-5 pb-8 text-white">
-
+    <div className="relative min-h-screen overflow-hidden bg-[#000000] text-white">
       {/* =========================================================
-          CINEMATIC JEWELS HERO
-      ========================================================= */}
-      <section
-        className="
-          jewels-hero
-          group
-          relative
-          min-h-[650px]
-          overflow-hidden
-          rounded-[36px]
-          border
-          border-white/[0.07]
-          bg-[#050507]
-          shadow-[0_30px_100px_rgba(0,0,0,0.55)]
-        "
-      >
-        {/* BACKGROUND LIGHT FIELD */}
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          GLOBAL ATMOSPHERE
+      ========================================================== */}
 
-          {/* Main blue atmosphere */}
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+        <div
+          className="absolute -left-[20%] top-[5%] h-[700px] w-[700px] rounded-full opacity-20 blur-[140px]"
+          style={{
+            background:
+              'radial-gradient(circle, rgba(37,99,235,0.45) 0%, rgba(37,99,235,0) 70%)',
+          }}
+        />
+
+        <div
+          className="absolute -right-[15%] top-[30%] h-[600px] w-[600px] rounded-full opacity-15 blur-[150px]"
+          style={{
+            background:
+              'radial-gradient(circle, rgba(59,130,246,0.5) 0%, rgba(59,130,246,0) 70%)',
+          }}
+        />
+
+        <div
+          className="absolute left-[35%] top-[55%] h-[500px] w-[500px] rounded-full opacity-10 blur-[150px]"
+          style={{
+            background:
+              'radial-gradient(circle, rgba(96,165,250,0.4) 0%, rgba(96,165,250,0) 70%)',
+          }}
+        />
+      </div>
+
+      <div className="relative z-10 mx-auto max-w-[1700px] px-4 pb-20 pt-5 sm:px-6 lg:px-8">
+
+        {/* =========================================================
+            HERO
+        ========================================================== */}
+
+        <section className="group relative min-h-[700px] overflow-hidden rounded-[40px] border border-white/[0.08] bg-[#050507] shadow-[0_30px_120px_rgba(0,0,0,0.75)]">
+
+          {/* Grid */}
           <div
-            className="
-              absolute
-              left-1/2
-              top-[42%]
-              h-[520px]
-              w-[520px]
-              -translate-x-1/2
-              -translate-y-1/2
-              rounded-full
-              bg-[#006eff]/[0.09]
-              blur-[110px]
-              transition-all
-              duration-[1500ms]
-              group-hover:bg-[#007aff]/[0.15]
-              group-hover:scale-125
-            "
+            className="absolute inset-0 opacity-[0.07]"
+            style={{
+              backgroundImage:
+                'linear-gradient(rgba(255,255,255,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.12) 1px, transparent 1px)',
+              backgroundSize: '55px 55px',
+            }}
           />
 
-          {/* Upper spotlight */}
+          {/* Main spotlight */}
           <div
-            className="
-              jewels-spotlight
-              absolute
-              left-1/2
-              top-[-280px]
-              h-[600px]
-              w-[600px]
-              -translate-x-1/2
-              rounded-full
-              bg-[#007aff]/[0.06]
-              blur-[100px]
-            "
+            className="absolute left-1/2 top-[-300px] h-[750px] w-[750px] -translate-x-1/2 rounded-full opacity-40 blur-[100px]"
+            style={{
+              background:
+                'radial-gradient(circle, rgba(59,130,246,0.32) 0%, rgba(37,99,235,0.12) 35%, transparent 70%)',
+              animation: 'spotlightFloat 8s ease-in-out infinite',
+            }}
           />
 
-          {/* Left atmosphere */}
+          {/* Horizontal atmospheric light */}
           <div
-            className="
-              absolute
-              -left-[220px]
-              top-[20%]
-              h-[500px]
-              w-[500px]
-              rounded-full
-              bg-blue-600/[0.045]
-              blur-[120px]
-            "
-          />
-
-          {/* Right atmosphere */}
-          <div
-            className="
-              absolute
-              -right-[220px]
-              bottom-[-100px]
-              h-[500px]
-              w-[500px]
-              rounded-full
-              bg-[#007aff]/[0.04]
-              blur-[120px]
-            "
-          />
-
-          {/* Horizon glow */}
-          <div
-            className="
-              absolute
-              bottom-[18%]
-              left-1/2
-              h-px
-              w-[70%]
-              -translate-x-1/2
-              bg-gradient-to-r
-              from-transparent
-              via-[#007aff]/30
-              to-transparent
-              blur-[1px]
-            "
-          />
-
-          {/* Fine grid */}
-          <div
-            className="
-              absolute
-              inset-0
-              opacity-[0.025]
-              [background-image:linear-gradient(rgba(255,255,255,0.8)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.8)_1px,transparent_1px)]
-              [background-size:52px_52px]
-            "
+            className="absolute left-[-20%] top-[45%] h-[1px] w-[140%] opacity-30 blur-[1px]"
+            style={{
+              background:
+                'linear-gradient(90deg, transparent, rgba(96,165,250,0.9), transparent)',
+              animation: 'lightDrift 9s ease-in-out infinite',
+            }}
           />
 
           {/* Vignette */}
           <div
-            className="
-              absolute
-              inset-0
-              bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(0,0,0,0.48)_100%)]
-            "
+            className="absolute inset-0"
+            style={{
+              background:
+                'radial-gradient(circle at center, transparent 15%, rgba(0,0,0,0.2) 55%, rgba(0,0,0,0.82) 100%)',
+            }}
           />
-        </div>
 
-        {/* FLOATING PARTICLES */}
-        <span className="jewel-particle jewel-particle-1" />
-        <span className="jewel-particle jewel-particle-2" />
-        <span className="jewel-particle jewel-particle-3" />
-        <span className="jewel-particle jewel-particle-4" />
-        <span className="jewel-particle jewel-particle-5" />
-        <span className="jewel-particle jewel-particle-6" />
-        <span className="jewel-particle jewel-particle-7" />
-        <span className="jewel-particle jewel-particle-8" />
-
-        {/* TOP EDGE LIGHT */}
-        <div
-          className="
-            absolute
-            left-1/2
-            top-0
-            h-px
-            w-[45%]
-            -translate-x-1/2
-            bg-gradient-to-r
-            from-transparent
-            via-[#1687ff]
-            to-transparent
-            shadow-[0_0_18px_rgba(0,122,255,0.9)]
-            transition-all
-            duration-1000
-            group-hover:w-[70%]
-          "
-        />
-
-        {/* MAIN HERO CONTENT */}
-        <div
-          className="
-            relative
-            z-10
-            flex
-            min-h-[650px]
-            flex-col
-            items-center
-            justify-center
-            px-5
-            py-20
-            text-center
-            sm:px-8
-            lg:py-24
-          "
-        >
-
-          {/* MINISTRY LABEL */}
-          <div className="jewels-reveal jewels-reveal-1">
-            <div className="flex items-center gap-3">
-
-              <div
-                className="
-                  h-px
-                  w-12
-                  bg-gradient-to-r
-                  from-transparent
-                  to-[#007aff]/60
-                  sm:w-20
-                "
-              />
-
-              <div
-                className="
-                  flex
-                  items-center
-                  gap-2.5
-                  rounded-full
-                  border
-                  border-[#007aff]/20
-                  bg-[#007aff]/[0.06]
-                  px-4
-                  py-2
-                  shadow-[0_0_30px_rgba(0,122,255,0.06)]
-                  backdrop-blur-xl
-                "
-              >
-                <span
-                  className="
-                    h-1.5
-                    w-1.5
-                    rounded-full
-                    bg-[#4da3ff]
-                    shadow-[0_0_10px_rgba(77,163,255,1)]
-                  "
-                />
-
-                <span
-                  className="
-                    text-[9px]
-                    font-black
-                    uppercase
-                    tracking-[0.34em]
-                    text-[#7abaff]
-                    sm:text-[10px]
-                  "
-                >
-                  Jewels of His Crown
-                </span>
-              </div>
-
-              <div
-                className="
-                  h-px
-                  w-12
-                  bg-gradient-to-l
-                  from-transparent
-                  to-[#007aff]/60
-                  sm:w-20
-                "
-              />
-
-            </div>
-          </div>
-
-          {/* GIANT JEWELS WORDMARK */}
-          <div
-            className="
-              jewels-wordmark
-              relative
-              mt-10
-              sm:mt-12
-            "
-          >
-            {/* Huge glow */}
-            <div
-              className="
-                pointer-events-none
-                absolute
-                left-1/2
-                top-1/2
-                h-[220px]
-                w-[650px]
-                -translate-x-1/2
-                -translate-y-1/2
-                rounded-full
-                bg-[#007aff]/[0.075]
-                blur-[90px]
-                transition-all
-                duration-1000
-                group-hover:bg-[#007aff]/[0.13]
-                group-hover:scale-110
-              "
+          {/* Floating particles */}
+          {[
+            ['left-[11%]', 'top-[18%]', 'delay-0'],
+            ['left-[22%]', 'top-[70%]', 'delay-1'],
+            ['left-[78%]', 'top-[20%]', 'delay-2'],
+            ['left-[88%]', 'top-[58%]', 'delay-3'],
+            ['left-[65%]', 'top-[78%]', 'delay-4'],
+            ['left-[35%]', 'top-[12%]', 'delay-5'],
+            ['left-[52%]', 'top-[88%]', 'delay-6'],
+            ['left-[7%]', 'top-[48%]', 'delay-7'],
+          ].map(([position, vertical, delay], index) => (
+            <span
+              key={index}
+              className={`absolute ${position} ${vertical} h-[3px] w-[3px] rounded-full bg-blue-300 shadow-[0_0_14px_rgba(96,165,250,0.9)] ${delay}`}
+              style={{
+                animation: `particleFloat ${5 + (index % 4)}s ease-in-out infinite`,
+                animationDelay: `${index * 0.65}s`,
+              }}
             />
+          ))}
 
-            {/* Inner glow */}
+          {/* Top edge highlight */}
+          <div className="absolute left-1/2 top-0 h-px w-[75%] -translate-x-1/2 bg-gradient-to-r from-transparent via-blue-400/60 to-transparent" />
+
+          {/* HERO CONTENT */}
+          <div className="relative z-10 flex min-h-[700px] flex-col items-center justify-center px-6 py-20 text-center">
+
+            {/* Ministry identity */}
             <div
-              className="
-                pointer-events-none
-                absolute
-                inset-[15%]
-                rounded-full
-                bg-[#1687ff]/10
-                blur-[45px]
-              "
-            />
-
-            <h1
-              className="
-                jewels-title
-                relative
-                select-none
-                text-[88px]
-                font-black
-                uppercase
-                leading-[0.72]
-                tracking-[-0.085em]
-                text-white
-                sm:text-[130px]
-                lg:text-[175px]
-                xl:text-[195px]
-              "
+              className="mb-9 flex items-center gap-4 text-[10px] font-semibold uppercase tracking-[0.45em] text-blue-300/80 sm:text-xs"
+              style={{ animation: 'fadeUp 1s ease-out both' }}
             >
-              JEWELS
+              <span className="h-px w-10 bg-gradient-to-r from-transparent to-blue-400/60 sm:w-16" />
+
+              <span className="flex items-center gap-2">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-60" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-blue-300" />
+                </span>
+
+                Jewels of His Crown
+              </span>
+
+              <span className="h-px w-10 bg-gradient-to-l from-transparent to-blue-400/60 sm:w-16" />
+            </div>
+
+            {/* Giant wordmark */}
+            <div className="relative">
+              <h1
+                className="select-none text-[72px] font-black leading-[0.78] tracking-[-0.075em] text-white sm:text-[115px] md:text-[145px] lg:text-[185px] xl:text-[215px]"
+                style={{
+                  animation: 'jewelsReveal 1.5s cubic-bezier(.16,1,.3,1) both',
+                  textShadow:
+                    '0 0 30px rgba(59,130,246,0.08), 0 0 100px rgba(37,99,235,0.08)',
+                }}
+              >
+                JEWELS
+              </h1>
 
               {/* Light sweep */}
-              <span
-                className="
-                  jewels-light-sweep
-                  pointer-events-none
-                  absolute
-                  inset-y-[-15%]
-                  left-[-20%]
-                  w-[12%]
-                  skew-x-[-18deg]
-                  bg-gradient-to-r
-                  from-transparent
-                  via-white/50
-                  to-transparent
-                  blur-[4px]
-                "
-              />
-            </h1>
-
-            {/* Wordmark underline */}
-            <div
-              className="
-                absolute
-                -bottom-8
-                left-1/2
-                flex
-                -translate-x-1/2
-                items-center
-                gap-3
-              "
-            >
-              <span
-                className="
-                  h-px
-                  w-16
-                  bg-gradient-to-r
-                  from-transparent
-                  to-[#007aff]/70
-                  sm:w-24
-                "
-              />
-
-              <span
-                className="
-                  h-2
-                  w-2
-                  rotate-45
-                  border
-                  border-[#4da3ff]
-                  bg-[#007aff]/20
-                  shadow-[0_0_14px_rgba(77,163,255,0.8)]
-                "
-              />
-
-              <span
-                className="
-                  h-px
-                  w-16
-                  bg-gradient-to-l
-                  from-transparent
-                  to-[#007aff]/70
-                  sm:w-24
-                "
-              />
-            </div>
-          </div>
-
-          {/* SLOGAN */}
-          <div
-            className="
-              jewels-reveal
-              jewels-reveal-2
-              mt-16
-              flex
-              items-center
-              gap-3
-              sm:mt-20
-              sm:gap-5
-            "
-          >
-            <div className="flex items-center gap-2">
-              <span
-                className="
-                  h-px
-                  w-8
-                  bg-gradient-to-r
-                  from-transparent
-                  to-[#007aff]/50
-                  sm:w-14
-                "
-              />
-
-              <span
-                className="
-                  h-1.5
-                  w-1.5
-                  rotate-45
-                  bg-[#4da3ff]
-                  shadow-[0_0_12px_rgba(77,163,255,0.9)]
-                "
-              />
-            </div>
-
-            <div className="relative">
               <div
-                className="
-                  absolute
-                  inset-x-0
-                  top-1/2
-                  h-10
-                  -translate-y-1/2
-                  rounded-full
-                  bg-[#007aff]/10
-                  blur-2xl
-                "
-              />
-
-              <span
-                className="
-                  relative
-                  text-[11px]
-                  font-black
-                  uppercase
-                  tracking-[0.4em]
-                  text-[#7abaff]
-                  transition-all
-                  duration-500
-                  group-hover:text-white
-                  sm:text-sm
-                  sm:tracking-[0.5em]
-                "
-              >
-                We Sing to Convert
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span
-                className="
-                  h-1.5
-                  w-1.5
-                  rotate-45
-                  bg-[#4da3ff]
-                  shadow-[0_0_12px_rgba(77,163,255,0.9)]
-                "
-              />
-
-              <span
-                className="
-                  h-px
-                  w-8
-                  bg-gradient-to-l
-                  from-transparent
-                  to-[#007aff]/50
-                  sm:w-14
-                "
-              />
-            </div>
-          </div>
-
-          {/* DESCRIPTION */}
-          <p
-            className="
-              jewels-reveal
-              jewels-reveal-3
-              mt-7
-              max-w-xl
-              text-xs
-              leading-7
-              text-white/30
-              sm:text-sm
-            "
-          >
-            A dedicated space for the music team to prepare,
-            organise, and minister with excellence.
-          </p>
-
-          {/* ACTIONS */}
-          <div
-            className="
-              jewels-reveal
-              jewels-reveal-4
-              mt-9
-              flex
-              flex-wrap
-              justify-center
-              gap-3
-            "
-          >
-            {/* Song Bank */}
-            <button
-              type="button"
-              onClick={() => setActiveTab('songs')}
-              className="
-                group/button
-                relative
-                flex
-                items-center
-                gap-2.5
-                overflow-hidden
-                rounded-2xl
-                bg-[#007aff]
-                px-6
-                py-3.5
-                text-xs
-                font-bold
-                text-white
-                shadow-[0_10px_35px_rgba(0,122,255,0.25)]
-                transition-all
-                duration-300
-                hover:-translate-y-0.5
-                hover:bg-[#087ff2]
-                hover:shadow-[0_15px_45px_rgba(0,122,255,0.35)]
-                active:scale-[0.97]
-                sm:px-7
-                sm:text-sm
-              "
-            >
-              <span
-                className="
-                  absolute
-                  inset-y-0
-                  -left-20
-                  w-14
-                  rotate-12
-                  bg-gradient-to-r
-                  from-transparent
-                  via-white/20
-                  to-transparent
-                  transition-transform
-                  duration-700
-                  group-hover/button:translate-x-[240px]
-                "
-              />
-
-              <Music className="relative h-4 w-4" />
-
-              <span className="relative">
-                Explore Song Bank
-              </span>
-
-              <ArrowRight
-                className="
-                  relative
-                  h-4
-                  w-4
-                  transition-transform
-                  duration-300
-                  group-hover/button:translate-x-1
-                "
-              />
-            </button>
-
-            {/* Ministration */}
-            <button
-              type="button"
-              onClick={() => {
-                if (nextMinistration) {
-                  onSelectMinistration(nextMinistration);
-                  setActiveTab('ministrations');
-                }
-              }}
-              className="
-                flex
-                items-center
-                gap-2.5
-                rounded-2xl
-                border
-                border-white/10
-                bg-white/[0.045]
-                px-6
-                py-3.5
-                text-xs
-                font-bold
-                text-white/65
-                backdrop-blur-xl
-                transition-all
-                duration-300
-                hover:-translate-y-0.5
-                hover:border-[#007aff]/25
-                hover:bg-white/[0.07]
-                hover:text-white
-                active:scale-[0.97]
-                sm:px-7
-                sm:text-sm
-              "
-            >
-              <Calendar className="h-4 w-4 text-[#4da3ff]" />
-
-              <span>
-                {nextMinistration
-                  ? `View ${nextMinistration.name}`
-                  : 'View Ministrations'}
-              </span>
-            </button>
-
-            {/* Tools */}
-            <button
-              type="button"
-              onClick={openToolsModal}
-              className="
-                flex
-                items-center
-                gap-2
-                rounded-2xl
-                border
-                border-white/[0.07]
-                bg-white/[0.02]
-                px-5
-                py-3.5
-                text-xs
-                font-bold
-                text-white/35
-                transition-all
-                duration-300
-                hover:border-white/15
-                hover:bg-white/[0.05]
-                hover:text-white
-                active:scale-[0.97]
-              "
-            >
-              <Wrench className="h-3.5 w-3.5 text-[#4da3ff]" />
-              Music Tools
-            </button>
-          </div>
-
-          {/* Bottom status */}
-          <div
-            className="
-              absolute
-              bottom-7
-              left-1/2
-              flex
-              -translate-x-1/2
-              items-center
-              gap-2
-              whitespace-nowrap
-              text-[8px]
-              font-bold
-              uppercase
-              tracking-[0.25em]
-              text-white/15
-            "
-          >
-            <span
-              className="
-                h-1
-                w-1
-                rounded-full
-                bg-emerald-400/60
-                shadow-[0_0_8px_rgba(74,222,128,0.7)]
-              "
-            />
-
-            Ministry Music Hub
-          </div>
-        </div>
-
-        {/* HERO ANIMATIONS */}
-        <style>{`
-          .jewels-hero {
-            isolation: isolate;
-          }
-
-          .jewels-hero::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            border-radius: inherit;
-            background:
-              radial-gradient(
-                ellipse at 50% 45%,
-                rgba(0, 122, 255, 0.08),
-                transparent 45%
-              );
-            animation: jewelsBreath 6s ease-in-out infinite;
-          }
-
-          .jewels-wordmark {
-            animation: jewelsRise 1.1s cubic-bezier(.16,1,.3,1) both;
-          }
-
-          .jewels-title {
-            text-shadow:
-              0 0 20px rgba(0,122,255,0.10),
-              0 0 55px rgba(0,122,255,0.08);
-          }
-
-          .jewels-light-sweep {
-            animation: jewelsSweep 5s ease-in-out 1.5s infinite;
-          }
-
-          .jewels-spotlight {
-            animation: spotlightFloat 8s ease-in-out infinite;
-          }
-
-          .jewels-reveal {
-            opacity: 0;
-            animation: jewelsReveal 0.9s cubic-bezier(.16,1,.3,1) forwards;
-          }
-
-          .jewels-reveal-1 {
-            animation-delay: 0.1s;
-          }
-
-          .jewels-reveal-2 {
-            animation-delay: 0.55s;
-          }
-
-          .jewels-reveal-3 {
-            animation-delay: 0.8s;
-          }
-
-          .jewels-reveal-4 {
-            animation-delay: 1.05s;
-          }
-
-          .jewel-particle {
-            position: absolute;
-            z-index: 2;
-            width: 3px;
-            height: 3px;
-            border-radius: 9999px;
-            background: #4da3ff;
-            box-shadow:
-              0 0 8px rgba(77,163,255,0.9),
-              0 0 18px rgba(0,122,255,0.35);
-            opacity: 0;
-            pointer-events: none;
-          }
-
-          .jewel-particle-1 {
-            left: 13%;
-            top: 30%;
-            animation: particleFloat 7s ease-in-out 1s infinite;
-          }
-
-          .jewel-particle-2 {
-            left: 22%;
-            top: 65%;
-            animation: particleFloat 8s ease-in-out 2.5s infinite;
-          }
-
-          .jewel-particle-3 {
-            left: 31%;
-            top: 20%;
-            animation: particleFloat 6s ease-in-out 1.8s infinite;
-          }
-
-          .jewel-particle-4 {
-            right: 17%;
-            top: 28%;
-            animation: particleFloat 9s ease-in-out 0.5s infinite;
-          }
-
-          .jewel-particle-5 {
-            right: 25%;
-            top: 63%;
-            animation: particleFloat 7s ease-in-out 3s infinite;
-          }
-
-          .jewel-particle-6 {
-            right: 10%;
-            top: 48%;
-            animation: particleFloat 8s ease-in-out 2s infinite;
-          }
-
-          .jewel-particle-7 {
-            left: 18%;
-            top: 47%;
-            animation: particleFloat 10s ease-in-out 4s infinite;
-          }
-
-          .jewel-particle-8 {
-            right: 32%;
-            top: 18%;
-            animation: particleFloat 7s ease-in-out 3.5s infinite;
-          }
-
-          @keyframes jewelsReveal {
-            0% {
-              opacity: 0;
-              transform: translateY(24px);
-              filter: blur(8px);
-            }
-
-            100% {
-              opacity: 1;
-              transform: translateY(0);
-              filter: blur(0);
-            }
-          }
-
-          @keyframes jewelsRise {
-            0% {
-              opacity: 0;
-              transform: translateY(35px) scale(0.94);
-              filter: blur(12px);
-            }
-
-            100% {
-              opacity: 1;
-              transform: translateY(0) scale(1);
-              filter: blur(0);
-            }
-          }
-
-          @keyframes jewelsSweep {
-            0%,
-            55%,
-            100% {
-              transform: translateX(-120px) skewX(-18deg);
-              opacity: 0;
-            }
-
-            65% {
-              opacity: 0.8;
-            }
-
-            78% {
-              transform: translateX(1000px) skewX(-18deg);
-              opacity: 0;
-            }
-          }
-
-          @keyframes spotlightFloat {
-            0%,
-            100% {
-              transform: translateX(-50%) translateY(0) scale(1);
-              opacity: 0.7;
-            }
-
-            50% {
-              transform: translateX(-50%) translateY(35px) scale(1.08);
-              opacity: 1;
-            }
-          }
-
-          @keyframes jewelsBreath {
-            0%,
-            100% {
-              opacity: 0.65;
-            }
-
-            50% {
-              opacity: 1;
-            }
-          }
-
-          @keyframes particleFloat {
-            0% {
-              opacity: 0;
-              transform: translate3d(0, 15px, 0) scale(0.5);
-            }
-
-            20% {
-              opacity: 0.55;
-            }
-
-            50% {
-              opacity: 0.2;
-              transform: translate3d(12px, -35px, 0) scale(1);
-            }
-
-            80% {
-              opacity: 0.45;
-            }
-
-            100% {
-              opacity: 0;
-              transform: translate3d(-8px, -70px, 0) scale(0.4);
-            }
-          }
-
-          @media (prefers-reduced-motion: reduce) {
-            .jewels-reveal,
-            .jewels-wordmark,
-            .jewels-light-sweep,
-            .jewels-spotlight,
-            .jewels-hero::before,
-            .jewel-particle {
-              animation: none !important;
-            }
-
-            .jewels-reveal {
-              opacity: 1;
-            }
-          }
-        `}</style>
-      </section>
-
-      {/* =========================================================
-          NEXT MINISTRATION
-      ========================================================= */}
-      {nextMinistration && (
-        <section
-          className="
-            overflow-hidden
-            rounded-[28px]
-            border
-            border-white/10
-            bg-[#111113]/90
-            shadow-2xl
-            shadow-black/20
-            backdrop-blur-2xl
-          "
-        >
-          <div
-            className="
-              flex
-              flex-col
-              gap-5
-              p-5
-              sm:p-6
-              lg:flex-row
-              lg:items-center
-              lg:justify-between
-            "
-          >
-            <div className="min-w-0">
-
-              <div
-                className="
-                  mb-3
-                  flex
-                  flex-wrap
-                  items-center
-                  gap-2
-                "
-              >
-                <span
-                  className="
-                    rounded-lg
-                    border
-                    border-[#007aff]/20
-                    bg-[#007aff]/10
-                    px-2.5
-                    py-1
-                    text-[9px]
-                    font-extrabold
-                    uppercase
-                    tracking-[0.15em]
-                    text-[#4da3ff]
-                  "
-                >
-                  Next Ministration
-                </span>
-
-                <span
-                  className="
-                    flex
-                    items-center
-                    gap-1.5
-                    rounded-lg
-                    border
-                    border-emerald-500/20
-                    bg-emerald-500/10
-                    px-2.5
-                    py-1
-                    text-[9px]
-                    font-bold
-                    text-emerald-300
-                  "
-                >
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                  {nextMinistration.status}
-                </span>
-              </div>
-
-              <h2
-                className="
-                  truncate
-                  text-2xl
-                  font-extrabold
-                  tracking-[-0.03em]
-                  text-white
-                  sm:text-3xl
-                "
-              >
-                {nextMinistration.name}
-              </h2>
-
-              <p
-                className="
-                  mt-2
-                  max-w-2xl
-                  text-sm
-                  leading-6
-                  text-white/35
-                "
-              >
-                {nextMinistration.description}
-              </p>
-
-              <div
-                className="
-                  mt-4
-                  flex
-                  flex-wrap
-                  items-center
-                  gap-x-4
-                  gap-y-2
-                "
+                className="pointer-events-none absolute inset-0 overflow-hidden"
+                style={{
+                  WebkitMaskImage:
+                    'linear-gradient(to bottom, transparent 0%, black 30%, black 70%, transparent 100%)',
+                  maskImage:
+                    'linear-gradient(to bottom, transparent 0%, black 30%, black 70%, transparent 100%)',
+                }}
               >
                 <div
-                  className="
-                    flex
-                    items-center
-                    gap-1.5
-                    text-xs
-                    font-semibold
-                    text-white/40
-                  "
-                >
-                  <Calendar className="h-3.5 w-3.5 text-[#4da3ff]" />
-                  {nextMinistration.date}
-                </div>
-
-                {nextMinistration.time && (
-                  <div
-                    className="
-                      flex
-                      items-center
-                      gap-1.5
-                      text-xs
-                      font-semibold
-                      text-white/40
-                    "
-                  >
-                    <Clock className="h-3.5 w-3.5 text-amber-300" />
-                    {nextMinistration.time}
-                  </div>
-                )}
-
-                {nextMinistration.venue && (
-                  <div
-                    className="
-                      flex
-                      items-center
-                      gap-1.5
-                      text-xs
-                      font-semibold
-                      text-white/40
-                    "
-                  >
-                    <MapPin className="h-3.5 w-3.5 text-white/30" />
-                    {nextMinistration.venue}
-                  </div>
-                )}
+                  className="absolute -left-[40%] top-0 h-full w-[22%] skew-x-[-20deg] bg-gradient-to-r from-transparent via-white/25 to-transparent blur-md"
+                  style={{
+                    animation: 'wordSweep 5s ease-in-out infinite',
+                    animationDelay: '1.5s',
+                  }}
+                />
               </div>
             </div>
 
+            {/* Signature line */}
             <div
-              className="
-                flex
-                shrink-0
-                flex-wrap
-                gap-2
-              "
+              className="mt-8 flex items-center gap-4"
+              style={{ animation: 'fadeUp 1s ease-out 0.4s both' }}
+            >
+              <span className="h-px w-12 bg-gradient-to-r from-transparent to-blue-400/60 sm:w-20" />
+
+              <div className="relative flex items-center gap-3">
+                <span className="text-sm font-medium uppercase tracking-[0.38em] text-white/75 sm:text-base">
+                  We Sing to Convert
+                </span>
+
+                <Sparkles className="h-4 w-4 text-blue-300" />
+              </div>
+
+              <span className="h-px w-12 bg-gradient-to-l from-transparent to-blue-400/60 sm:w-20" />
+            </div>
+
+            {/* Description */}
+            <p
+              className="mt-7 max-w-2xl text-sm leading-7 text-white/45 sm:text-base"
+              style={{ animation: 'fadeUp 1s ease-out 0.55s both' }}
+            >
+              The digital home of the Jewels music ministry —
+              where songs, ministrations, voices and worship
+              come together as one sound.
+            </p>
+
+            {/* Hero actions */}
+            <div
+              className="mt-10 flex flex-col items-center gap-3 sm:flex-row"
+              style={{ animation: 'fadeUp 1s ease-out 0.7s both' }}
             >
               <button
-                type="button"
-                onClick={() => {
-                  onSelectMinistration(nextMinistration);
-                  setActiveTab('ministrations');
-                }}
-                className="
-                  flex
-                  items-center
-                  gap-2
-                  rounded-2xl
-                  bg-[#007aff]
-                  px-4
-                  py-3
-                  text-xs
-                  font-bold
-                  text-white
-                  shadow-lg
-                  shadow-blue-500/15
-                  transition-all
-                  hover:bg-[#087ff2]
-                  active:scale-[0.97]
-                  sm:px-5
-                "
+                onClick={() => setActiveTab('songs')}
+                className="group/btn relative flex h-12 items-center gap-3 overflow-hidden rounded-full bg-white px-6 text-sm font-bold text-black shadow-[0_0_40px_rgba(255,255,255,0.08)] transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_50px_rgba(96,165,250,0.2)]"
               >
-                <span>View Setlist</span>
-                <ArrowRight className="h-4 w-4" />
+                <Music2 className="h-4 w-4" />
+
+                <span>Explore Song Bank</span>
+
+                <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" />
+
+                <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-black/[0.06] to-transparent transition-transform duration-700 group-hover/btn:translate-x-full" />
               </button>
 
               <button
-                type="button"
                 onClick={openStageMode}
-                title="Rehearse setlist in stage mode"
-                className="
-                  flex
-                  items-center
-                  gap-2
-                  rounded-2xl
-                  border
-                  border-amber-500/20
-                  bg-amber-500/10
-                  px-4
-                  py-3
-                  text-xs
-                  font-bold
-                  text-amber-200
-                  transition-all
-                  hover:bg-amber-500/15
-                  active:scale-[0.97]
-                "
+                className="group/btn flex h-12 items-center gap-3 rounded-full border border-white/10 bg-white/[0.04] px-6 text-sm font-semibold text-white/80 backdrop-blur-xl transition-all duration-300 hover:border-blue-400/30 hover:bg-blue-500/[0.08] hover:text-white"
               >
-                <Radio className="h-4 w-4 text-amber-300" />
+                <Play className="h-4 w-4 text-blue-300" />
 
-                <span className="hidden sm:inline">
-                  Stage Mode
-                </span>
-              </button>
-            </div>
-          </div>
+                <span>Stage Mode</span>
 
-          {/* Statistics */}
-          <div
-            className="
-              grid
-              grid-cols-2
-              gap-px
-              border-y
-              border-white/10
-              bg-white/10
-            "
-          >
-            <div
-              className="
-                flex
-                items-center
-                gap-3
-                bg-[#0d0d0f]
-                p-4
-                sm:p-5
-              "
-            >
-              <div
-                className="
-                  flex
-                  h-10
-                  w-10
-                  shrink-0
-                  items-center
-                  justify-center
-                  rounded-xl
-                  border
-                  border-[#007aff]/15
-                  bg-[#007aff]/10
-                  sm:h-11
-                  sm:w-11
-                "
-              >
-                <Music className="h-5 w-5 text-[#4da3ff]" />
-              </div>
-
-              <div className="min-w-0">
-                <div
-                  className="
-                    text-2xl
-                    font-extrabold
-                    leading-none
-                    text-white
-                    sm:text-3xl
-                  "
-                >
-                  {totalMinSongs}
-                </div>
-
-                <div
-                  className="
-                    mt-1.5
-                    text-[8px]
-                    font-bold
-                    uppercase
-                    tracking-[0.12em]
-                    text-white/30
-                    sm:text-[9px]
-                  "
-                >
-                  Repertoire Songs
-                </div>
-              </div>
-            </div>
-
-            <div
-              className="
-                flex
-                items-center
-                gap-3
-                bg-[#0d0d0f]
-                p-4
-                sm:p-5
-              "
-            >
-              <div
-                className="
-                  flex
-                  h-10
-                  w-10
-                  shrink-0
-                  items-center
-                  justify-center
-                  rounded-xl
-                  border
-                  border-amber-500/20
-                  bg-amber-500/10
-                  sm:h-11
-                  sm:w-11
-                "
-              >
-                <Mic className="h-5 w-5 text-amber-300" />
-              </div>
-
-              <div className="min-w-0">
-                <div
-                  className="
-                    text-2xl
-                    font-extrabold
-                    leading-none
-                    text-amber-200
-                    sm:text-3xl
-                  "
-                >
-                  {totalAssignedLeads} / {totalMinSongs}
-                </div>
-
-                <div
-                  className="
-                    mt-1.5
-                    text-[8px]
-                    font-bold
-                    uppercase
-                    tracking-[0.12em]
-                    text-white/30
-                    sm:text-[9px]
-                  "
-                >
-                  Leads Allocated
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Planned Setlist */}
-          <div className="p-5 sm:p-6">
-
-            <div
-              className="
-                mb-3
-                flex
-                flex-wrap
-                items-center
-                justify-between
-                gap-3
-              "
-            >
-              <div>
-                <span
-                  className="
-                    text-[9px]
-                    font-extrabold
-                    uppercase
-                    tracking-[0.16em]
-                    text-white/30
-                  "
-                >
-                  Planned Setlist
-                </span>
-
-                <p className="mt-1 text-xs text-white/20">
-                  First four songs in performance order
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => {
-                  onSelectMinistration(nextMinistration);
-                  setActiveTab('ministrations');
-                }}
-                className="
-                  flex
-                  items-center
-                  gap-1.5
-                  rounded-xl
-                  border
-                  border-white/10
-                  bg-white/[0.025]
-                  px-3
-                  py-2
-                  text-[9px]
-                  font-bold
-                  text-[#4da3ff]
-                  transition-all
-                  hover:border-white/15
-                  hover:bg-white/[0.06]
-                  hover:text-white
-                "
-              >
-                Manage Setlist
-                <ChevronRight className="h-3.5 w-3.5" />
+                <ChevronRight className="h-4 w-4 transition-transform duration-300 group-hover/btn:translate-x-1" />
               </button>
             </div>
 
+            {/* Bottom hero status */}
             <div
-              className="
-                grid
-                grid-cols-1
-                gap-2
-                sm:grid-cols-2
-                lg:grid-cols-4
-              "
+              className="absolute bottom-7 left-1/2 flex -translate-x-1/2 items-center gap-3 whitespace-nowrap text-[9px] font-medium uppercase tracking-[0.35em] text-white/25 sm:text-[10px]"
+              style={{ animation: 'fadeUp 1s ease-out 1s both' }}
             >
-              {nextMinistration.songs
-                .slice(0, 4)
-                .map((item, idx) => {
-
-                  const song = songs.find(
-                    s => s.id === item.songId
-                  );
-
-                  const leadMember = team.find(
-                    member => member.id === item.lead
-                  );
-
-                  if (!song) return null;
-
-                  return (
-                    <div
-                      key={item.songId}
-                      onClick={() => onSelectSong(song)}
-                      className="
-                        group
-                        flex
-                        min-w-0
-                        cursor-pointer
-                        items-center
-                        justify-between
-                        gap-2
-                        rounded-2xl
-                        border
-                        border-white/10
-                        bg-white/[0.025]
-                        p-3
-                        transition-all
-                        duration-200
-                        hover:border-[#007aff]/20
-                        hover:bg-white/[0.055]
-                      "
-                    >
-                      <div
-                        className="
-                          flex
-                          min-w-0
-                          items-center
-                          gap-2.5
-                        "
-                      >
-                        <span
-                          className="
-                            flex
-                            h-7
-                            w-7
-                            shrink-0
-                            items-center
-                            justify-center
-                            rounded-lg
-                            border
-                            border-white/10
-                            bg-[#0d0d0f]
-                            text-[10px]
-                            font-extrabold
-                            text-[#4da3ff]
-                          "
-                        >
-                          {idx + 1}
-                        </span>
-
-                        <div className="min-w-0">
-                          <h4
-                            className="
-                              truncate
-                              text-xs
-                              font-bold
-                              text-white
-                            "
-                          >
-                            {song.title}
-                          </h4>
-
-                          <p
-                            className="
-                              mt-0.5
-                              truncate
-                              text-[9px]
-                              text-white/30
-                            "
-                          >
-                            {leadMember
-                              ? `Lead: ${leadMember.name}`
-                              : 'Lead: Unassigned'}
-                          </p>
-                        </div>
-                      </div>
-
-                      <span
-                        className="
-                          shrink-0
-                          rounded-lg
-                          border
-                          border-[#007aff]/20
-                          bg-[#007aff]/10
-                          px-2
-                          py-1
-                          text-[9px]
-                          font-bold
-                          text-[#4da3ff]
-                        "
-                      >
-                        {item.keyOverride || song.key}
-                      </span>
-                    </div>
-                  );
-                })}
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-400" />
+              Ministry Music Hub
+              <span className="text-white/10">•</span>
+              Digital Worship Environment
             </div>
           </div>
         </section>
-      )}
 
-      {/* =========================================================
-          QUICK ACCESS
-      ========================================================= */}
-      <section>
+        {/* =========================================================
+            LIVE STRIP
+        ========================================================== */}
 
-        <div className="mb-4">
-          <span
-            className="
-              text-[9px]
-              font-extrabold
-              uppercase
-              tracking-[0.18em]
-              text-[#4da3ff]
-            "
-          >
-            Quick Access
-          </span>
+        <div className="relative -mt-5 px-3 sm:px-8">
+          <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#08090c]/90 shadow-[0_20px_60px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
+            <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-blue-500/10 to-transparent" />
+            <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-blue-500/10 to-transparent" />
 
-          <h2
-            className="
-              mt-1
-              text-xl
-              font-extrabold
-              tracking-[-0.025em]
-              text-white
-              sm:text-2xl
-            "
-          >
-            Ministry Departments
-          </h2>
+            <div className="relative flex min-h-[62px] flex-wrap items-center justify-center gap-x-7 gap-y-3 px-5 py-4 text-[10px] font-semibold uppercase tracking-[0.25em] text-white/40 sm:justify-between sm:px-7">
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-50" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-blue-400" />
+                </span>
+                <span className="text-blue-300/80">System Live</span>
+              </div>
+
+              <div className="hidden h-4 w-px bg-white/10 sm:block" />
+
+              <div className="flex items-center gap-2">
+                <Music2 className="h-3.5 w-3.5 text-white/30" />
+                {totalSongs} Songs
+              </div>
+
+              <div className="hidden h-4 w-px bg-white/10 sm:block" />
+
+              <div className="flex items-center gap-2">
+                <Radio className="h-3.5 w-3.5 text-white/30" />
+                {totalMinistrations} Ministrations
+              </div>
+
+              <div className="hidden h-4 w-px bg-white/10 sm:block" />
+
+              <div className="flex items-center gap-2">
+                <Users className="h-3.5 w-3.5 text-white/30" />
+                {totalTeam} Team Members
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div
-          className="
-            grid
-            grid-cols-1
-            gap-3
-            md:grid-cols-3
-          "
-        >
+        {/* =========================================================
+            SECTION HEADER
+        ========================================================== */}
+
+        <div className="mt-20 flex items-end justify-between gap-5">
+          <div>
+            <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.35em] text-blue-400/70">
+              Command Center
+            </p>
+
+            <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+              Everything for the sound.
+            </h2>
+          </div>
+
+          <div className="hidden items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.25em] text-white/20 sm:flex">
+            <Waves className="h-3.5 w-3.5" />
+            Jewels Music Hub
+          </div>
+        </div>
+
+        {/* =========================================================
+            COMMAND CARDS
+        ========================================================== */}
+
+        <div className="mt-7 grid gap-4 md:grid-cols-3">
 
           {/* SONG BANK */}
-          <div
+          <button
             onClick={() => setActiveTab('songs')}
-            className="
-              group
-              flex
-              cursor-pointer
-              flex-col
-              justify-between
-              rounded-[24px]
-              border
-              border-white/10
-              bg-[#111113]/85
-              p-5
-              shadow-xl
-              shadow-black/10
-              backdrop-blur-2xl
-              transition-all
-              duration-200
-              hover:-translate-y-0.5
-              hover:border-[#007aff]/25
-              hover:bg-[#141416]
-            "
+            className="group relative min-h-[190px] overflow-hidden rounded-[28px] border border-white/[0.08] bg-[#08090c] p-6 text-left transition-all duration-500 hover:-translate-y-1 hover:border-blue-400/25 hover:bg-[#0a0d12]"
           >
-            <div>
+            <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-blue-500/10 blur-[60px] transition-all duration-500 group-hover:bg-blue-500/20" />
 
-              <div
-                className="
-                  mb-5
-                  flex
-                  h-10
-                  w-10
-                  items-center
-                  justify-center
-                  rounded-xl
-                  border
-                  border-[#007aff]/15
-                  bg-[#007aff]/10
-                "
-              >
-                <Music className="h-5 w-5 text-[#4da3ff]" />
+            <div className="relative flex h-full flex-col justify-between">
+              <div className="flex items-start justify-between">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-blue-400/15 bg-blue-500/10 text-blue-300">
+                  <Disc3 className="h-5 w-5" />
+                </div>
+
+                <ArrowUpRight className="h-5 w-5 text-white/20 transition-all duration-300 group-hover:-translate-y-1 group-hover:translate-x-1 group-hover:text-blue-300" />
               </div>
 
-              <span
-                className="
-                  text-[8px]
-                  font-extrabold
-                  uppercase
-                  tracking-[0.17em]
-                  text-[#4da3ff]
-                "
-              >
-                Repertoire Library
-              </span>
+              <div className="mt-10">
+                <div className="text-2xl font-bold text-white">
+                  Song Bank
+                </div>
 
-              <h3
-                className="
-                  mt-1
-                  text-lg
-                  font-bold
-                  tracking-tight
-                  text-white
-                "
-              >
-                Song Bank
-              </h3>
+                <p className="mt-1 text-sm text-white/35">
+                  Browse the ministry repertoire
+                </p>
+              </div>
 
-              <p
-                className="
-                  mt-2
-                  text-xs
-                  leading-6
-                  text-white/35
-                "
-              >
-                Browse praise and worship songs,
-                lyrics, vocal charts, band cues,
-                and audio references.
-              </p>
-            </div>
-
-            <div
-              className="
-                mt-5
-                flex
-                items-center
-                justify-between
-                border-t
-                border-white/10
-                pt-4
-              "
-            >
-              <span className="text-[10px] font-bold text-white/35">
-                {songs.length} Songs Loaded
-              </span>
-
-              <div
-                className="
-                  flex
-                  h-7
-                  w-7
-                  items-center
-                  justify-center
-                  rounded-lg
-                  border
-                  border-white/10
-                  bg-white/[0.025]
-                  text-white/25
-                  transition-all
-                  group-hover:border-[#007aff]/20
-                  group-hover:bg-[#007aff]/10
-                  group-hover:text-[#4da3ff]
-                "
-              >
+              <div className="mt-5 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-blue-300/60">
+                {totalSongs} available songs
                 <ChevronRight className="h-3.5 w-3.5" />
               </div>
             </div>
-          </div>
+          </button>
 
           {/* MINISTRATIONS */}
-          <div
-            onClick={() => setActiveTab('ministrations')}
-            className="
-              group
-              flex
-              cursor-pointer
-              flex-col
-              justify-between
-              rounded-[24px]
-              border
-              border-white/10
-              bg-[#111113]/85
-              p-5
-              shadow-xl
-              shadow-black/10
-              backdrop-blur-2xl
-              transition-all
-              duration-200
-              hover:-translate-y-0.5
-              hover:border-amber-500/20
-              hover:bg-[#141416]
-            "
-          >
-            <div>
-
-              <div
-                className="
-                  mb-5
-                  flex
-                  h-10
-                  w-10
-                  items-center
-                  justify-center
-                  rounded-xl
-                  border
-                  border-amber-500/20
-                  bg-amber-500/10
-                "
-              >
-                <Calendar className="h-5 w-5 text-amber-300" />
-              </div>
-
-              <span
-                className="
-                  text-[8px]
-                  font-extrabold
-                  uppercase
-                  tracking-[0.17em]
-                  text-amber-300
-                "
-              >
-                Services & Events
-              </span>
-
-              <h3
-                className="
-                  mt-1
-                  text-lg
-                  font-bold
-                  tracking-tight
-                  text-white
-                "
-              >
-                Ministrations & Setlists
-              </h3>
-
-              <p
-                className="
-                  mt-2
-                  text-xs
-                  leading-6
-                  text-white/35
-                "
-              >
-                Build service setlists, assign
-                lead vocalists, configure keys,
-                and manage ministry notes.
-              </p>
-            </div>
-
-            <div
-              className="
-                mt-5
-                flex
-                items-center
-                justify-between
-                border-t
-                border-white/10
-                pt-4
-              "
-            >
-              <span className="text-[10px] font-bold text-white/35">
-                {ministrations.length} Events Scheduled
-              </span>
-
-              <div
-                className="
-                  flex
-                  h-7
-                  w-7
-                  items-center
-                  justify-center
-                  rounded-lg
-                  border
-                  border-white/10
-                  bg-white/[0.025]
-                  text-white/25
-                  transition-all
-                  group-hover:border-amber-500/20
-                  group-hover:bg-amber-500/10
-                  group-hover:text-amber-300
-                "
-              >
-                <ChevronRight className="h-3.5 w-3.5" />
-              </div>
-            </div>
-          </div>
-
-          {/* MUSIC TEAM */}
-          <div
-            onClick={() => setActiveTab('team')}
-            className="
-              group
-              flex
-              cursor-pointer
-              flex-col
-              justify-between
-              rounded-[24px]
-              border
-              border-white/10
-              bg-[#111113]/85
-              p-5
-              shadow-xl
-              shadow-black/10
-              backdrop-blur-2xl
-              transition-all
-              duration-200
-              hover:-translate-y-0.5
-              hover:border-[#007aff]/25
-              hover:bg-[#141416]
-            "
-          >
-            <div>
-
-              <div
-                className="
-                  mb-5
-                  flex
-                  h-10
-                  w-10
-                  items-center
-                  justify-center
-                  rounded-xl
-                  border
-                  border-[#007aff]/15
-                  bg-[#007aff]/10
-                "
-              >
-                <Users className="h-5 w-5 text-[#4da3ff]" />
-              </div>
-
-              <span
-                className="
-                  text-[8px]
-                  font-extrabold
-                  uppercase
-                  tracking-[0.17em]
-                  text-[#4da3ff]
-                "
-              >
-                People & Roster
-              </span>
-
-              <h3
-                className="
-                  mt-1
-                  text-lg
-                  font-bold
-                  tracking-tight
-                  text-white
-                "
-              >
-                Music Team
-              </h3>
-
-              <p
-                className="
-                  mt-2
-                  text-xs
-                  leading-6
-                  text-white/35
-                "
-              >
-                View vocalists, instrumentalists,
-                contacts, roles, and team members.
-              </p>
-            </div>
-
-            <div
-              className="
-                mt-5
-                flex
-                items-center
-                justify-between
-                border-t
-                border-white/10
-                pt-4
-              "
-            >
-              <span className="text-[10px] font-bold text-white/35">
-                {team.length} Active Members
-              </span>
-
-              <div
-                className="
-                  flex
-                  h-7
-                  w-7
-                  items-center
-                  justify-center
-                  rounded-lg
-                  border
-                  border-white/10
-                  bg-white/[0.025]
-                  text-white/25
-                  transition-all
-                  group-hover:border-[#007aff]/20
-                  group-hover:bg-[#007aff]/10
-                  group-hover:text-[#4da3ff]
-                "
-              >
-                <ChevronRight className="h-3.5 w-3.5" />
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-      {/* =========================================================
-          RECENT SONGS
-      ========================================================= */}
-      <section>
-
-        <div
-          className="
-            mb-4
-            flex
-            items-end
-            justify-between
-            gap-3
-          "
-        >
-          <div>
-
-            <span
-              className="
-                text-[9px]
-                font-extrabold
-                uppercase
-                tracking-[0.18em]
-                text-[#4da3ff]
-              "
-            >
-              Recent Additions
-            </span>
-
-            <h2
-              className="
-                mt-1
-                text-xl
-                font-extrabold
-                tracking-[-0.025em]
-                text-white
-                sm:text-2xl
-              "
-            >
-              Featured Ministry Songs
-            </h2>
-
-          </div>
-
           <button
-            type="button"
-            onClick={() => setActiveTab('songs')}
-            className="
-              hidden
-              shrink-0
-              items-center
-              gap-1
-              rounded-xl
-              border
-              border-white/10
-              bg-white/[0.025]
-              px-3
-              py-2
-              text-[9px]
-              font-bold
-              text-[#4da3ff]
-              transition-all
-              hover:border-white/15
-              hover:bg-white/[0.06]
-              hover:text-white
-              sm:flex
-            "
+            onClick={() => setActiveTab('ministrations')}
+            className="group relative min-h-[190px] overflow-hidden rounded-[28px] border border-white/[0.08] bg-[#08090c] p-6 text-left transition-all duration-500 hover:-translate-y-1 hover:border-purple-400/25 hover:bg-[#0b090f]"
           >
-            View All
-            <ChevronRight className="h-3.5 w-3.5" />
+            <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-purple-500/10 blur-[60px] transition-all duration-500 group-hover:bg-purple-500/20" />
+
+            <div className="relative flex h-full flex-col justify-between">
+              <div className="flex items-start justify-between">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-purple-400/15 bg-purple-500/10 text-purple-300">
+                  <Radio className="h-5 w-5" />
+                </div>
+
+                <ArrowUpRight className="h-5 w-5 text-white/20 transition-all duration-300 group-hover:-translate-y-1 group-hover:translate-x-1 group-hover:text-purple-300" />
+              </div>
+
+              <div className="mt-10">
+                <div className="text-2xl font-bold text-white">
+                  Ministrations
+                </div>
+
+                <p className="mt-1 text-sm text-white/35">
+                  Prepare the next sound
+                </p>
+              </div>
+
+              <div className="mt-5 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-purple-300/60">
+                {totalMinistrations} scheduled
+                <ChevronRight className="h-3.5 w-3.5" />
+              </div>
+            </div>
+          </button>
+
+          {/* TOOLS */}
+          <button
+            onClick={openToolsModal}
+            className="group relative min-h-[190px] overflow-hidden rounded-[28px] border border-white/[0.08] bg-[#08090c] p-6 text-left transition-all duration-500 hover:-translate-y-1 hover:border-cyan-400/25 hover:bg-[#080d0f]"
+          >
+            <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-cyan-500/10 blur-[60px] transition-all duration-500 group-hover:bg-cyan-500/20" />
+
+            <div className="relative flex h-full flex-col justify-between">
+              <div className="flex items-start justify-between">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/15 bg-cyan-500/10 text-cyan-300">
+                  <Headphones className="h-5 w-5" />
+                </div>
+
+                <ArrowUpRight className="h-5 w-5 text-white/20 transition-all duration-300 group-hover:-translate-y-1 group-hover:translate-x-1 group-hover:text-cyan-300" />
+              </div>
+
+              <div className="mt-10">
+                <div className="text-2xl font-bold text-white">
+                  Music Tools
+                </div>
+
+                <p className="mt-1 text-sm text-white/35">
+                  Tune, transpose and rehearse
+                </p>
+              </div>
+
+              <div className="mt-5 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-300/60">
+                Pitch • Tempo • Key
+                <ChevronRight className="h-3.5 w-3.5" />
+              </div>
+            </div>
           </button>
         </div>
 
-        <div
-          className="
-            grid
-            grid-cols-1
-            gap-3
-            sm:grid-cols-2
-            lg:grid-cols-3
-          "
-        >
-          {songs.slice(0, 3).map(song => (
-            <div
-              key={song.id}
-              onClick={() => onSelectSong(song)}
-              className="
-                group
-                flex
-                cursor-pointer
-                items-center
-                justify-between
-                gap-3
-                rounded-[24px]
-                border
-                border-white/10
-                bg-[#111113]/85
-                p-4
-                shadow-xl
-                shadow-black/10
-                backdrop-blur-2xl
-                transition-all
-                duration-200
-                hover:-translate-y-0.5
-                hover:border-white/15
-                hover:bg-[#141416]
-              "
-            >
-              <div
-                className="
-                  flex
-                  min-w-0
-                  items-center
-                  gap-3
-                "
-              >
-                <div
-                  className="
-                    flex
-                    h-11
-                    w-11
-                    shrink-0
-                    items-center
-                    justify-center
-                    rounded-xl
-                    border
-                    border-white/10
-                    bg-[#0d0d0f]
-                  "
-                >
-                  {song.icon ? (
-                    <span className="text-lg">
-                      {song.icon}
+        {/* =========================================================
+            NEXT MINISTRATION
+        ========================================================== */}
+
+        <div className="mt-20 flex items-end justify-between">
+          <div>
+            <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.35em] text-blue-400/70">
+              Upcoming
+            </p>
+
+            <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+              Next ministration
+            </h2>
+          </div>
+
+          <button
+            onClick={() => setActiveTab('ministrations')}
+            className="hidden items-center gap-1 text-xs font-semibold text-white/30 transition-colors hover:text-white sm:flex"
+          >
+            View all
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+
+        {nextMinistration ? (
+          <button
+            onClick={() => onSelectMinistration(nextMinistration)}
+            className="group relative mt-7 block w-full overflow-hidden rounded-[32px] border border-white/[0.08] bg-[#08090c] text-left transition-all duration-500 hover:border-blue-400/25"
+          >
+            {/* Background glow */}
+            <div className="absolute right-[-10%] top-[-100%] h-[600px] w-[600px] rounded-full bg-blue-500/[0.08] blur-[120px] transition-all duration-700 group-hover:bg-blue-500/[0.13]" />
+
+            {/* Decorative waveform */}
+            <div className="absolute bottom-0 right-0 flex h-full w-[45%] items-center justify-end gap-[5px] overflow-hidden opacity-[0.07]">
+              {Array.from({ length: 45 }).map((_, index) => (
+                <span
+                  key={index}
+                  className="w-[3px] rounded-full bg-blue-300"
+                  style={{
+                    height: `${18 + ((index * 17) % 85)}px`,
+                    animation: `wavePulse ${1.5 + (index % 5) * 0.2}s ease-in-out infinite`,
+                    animationDelay: `${index * 0.05}s`,
+                  }}
+                />
+              ))}
+            </div>
+
+            <div className="relative grid gap-8 p-7 sm:p-9 lg:grid-cols-[1fr_auto] lg:items-center">
+
+              <div>
+                <div className="mb-5 flex items-center gap-3">
+                  <span className="flex h-8 items-center gap-2 rounded-full border border-blue-400/15 bg-blue-500/[0.08] px-3 text-[9px] font-bold uppercase tracking-[0.22em] text-blue-300">
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-400" />
+                    Upcoming
+                  </span>
+
+                  {isMD && (
+                    <span className="rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.2em] text-white/30">
+                      MD View
                     </span>
-                  ) : (
-                    <Music className="h-5 w-5 text-white/25" />
                   )}
                 </div>
 
-                <div className="min-w-0">
+                <h3 className="max-w-2xl text-3xl font-bold tracking-tight text-white sm:text-4xl">
+                  {nextMinistration.title || 'Upcoming Ministration'}
+                </h3>
 
-                  <span
-                    className="
-                      block
-                      text-[8px]
-                      font-extrabold
-                      uppercase
-                      tracking-[0.14em]
-                      text-[#4da3ff]
-                    "
-                  >
-                    {song.category}
-                  </span>
+                <div className="mt-6 flex flex-wrap gap-x-6 gap-y-3 text-sm text-white/40">
+                  {nextMinistration.date && (
+                    <span className="flex items-center gap-2">
+                      <CalendarDays className="h-4 w-4 text-blue-300/70" />
+                      {nextMinistration.date}
+                    </span>
+                  )}
 
-                  <h4
-                    className="
-                      mt-0.5
-                      truncate
-                      text-sm
-                      font-bold
-                      text-white
-                    "
-                  >
-                    {song.title}
-                  </h4>
+                  {nextMinistration.time && (
+                    <span className="flex items-center gap-2">
+                      <Clock3 className="h-4 w-4 text-blue-300/70" />
+                      {nextMinistration.time}
+                    </span>
+                  )}
 
-                  <p
-                    className="
-                      truncate
-                      text-[10px]
-                      text-white/30
-                    "
-                  >
-                    {song.artist}
-                  </p>
-
+                  {nextMinistration.venue && (
+                    <span className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-blue-300/70" />
+                      {nextMinistration.venue}
+                    </span>
+                  )}
                 </div>
               </div>
 
-              <div className="shrink-0 text-right">
-
-                <span
-                  className="
-                    block
-                    text-[10px]
-                    font-extrabold
-                    text-[#4da3ff]
-                  "
-                >
-                  Key: {song.key}
-                </span>
-
-                <span
-                  className="
-                    text-[9px]
-                    font-medium
-                    text-white/25
-                  "
-                >
-                  {typeof song.tempo === 'string'
-                    ? song.tempo.split(' ')[0]
-                    : 'Tempo N/A'}
-                </span>
-
+              <div className="flex h-14 w-14 items-center justify-center self-end rounded-full border border-white/10 bg-white/[0.04] transition-all duration-300 group-hover:border-blue-400/30 group-hover:bg-blue-500/10 lg:self-center">
+                <ChevronRight className="h-5 w-5 text-white/40 transition-transform duration-300 group-hover:translate-x-1 group-hover:text-blue-300" />
               </div>
             </div>
-          ))}
+          </button>
+        ) : (
+          <div className="mt-7 rounded-[32px] border border-dashed border-white/[0.08] bg-[#08090c] p-12 text-center">
+            <Radio className="mx-auto h-8 w-8 text-white/15" />
+
+            <p className="mt-4 text-sm text-white/30">
+              No upcoming ministration yet.
+            </p>
+          </div>
+        )}
+
+        {/* =========================================================
+            SONG BANK + TEAM
+        ========================================================== */}
+
+        <div className="mt-20 grid gap-6 lg:grid-cols-[1.4fr_0.8fr]">
+
+          {/* RECENT SONGS */}
+          <section className="overflow-hidden rounded-[32px] border border-white/[0.08] bg-[#08090c]">
+            <div className="flex items-center justify-between border-b border-white/[0.06] px-6 py-5 sm:px-7">
+              <div>
+                <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-blue-400/60">
+                  Repertoire
+                </p>
+
+                <h2 className="mt-1 text-lg font-bold text-white">
+                  Recent songs
+                </h2>
+              </div>
+
+              <button
+                onClick={() => setActiveTab('songs')}
+                className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white/30 transition-colors hover:text-blue-300"
+              >
+                Song bank
+                <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+
+            <div className="divide-y divide-white/[0.05]">
+              {recentSongs.length > 0 ? (
+                recentSongs.map((song, index) => (
+                  <button
+                    key={song.id}
+                    onClick={() => onSelectSong(song)}
+                    className="group flex w-full items-center gap-4 px-6 py-4 text-left transition-colors duration-300 hover:bg-white/[0.025] sm:px-7"
+                  >
+                    <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/[0.07] bg-white/[0.025]">
+                      <span className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent" />
+
+                      <Music2 className="relative h-4 w-4 text-white/35 transition-colors group-hover:text-blue-300" />
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-semibold text-white/80 transition-colors group-hover:text-white">
+                        {song.title}
+                      </div>
+
+                      <div className="mt-1 text-[10px] uppercase tracking-[0.18em] text-white/25">
+                        Song {String(index + 1).padStart(2, '0')}
+                      </div>
+                    </div>
+
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full text-white/15 transition-all group-hover:bg-blue-500/10 group-hover:text-blue-300">
+                      <ChevronRight className="h-4 w-4" />
+                    </div>
+                  </button>
+                ))
+              ) : (
+                <div className="px-7 py-12 text-center text-sm text-white/25">
+                  No songs available yet.
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* TEAM */}
+          <section className="overflow-hidden rounded-[32px] border border-white/[0.08] bg-[#08090c]">
+            <div className="flex items-center justify-between border-b border-white/[0.06] px-6 py-5">
+              <div>
+                <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-purple-400/60">
+                  The Sound
+                </p>
+
+                <h2 className="mt-1 text-lg font-bold text-white">
+                  Music team
+                </h2>
+              </div>
+
+              <button
+                onClick={() => setActiveTab('team')}
+                className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white/30 transition-colors hover:text-purple-300"
+              >
+                View
+                <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              {featuredTeam.length > 0 ? (
+                <div className="space-y-3">
+                  {featuredTeam.map((member, index) => (
+                    <div
+                      key={member.id || index}
+                      className="group flex items-center gap-3 rounded-2xl border border-white/[0.05] bg-white/[0.015] p-3 transition-all duration-300 hover:border-purple-400/15 hover:bg-purple-500/[0.03]"
+                    >
+                      <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-gradient-to-br from-white/[0.08] to-white/[0.02]">
+                        <Mic2 className="h-4 w-4 text-white/35 group-hover:text-purple-300" />
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-white/75">
+                          {member.name}
+                        </p>
+
+                        <p className="mt-0.5 truncate text-[10px] uppercase tracking-[0.16em] text-white/25">
+                          {member.role || 'Music Team'}
+                        </p>
+                      </div>
+
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/70 shadow-[0_0_10px_rgba(52,211,153,0.35)]" />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex min-h-[250px] flex-col items-center justify-center text-center">
+                  <Users className="h-8 w-8 text-white/10" />
+
+                  <p className="mt-4 text-sm text-white/25">
+                    No team members available.
+                  </p>
+                </div>
+              )}
+            </div>
+          </section>
         </div>
 
-        {/* Mobile View All */}
-        <button
-          type="button"
-          onClick={() => setActiveTab('songs')}
-          className="
-            mt-3
-            flex
-            w-full
-            items-center
-            justify-center
-            gap-1.5
-            rounded-xl
-            border
-            border-white/10
-            bg-white/[0.025]
-            px-3
-            py-2.5
-            text-[9px]
-            font-bold
-            text-[#4da3ff]
-            transition-all
-            hover:bg-white/[0.06]
-            hover:text-white
-            sm:hidden
-          "
-        >
-          View All {songs.length} Songs
-          <ChevronRight className="h-3.5 w-3.5" />
-        </button>
+        {/* =========================================================
+            FINAL CTA / IDENTITY
+        ========================================================== */}
 
-      </section>
+        <section className="relative mt-20 overflow-hidden rounded-[32px] border border-white/[0.07] bg-[#050507] px-6 py-14 text-center sm:px-10">
+          <div className="absolute left-1/2 top-1/2 h-[300px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-500/[0.07] blur-[100px]" />
 
+          <div className="relative">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-blue-400/15 bg-blue-500/[0.08] text-blue-300">
+              <Zap className="h-5 w-5" />
+            </div>
+
+            <p className="mt-6 text-[10px] font-bold uppercase tracking-[0.4em] text-blue-300/50">
+              Jewels of His Crown
+            </p>
+
+            <h2 className="mt-4 text-2xl font-bold tracking-tight text-white sm:text-4xl">
+              One ministry.
+              <span className="text-white/35"> One sound.</span>
+            </h2>
+
+            <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-white/30">
+              Every rehearsal, every song, every voice and every
+              ministration working together for one purpose.
+            </p>
+
+            <div className="mt-8 flex items-center justify-center gap-3 text-[9px] font-bold uppercase tracking-[0.35em] text-white/20">
+              <span className="h-px w-10 bg-white/10" />
+              We Sing to Convert
+              <span className="h-px w-10 bg-white/10" />
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+      {/* =========================================================
+          ANIMATION SYSTEM
+      ========================================================== */}
+
+      <style>{`
+        @keyframes jewelsReveal {
+          0% {
+            opacity: 0;
+            transform: translateY(45px) scale(0.94);
+            letter-spacing: -0.12em;
+            filter: blur(12px);
+          }
+          55% {
+            opacity: 1;
+            filter: blur(0);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            letter-spacing: -0.075em;
+          }
+        }
+
+        @keyframes fadeUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes spotlightFloat {
+          0%,
+          100% {
+            transform: translateX(-50%) translateY(0) scale(1);
+          }
+          50% {
+            transform: translateX(-50%) translateY(35px) scale(1.08);
+          }
+        }
+
+        @keyframes wordSweep {
+          0% {
+            transform: translateX(-100%) skewX(-20deg);
+          }
+          30%,
+          100% {
+            transform: translateX(650%) skewX(-20deg);
+          }
+        }
+
+        @keyframes lightDrift {
+          0%,
+          100% {
+            transform: translateX(-8%);
+            opacity: 0.15;
+          }
+          50% {
+            transform: translateX(8%);
+            opacity: 0.35;
+          }
+        }
+
+        @keyframes particleFloat {
+          0%,
+          100% {
+            transform: translate3d(0, 0, 0);
+            opacity: 0.15;
+          }
+          25% {
+            transform: translate3d(10px, -18px, 0);
+            opacity: 0.65;
+          }
+          50% {
+            transform: translate3d(-8px, -35px, 0);
+            opacity: 0.25;
+          }
+          75% {
+            transform: translate3d(14px, -18px, 0);
+            opacity: 0.55;
+          }
+        }
+
+        @keyframes wavePulse {
+          0%,
+          100% {
+            transform: scaleY(0.55);
+            opacity: 0.35;
+          }
+          50% {
+            transform: scaleY(1);
+            opacity: 0.8;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          *,
+          *::before,
+          *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            scroll-behavior: auto !important;
+          }
+        }
+      `}</style>
     </div>
   );
 };
+
+export default DashboardView;
