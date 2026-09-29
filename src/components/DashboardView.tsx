@@ -78,8 +78,28 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         "
       >
         {/* =====================================================
-            AMBIENT BACKGROUND LIGHT
+            AMBIENT BACKGROUND
         ===================================================== */}
+
+        <div
+          className="
+            pointer-events-none
+            absolute
+            left-1/2
+            top-1/2
+            h-[420px]
+            w-[420px]
+            -translate-x-1/2
+            -translate-y-1/2
+            rounded-full
+            bg-[#007aff]/[0.055]
+            blur-3xl
+            transition-all
+            duration-1000
+            group-hover:bg-[#007aff]/[0.09]
+            group-hover:scale-110
+          "
+        />
 
         <div
           className="
@@ -95,7 +115,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             transition-all
             duration-1000
             group-hover:bg-[#007aff]/20
-            group-hover:scale-110
           "
         />
 
@@ -103,34 +122,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           className="
             pointer-events-none
             absolute
-            -bottom-24
-            left-1/3
-            h-64
-            w-96
+            -bottom-32
+            -left-32
+            h-80
+            w-80
             rounded-full
-            bg-[#007aff]/[0.035]
+            bg-blue-500/[0.035]
             blur-3xl
             animate-pulse
           "
         />
 
-        <div
-          className="
-            pointer-events-none
-            absolute
-            left-[-10%]
-            top-1/2
-            h-40
-            w-40
-            -translate-y-1/2
-            rounded-full
-            bg-blue-500/[0.025]
-            blur-3xl
-          "
-        />
-
         {/* =====================================================
-            SUBTLE TOP LIGHT
+            TOP LIGHT
         ===================================================== */}
 
         <div
@@ -144,11 +148,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             -translate-x-1/2
             bg-gradient-to-r
             from-transparent
-            via-[#007aff]/50
+            via-[#007aff]/60
             to-transparent
             opacity-60
-            transition-opacity
+            transition-all
             duration-700
+            group-hover:w-4/5
             group-hover:opacity-100
           "
         />
@@ -156,349 +161,447 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div
           className="
             relative
-            p-5
-            sm:p-7
-            lg:p-9
+            flex
+            flex-col
+            items-center
+            px-5
+            py-10
+            text-center
+            sm:px-8
+            sm:py-12
+            lg:py-14
           "
         >
+
+          {/* ===================================================
+              MINISTRY NAME
+          =================================================== */}
+
           <div
             className="
+              mb-7
               flex
-              max-w-5xl
-              flex-col
+              items-center
+              gap-2.5
+              rounded-full
+              border
+              border-[#007aff]/20
+              bg-[#007aff]/10
+              px-4
+              py-2
+              shadow-lg
+              shadow-blue-500/5
+              transition-all
+              duration-500
+              group-hover:border-[#007aff]/40
+              group-hover:bg-[#007aff]/15
+            "
+          >
+            <Sparkles
+              className="
+                h-3.5
+                w-3.5
+                text-[#4da3ff]
+                animate-pulse
+              "
+            />
+
+            <span
+              className="
+                text-[9px]
+                font-extrabold
+                uppercase
+                tracking-[0.22em]
+                text-[#4da3ff]
+              "
+            >
+              Jewels of His Crown
+            </span>
+
+            <Sparkles
+              className="
+                h-3.5
+                w-3.5
+                text-[#4da3ff]
+                animate-pulse
+              "
+            />
+          </div>
+
+          {/* ===================================================
+              JEWELS WORDMARK
+          =================================================== */}
+
+          <div className="relative">
+
+            <div
+              className="
+                pointer-events-none
+                absolute
+                inset-0
+                rounded-full
+                bg-[#007aff]/15
+                blur-3xl
+                opacity-50
+                transition-all
+                duration-700
+                group-hover:opacity-80
+              "
+            />
+
+            <div
+              className="
+                pointer-events-none
+                absolute
+                left-1/2
+                top-1/2
+                h-20
+                w-64
+                -translate-x-1/2
+                -translate-y-1/2
+                rounded-full
+                bg-[#007aff]/10
+                blur-2xl
+                animate-pulse
+              "
+            />
+
+            <h1
+              className="
+                relative
+                text-[64px]
+                font-black
+                uppercase
+                leading-none
+                tracking-[-0.065em]
+                text-white
+                drop-shadow-[0_0_30px_rgba(0,122,255,0.18)]
+                transition-all
+                duration-700
+                group-hover:scale-[1.015]
+                group-hover:tracking-[-0.075em]
+                sm:text-[86px]
+                lg:text-[104px]
+              "
+            >
+              Jewels
+            </h1>
+          </div>
+
+          {/* ===================================================
+              ORNAMENTAL TAGLINE
+          =================================================== */}
+
+          <div
+            className="
+              relative
+              mt-7
+              flex
+              w-full
+              max-w-xl
+              items-center
+              justify-center
+              gap-3
+              sm:gap-4
             "
           >
 
-            {/* =================================================
-                MINISTRY NAME
-            ================================================= */}
-
+            {/* Left ornament */}
             <div
               className="
-                mb-6
                 flex
-                w-fit
+                flex-1
                 items-center
-                gap-2.5
-                rounded-xl
-                border
-                border-[#007aff]/20
-                bg-[#007aff]/10
-                px-3
-                py-1.5
-                shadow-lg
-                shadow-blue-500/5
-                transition-all
-                duration-300
-                group-hover:border-[#007aff]/35
-                group-hover:bg-[#007aff]/15
+                justify-end
+                gap-1.5
               "
             >
-              <Sparkles
+              <span
                 className="
-                  h-3.5
-                  w-3.5
-                  text-[#4da3ff]
-                  animate-pulse
+                  h-px
+                  w-6
+                  bg-gradient-to-r
+                  from-transparent
+                  to-[#007aff]/30
+                  sm:w-10
                 "
               />
 
               <span
                 className="
-                  text-[9px]
-                  font-extrabold
-                  uppercase
-                  tracking-[0.2em]
-                  text-[#4da3ff]
+                  h-1
+                  w-1
+                  rotate-45
+                  bg-[#4da3ff]
+                  shadow-[0_0_8px_rgba(77,163,255,0.8)]
                 "
-              >
-                Jewels of His Crown
-              </span>
+              />
             </div>
 
-            {/* =================================================
-                MAIN IDENTITY
-            ================================================= */}
+            {/* Slogan */}
+            <div
+              className="
+                relative
+                shrink-0
+                overflow-hidden
+                rounded-full
+                border
+                border-[#007aff]/20
+                bg-[#007aff]/[0.06]
+                px-5
+                py-2.5
+                shadow-[0_0_25px_rgba(0,122,255,0.08)]
+                transition-all
+                duration-500
+                group-hover:border-[#007aff]/40
+                group-hover:bg-[#007aff]/[0.10]
+                group-hover:shadow-[0_0_35px_rgba(0,122,255,0.14)]
+                sm:px-7
+              "
+            >
 
-            <div className="relative w-fit">
-
-              {/* soft glow behind title */}
-              <div
+              {/* Moving highlight */}
+              <span
                 className="
                   pointer-events-none
                   absolute
-                  inset-0
-                  -z-10
-                  rounded-full
-                  bg-[#007aff]/10
-                  blur-3xl
-                  opacity-40
-                  transition-all
-                  duration-700
-                  group-hover:opacity-70
-                "
-              />
-
-              <h1
-                className="
-                  text-5xl
-                  font-black
-                  leading-none
-                  tracking-[-0.055em]
-                  text-white
-                  transition-all
-                  duration-700
-                  group-hover:tracking-[-0.065em]
-                  sm:text-7xl
-                  lg:text-[88px]
-                "
-              >
-                Jewels
-              </h1>
-            </div>
-
-            {/* =================================================
-                SIGNATURE TAGLINE
-            ================================================= */}
-
-            <div
-              className="
-                mt-6
-                flex
-                w-fit
-                items-center
-                gap-3
-              "
-            >
-              {/* left accent */}
-              <span
-                className="
-                  h-px
-                  w-8
+                  inset-y-0
+                  -left-20
+                  w-16
+                  rotate-12
                   bg-gradient-to-r
                   from-transparent
-                  to-[#007aff]
-                  transition-all
-                  duration-700
-                  group-hover:w-14
-                  sm:w-10
-                  sm:group-hover:w-20
+                  via-white/10
+                  to-transparent
+                  transition-transform
+                  duration-1000
+                  group-hover:translate-x-[420px]
                 "
               />
 
-              {/* glowing dot */}
-              <span
+              <div
                 className="
                   relative
                   flex
-                  h-2
-                  w-2
                   items-center
-                  justify-center
+                  gap-2.5
                 "
               >
-                <span
+                <Sparkles
                   className="
-                    absolute
-                    h-2
-                    w-2
-                    rounded-full
-                    bg-[#007aff]
-                    animate-ping
-                    opacity-50
+                    h-3
+                    w-3
+                    text-[#4da3ff]
+                    opacity-80
                   "
                 />
 
                 <span
                   className="
-                    relative
-                    h-1.5
-                    w-1.5
-                    rounded-full
-                    bg-[#4da3ff]
+                    text-[10px]
+                    font-black
+                    uppercase
+                    tracking-[0.3em]
+                    text-[#7abaff]
+                    transition-all
+                    duration-500
+                    group-hover:text-white
+                    sm:text-xs
+                    sm:tracking-[0.38em]
+                  "
+                >
+                  We Sing to Convert
+                </span>
+
+                <Sparkles
+                  className="
+                    h-3
+                    w-3
+                    text-[#4da3ff]
+                    opacity-80
                   "
                 />
-              </span>
+              </div>
+            </div>
 
-              <p
+            {/* Right ornament */}
+            <div
+              className="
+                flex
+                flex-1
+                items-center
+                justify-start
+                gap-1.5
+              "
+            >
+              <span
                 className="
-                  text-[10px]
-                  font-extrabold
-                  uppercase
-                  tracking-[0.28em]
-                  text-[#4da3ff]
-                  transition-all
-                  duration-500
-                  group-hover:text-white
-                  sm:text-xs
-                  sm:tracking-[0.32em]
+                  h-1
+                  w-1
+                  rotate-45
+                  bg-[#4da3ff]
+                  shadow-[0_0_8px_rgba(77,163,255,0.8)]
                 "
-              >
-                We Sing to Convert
-              </p>
+              />
 
-              {/* right accent */}
               <span
                 className="
                   h-px
-                  w-8
+                  w-6
                   bg-gradient-to-l
                   from-transparent
-                  to-[#007aff]
-                  transition-all
-                  duration-700
-                  group-hover:w-14
+                  to-[#007aff]/30
                   sm:w-10
-                  sm:group-hover:w-20
                 "
               />
             </div>
+          </div>
 
-            {/* =================================================
-                SMALL DESCRIPTION
-            ================================================= */}
+          {/* ===================================================
+              DESCRIPTION
+          =================================================== */}
 
-            <p
+          <p
+            className="
+              mt-6
+              max-w-xl
+              text-xs
+              leading-6
+              text-white/30
+              transition-colors
+              duration-500
+              group-hover:text-white/40
+              sm:text-sm
+            "
+          >
+            A dedicated space for the music team to prepare,
+            organise, and minister with excellence.
+          </p>
+
+          {/* ===================================================
+              ACTIONS
+          =================================================== */}
+
+          <div
+            className="
+              mt-7
+              flex
+              flex-wrap
+              justify-center
+              gap-2.5
+            "
+          >
+            <button
+              type="button"
+              onClick={() => setActiveTab('songs')}
               className="
-                mt-5
-                max-w-xl
+                group/button
+                flex
+                items-center
+                gap-2
+                rounded-2xl
+                bg-[#007aff]
+                px-5
+                py-3
                 text-xs
-                leading-6
-                text-white/35
-                transition-colors
-                duration-500
-                group-hover:text-white/45
+                font-bold
+                text-white
+                shadow-xl
+                shadow-blue-500/20
+                transition-all
+                duration-200
+                hover:bg-[#087ff2]
+                hover:shadow-blue-500/30
+                active:scale-[0.97]
                 sm:text-sm
               "
             >
-              A dedicated space for the music team to prepare,
-              organise, and minister with excellence.
-            </p>
+              <Music className="h-4 w-4" />
 
-            {/* =================================================
-                ACTIONS
-            ================================================= */}
+              <span>
+                Explore Song Bank
+              </span>
 
-            <div
+              <ArrowRight
+                className="
+                  h-4
+                  w-4
+                  transition-transform
+                  duration-200
+                  group-hover/button:translate-x-1
+                "
+              />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (nextMinistration) {
+                  onSelectMinistration(nextMinistration);
+                  setActiveTab('ministrations');
+                }
+              }}
               className="
-                mt-7
                 flex
-                flex-wrap
-                gap-2.5
+                items-center
+                gap-2
+                rounded-2xl
+                border
+                border-white/10
+                bg-white/[0.045]
+                px-5
+                py-3
+                text-xs
+                font-bold
+                text-white/65
+                transition-all
+                duration-200
+                hover:border-white/15
+                hover:bg-white/[0.07]
+                hover:text-white
+                active:scale-[0.97]
+                sm:text-sm
               "
             >
-              <button
-                type="button"
-                onClick={() => setActiveTab('songs')}
-                className="
-                  group/button
-                  flex
-                  items-center
-                  gap-2
-                  rounded-2xl
-                  bg-[#007aff]
-                  px-5
-                  py-3
-                  text-xs
-                  font-bold
-                  text-white
-                  shadow-xl
-                  shadow-blue-500/20
-                  transition-all
-                  duration-200
-                  hover:bg-[#087ff2]
-                  hover:shadow-blue-500/30
-                  active:scale-[0.97]
-                  sm:text-sm
-                "
-              >
-                <Music className="h-4 w-4" />
+              <Calendar className="h-4 w-4 text-[#4da3ff]" />
 
-                <span>
-                  Explore Song Bank
-                </span>
+              <span>
+                {nextMinistration
+                  ? `View ${nextMinistration.name}`
+                  : 'View Ministrations'}
+              </span>
+            </button>
 
-                <ArrowRight
-                  className="
-                    h-4
-                    w-4
-                    transition-transform
-                    duration-200
-                    group-hover/button:translate-x-1
-                  "
-                />
-              </button>
+            <button
+              type="button"
+              onClick={openToolsModal}
+              className="
+                flex
+                items-center
+                gap-2
+                rounded-2xl
+                border
+                border-white/10
+                bg-white/[0.025]
+                px-4
+                py-3
+                text-xs
+                font-bold
+                text-white/40
+                transition-all
+                duration-200
+                hover:border-white/15
+                hover:bg-white/[0.055]
+                hover:text-white
+                active:scale-[0.97]
+              "
+            >
+              <Wrench className="h-3.5 w-3.5 text-[#4da3ff]" />
 
-              <button
-                type="button"
-                onClick={() => {
-                  if (nextMinistration) {
-                    onSelectMinistration(nextMinistration);
-                    setActiveTab('ministrations');
-                  }
-                }}
-                className="
-                  flex
-                  items-center
-                  gap-2
-                  rounded-2xl
-                  border
-                  border-white/10
-                  bg-white/[0.045]
-                  px-5
-                  py-3
-                  text-xs
-                  font-bold
-                  text-white/65
-                  transition-all
-                  duration-200
-                  hover:border-white/15
-                  hover:bg-white/[0.07]
-                  hover:text-white
-                  active:scale-[0.97]
-                  sm:text-sm
-                "
-              >
-                <Calendar className="h-4 w-4 text-[#4da3ff]" />
-
-                <span>
-                  {nextMinistration
-                    ? `View ${nextMinistration.name}`
-                    : 'View Ministrations'}
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={openToolsModal}
-                className="
-                  flex
-                  items-center
-                  gap-2
-                  rounded-2xl
-                  border
-                  border-white/10
-                  bg-white/[0.025]
-                  px-4
-                  py-3
-                  text-xs
-                  font-bold
-                  text-white/40
-                  transition-all
-                  duration-200
-                  hover:border-white/15
-                  hover:bg-white/[0.055]
-                  hover:text-white
-                  active:scale-[0.97]
-                "
-              >
-                <Wrench className="h-3.5 w-3.5 text-[#4da3ff]" />
-
-                <span>
-                  Music Tools
-                </span>
-              </button>
-            </div>
+              <span>
+                Music Tools
+              </span>
+            </button>
           </div>
         </div>
       </section>
