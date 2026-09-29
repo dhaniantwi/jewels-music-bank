@@ -120,7 +120,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               flex-col
             "
           >
-            {/* Eyebrow */}
+            {/* Ministry Name */}
             <div
               className="
                 mb-5
@@ -147,11 +147,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   text-[#4da3ff]
                 "
               >
-                Jewels of His Crown 
+                Jewels of His Crown
               </span>
             </div>
 
-            {/* Heading */}
+            {/* Main Identity */}
             <h1
               className="
                 max-w-3xl
@@ -164,20 +164,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 lg:text-[52px]
               "
             >
-Jewels            </h1>
+              Jewels
+            </h1>
 
+            {/* Ministry Slogan */}
             <p
               className="
                 mt-4
                 max-w-2xl
                 text-sm
-                font-medium
+                font-semibold
                 leading-7
-                text-white/40
+                text-white/65
                 sm:text-base
               "
             >
-             We Sing to Convert.
+              Respond: We Sing to Convert.
             </p>
 
             {/* Actions */}
