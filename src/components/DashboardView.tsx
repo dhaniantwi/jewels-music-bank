@@ -164,8 +164,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 lg:text-[52px]
               "
             >
-              Welcome, Music Team
-            </h1>
+Jewels            </h1>
 
             <p
               className="
