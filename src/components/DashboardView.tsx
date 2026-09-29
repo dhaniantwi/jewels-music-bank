@@ -177,9 +177,7 @@ Jewels            </h1>
                 sm:text-base
               "
             >
-              Everything you need to prepare,
-              organize, rehearse, and deliver
-              your ministrations in one place.
+             We Sing to Convert.
             </p>
 
             {/* Actions */}
