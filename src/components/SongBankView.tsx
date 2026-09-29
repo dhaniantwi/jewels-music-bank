@@ -134,8 +134,7 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
   };
 
   return (
-    <div className="w-full min-w-0 max-w-full space-y-5 bg-[#0f0f11] text-white animate-in fade-in duration-300">
-
+<div className="w-full min-w-0 max-w-full space-y-5 overflow-hidden rounded-[30px] border border-white/10 bg-[#0f0f11] text-white shadow-2xl shadow-black/20 animate-in fade-in duration-300">
       {/* =========================================================
           HERO
       ========================================================= */}
