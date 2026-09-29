@@ -147,7 +147,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   text-[#4da3ff]
                 "
               >
-                Jewels of His Crown Official Portal
+                Jewels of His Crown 
               </span>
             </div>
 
