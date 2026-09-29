@@ -261,8 +261,7 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
   };
 
   return (
-    <div className="w-full min-w-0 max-w-full overflow-hidden bg-[#0f0f11] text-white animate-in fade-in duration-200">
-      <input
+<div className="w-full min-w-0 max-w-full overflow-hidden rounded-[30px] border border-white/10 bg-[#0f0f11] text-white shadow-2xl shadow-black/20 animate-in fade-in duration-200">      <input
         ref={fileInputRef}
         type="file"
         accept="image/png,image/jpeg,image/webp,image/gif"
