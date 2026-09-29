@@ -1,4 +1,10 @@
-import React, { useMemo, useState } from 'react';
+
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { Song, ActiveRole } from '../types';
 import {
   Search,
@@ -20,10 +26,7 @@ import {
   AudioLines,
   Command,
 } from 'lucide-react';
-import {
-  CHROMATIC_KEYS,
-  playPitchTone,
-} from '../utils/audioUtils';
+import { CHROMATIC_KEYS } from '../utils/audioUtils';
 
 interface SongBankViewProps {
   songs: Song[];
@@ -47,6 +50,8 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
   const [selectedKey, setSelectedKey] = useState('All');
   const [playingSongId, setPlayingSongId] = useState<string | null>(null);
 
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
   const isMD = activeRole === 'admin_md';
 
   const categories = [
@@ -60,6 +65,16 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
     'Contemporary',
     'Other',
   ];
+
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+        audioRef.current = null;
+      }
+    };
+  }, []);
 
   const filteredSongs = useMemo(() => {
     const search = searchTerm.toLowerCase().trim();
@@ -113,31 +128,81 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
     setSelectedKey('All');
   };
 
-  const handleQuickPlay = (
+  const handleQuickPlay = async (
     e: React.MouseEvent,
     song: Song
   ) => {
     e.stopPropagation();
 
-    if (playingSongId === song.id) {
+    /*
+     * No audio attached to this song.
+     */
+    if (!song.audioUrl) {
+      return;
+    }
+
+    /*
+     * If this song is already playing,
+     * pause it.
+     */
+    if (
+      playingSongId === song.id &&
+      audioRef.current
+    ) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      audioRef.current = null;
       setPlayingSongId(null);
       return;
     }
 
+    /*
+     * Stop any song that is currently playing.
+     */
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      audioRef.current = null;
+    }
+
+    /*
+     * Create the actual audio player using
+     * the song's stored audioUrl.
+     */
+    const audio = new Audio(song.audioUrl);
+
+    audio.preload = 'metadata';
+
+    audio.onended = () => {
+      if (audioRef.current === audio) {
+        audioRef.current = null;
+        setPlayingSongId(null);
+      }
+    };
+
+    audio.onerror = () => {
+      if (audioRef.current === audio) {
+        audioRef.current = null;
+        setPlayingSongId(null);
+      }
+    };
+
+    audioRef.current = audio;
     setPlayingSongId(song.id);
 
-    const songKey = song.key || 'C';
-
-    playPitchTone(
-      `${songKey.replace('m', '')}4`,
-      3
-    );
-
-    setTimeout(() => {
-      setPlayingSongId(prev =>
-        prev === song.id ? null : prev
+    try {
+      await audio.play();
+    } catch (error) {
+      console.error(
+        'Unable to play song:',
+        error
       );
-    }, 3000);
+
+      if (audioRef.current === audio) {
+        audioRef.current = null;
+        setPlayingSongId(null);
+      }
+    }
   };
 
   const getSongCapabilities = (song: Song) => {
@@ -145,6 +210,7 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
 
     return {
       lead: Boolean(arrangement?.lead),
+
       harmony: Boolean(
         arrangement &&
         (
@@ -153,6 +219,7 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
           'tenor' in arrangement
         )
       ),
+
       band: Boolean(
         arrangement &&
         (
@@ -210,12 +277,10 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
             shadow-black/30
           "
         >
-          {/* Hero glow */}
           <div className="pointer-events-none absolute -right-28 -top-28 h-[360px] w-[360px] rounded-full bg-[#007aff]/[0.09] blur-[100px]" />
 
           <div className="pointer-events-none absolute -bottom-40 left-[30%] h-[280px] w-[280px] rounded-full bg-blue-500/[0.045] blur-[100px]" />
 
-          {/* Perspective grid */}
           <div
             className="pointer-events-none absolute inset-0 opacity-[0.035]"
             style={{
@@ -228,13 +293,12 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
             }}
           />
 
-          {/* Thin horizon */}
           <div className="pointer-events-none absolute left-0 right-0 top-[57%] h-px bg-gradient-to-r from-transparent via-[#007aff]/30 to-transparent" />
 
-          {/* Decorative disc */}
           <div className="pointer-events-none absolute right-[8%] top-[13%] hidden h-[230px] w-[230px] items-center justify-center rounded-full border border-white/[0.06] md:flex">
             <div className="absolute inset-5 rounded-full border border-white/[0.045]" />
             <div className="absolute inset-12 rounded-full border border-[#007aff]/10" />
+
             <div className="flex h-20 w-20 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.02]">
               <Disc3 className="h-8 w-8 text-[#4da3ff]/50" />
             </div>
@@ -242,7 +306,6 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
 
           <div className="relative flex min-h-[430px] flex-col justify-between p-6 sm:p-8 lg:p-10">
 
-            {/* Top eyebrow */}
             <div className="flex items-center justify-between gap-4">
               <div
                 className="
@@ -268,17 +331,18 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
 
               <div className="hidden items-center gap-2 sm:flex">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)]" />
+
                 <span className="text-[9px] font-extrabold uppercase tracking-[0.18em] text-white/30">
                   Repertoire Online
                 </span>
               </div>
             </div>
 
-            {/* Main hero */}
             <div className="relative max-w-3xl py-10">
 
               <div className="mb-4 flex items-center gap-2 text-[#4da3ff]">
                 <Sparkles className="h-4 w-4" />
+
                 <span className="text-[10px] font-extrabold uppercase tracking-[0.2em]">
                   Music Ministry
                 </span>
@@ -310,6 +374,7 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
               <div className="mt-7 flex flex-wrap items-center gap-3">
                 <div className="inline-flex items-center gap-2 rounded-2xl border border-white/[0.07] bg-white/[0.035] px-4 py-2.5">
                   <Music2 className="h-4 w-4 text-[#4da3ff]" />
+
                   <span className="text-xs font-bold text-white/70">
                     {songs.length} songs
                   </span>
@@ -317,6 +382,7 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
 
                 <div className="inline-flex items-center gap-2 rounded-2xl border border-white/[0.07] bg-white/[0.035] px-4 py-2.5">
                   <Command className="h-4 w-4 text-white/35" />
+
                   <span className="text-xs font-bold text-white/45">
                     {isMD ? 'MD Access' : 'Member Access'}
                   </span>
@@ -324,7 +390,6 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
               </div>
             </div>
 
-            {/* Hero bottom */}
             <div className="flex flex-col gap-4 border-t border-white/[0.06] pt-5 sm:flex-row sm:items-end sm:justify-between">
 
               <div>
@@ -481,7 +546,6 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
               </div>
             </div>
 
-            {/* Search */}
             <div className="relative mt-5">
               <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/25" />
 
@@ -541,7 +605,6 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
               )}
             </div>
 
-            {/* Categories */}
             <div className="mt-5">
               <div className="mb-2.5 flex items-center justify-between">
                 <span className="text-[9px] font-extrabold uppercase tracking-[0.18em] text-white/20">
@@ -603,7 +666,6 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
             </div>
           </div>
 
-          {/* Key row */}
           <div className="flex flex-col gap-3 p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
 
             <div className="flex items-center gap-3">
@@ -771,7 +833,6 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
                     )}ms`,
                   }}
                 >
-                  {/* Card glow */}
                   <div
                     className="
                       pointer-events-none
@@ -790,7 +851,6 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
                     "
                   />
 
-                  {/* Card top accent */}
                   <div className="pointer-events-none absolute left-5 right-5 top-0 h-px bg-gradient-to-r from-transparent via-[#007aff]/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
 
                   {/* TOP */}
@@ -934,6 +994,7 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
 
                     <button
                       type="button"
+                      disabled={!song.audioUrl}
                       onClick={e =>
                         handleQuickPlay(e, song)
                       }
@@ -951,21 +1012,28 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
                         transition-all
                         active:scale-[0.97]
                         ${
-                          isPlayingThis
+                          !song.audioUrl
                             ? `
-                              border-[#007aff]/40
-                              bg-[#007aff]
-                              text-white
-                              shadow-lg
-                              shadow-blue-500/20
+                              cursor-not-allowed
+                              border-white/[0.05]
+                              bg-white/[0.02]
+                              text-white/20
                             `
-                            : `
-                              border-white/[0.06]
-                              bg-white/[0.03]
-                              text-[#4da3ff]
-                              hover:border-[#007aff]/25
-                              hover:bg-[#007aff]/[0.09]
-                            `
+                            : isPlayingThis
+                              ? `
+                                border-[#007aff]/40
+                                bg-[#007aff]
+                                text-white
+                                shadow-lg
+                                shadow-blue-500/20
+                              `
+                              : `
+                                border-white/[0.06]
+                                bg-white/[0.03]
+                                text-[#4da3ff]
+                                hover:border-[#007aff]/25
+                                hover:bg-[#007aff]/[0.09]
+                              `
                         }
                       `}
                     >
@@ -975,9 +1043,11 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
                         <Play className="h-3.5 w-3.5 fill-current" />
                       )}
 
-                      {isPlayingThis
-                        ? 'Playing Key...'
-                        : 'Key Tone'}
+                      {!song.audioUrl
+                        ? 'No Audio'
+                        : isPlayingThis
+                          ? 'Playing...'
+                          : 'Play Song'}
                     </button>
 
                     <div className="flex items-center justify-end gap-1.5">
@@ -1161,9 +1231,11 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
           <div className="relative">
             <div className="mx-auto mb-3 flex w-fit items-center gap-2">
               <span className="h-1 w-1 rounded-full bg-[#4da3ff]" />
+
               <span className="text-[9px] font-extrabold uppercase tracking-[0.24em] text-white/25">
                 Jewels of His Crown
               </span>
+
               <span className="h-1 w-1 rounded-full bg-[#4da3ff]" />
             </div>
 
@@ -1185,4 +1257,3 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
   );
 };
 
-export default SongBankView;
