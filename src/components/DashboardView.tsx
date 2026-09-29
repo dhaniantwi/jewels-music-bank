@@ -65,6 +65,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       ========================================================= */}
       <section
         className="
+          group
           relative
           overflow-hidden
           rounded-[28px]
@@ -76,18 +77,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           backdrop-blur-2xl
         "
       >
-        {/* ambient glow */}
+        {/* =====================================================
+            AMBIENT BACKGROUND LIGHT
+        ===================================================== */}
+
         <div
           className="
             pointer-events-none
             absolute
-            -right-28
-            -top-28
-            h-72
-            w-72
+            -right-32
+            -top-32
+            h-80
+            w-80
             rounded-full
             bg-[#007aff]/10
             blur-3xl
+            transition-all
+            duration-1000
+            group-hover:bg-[#007aff]/20
+            group-hover:scale-110
           "
         />
 
@@ -95,13 +103,53 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           className="
             pointer-events-none
             absolute
-            bottom-0
+            -bottom-24
             left-1/3
-            h-32
-            w-64
+            h-64
+            w-96
             rounded-full
-            bg-[#007aff]/[0.025]
+            bg-[#007aff]/[0.035]
             blur-3xl
+            animate-pulse
+          "
+        />
+
+        <div
+          className="
+            pointer-events-none
+            absolute
+            left-[-10%]
+            top-1/2
+            h-40
+            w-40
+            -translate-y-1/2
+            rounded-full
+            bg-blue-500/[0.025]
+            blur-3xl
+          "
+        />
+
+        {/* =====================================================
+            SUBTLE TOP LIGHT
+        ===================================================== */}
+
+        <div
+          className="
+            pointer-events-none
+            absolute
+            left-1/2
+            top-0
+            h-px
+            w-2/3
+            -translate-x-1/2
+            bg-gradient-to-r
+            from-transparent
+            via-[#007aff]/50
+            to-transparent
+            opacity-60
+            transition-opacity
+            duration-700
+            group-hover:opacity-100
           "
         />
 
@@ -110,40 +158,57 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             relative
             p-5
             sm:p-7
-            lg:p-8
+            lg:p-9
           "
         >
           <div
             className="
               flex
-              max-w-4xl
+              max-w-5xl
               flex-col
             "
           >
-            {/* Ministry Name */}
+
+            {/* =================================================
+                MINISTRY NAME
+            ================================================= */}
+
             <div
               className="
-                mb-5
+                mb-6
                 flex
                 w-fit
                 items-center
-                gap-2
+                gap-2.5
                 rounded-xl
                 border
                 border-[#007aff]/20
                 bg-[#007aff]/10
                 px-3
                 py-1.5
+                shadow-lg
+                shadow-blue-500/5
+                transition-all
+                duration-300
+                group-hover:border-[#007aff]/35
+                group-hover:bg-[#007aff]/15
               "
             >
-              <Sparkles className="h-3.5 w-3.5 text-[#4da3ff]" />
+              <Sparkles
+                className="
+                  h-3.5
+                  w-3.5
+                  text-[#4da3ff]
+                  animate-pulse
+                "
+              />
 
               <span
                 className="
                   text-[9px]
                   font-extrabold
                   uppercase
-                  tracking-[0.18em]
+                  tracking-[0.2em]
                   text-[#4da3ff]
                 "
               >
@@ -151,38 +216,169 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </span>
             </div>
 
-            {/* Main Identity */}
-            <h1
+            {/* =================================================
+                MAIN IDENTITY
+            ================================================= */}
+
+            <div className="relative w-fit">
+
+              {/* soft glow behind title */}
+              <div
+                className="
+                  pointer-events-none
+                  absolute
+                  inset-0
+                  -z-10
+                  rounded-full
+                  bg-[#007aff]/10
+                  blur-3xl
+                  opacity-40
+                  transition-all
+                  duration-700
+                  group-hover:opacity-70
+                "
+              />
+
+              <h1
+                className="
+                  text-5xl
+                  font-black
+                  leading-none
+                  tracking-[-0.055em]
+                  text-white
+                  transition-all
+                  duration-700
+                  group-hover:tracking-[-0.065em]
+                  sm:text-7xl
+                  lg:text-[88px]
+                "
+              >
+                Jewels
+              </h1>
+            </div>
+
+            {/* =================================================
+                SIGNATURE TAGLINE
+            ================================================= */}
+
+            <div
               className="
-                max-w-3xl
-                text-3xl
-                font-extrabold
-                leading-[1.05]
-                tracking-[-0.04em]
-                text-white
-                sm:text-5xl
-                lg:text-[52px]
+                mt-6
+                flex
+                w-fit
+                items-center
+                gap-3
               "
             >
-              Jewels
-            </h1>
+              {/* left accent */}
+              <span
+                className="
+                  h-px
+                  w-8
+                  bg-gradient-to-r
+                  from-transparent
+                  to-[#007aff]
+                  transition-all
+                  duration-700
+                  group-hover:w-14
+                  sm:w-10
+                  sm:group-hover:w-20
+                "
+              />
 
-            {/* Ministry Slogan */}
+              {/* glowing dot */}
+              <span
+                className="
+                  relative
+                  flex
+                  h-2
+                  w-2
+                  items-center
+                  justify-center
+                "
+              >
+                <span
+                  className="
+                    absolute
+                    h-2
+                    w-2
+                    rounded-full
+                    bg-[#007aff]
+                    animate-ping
+                    opacity-50
+                  "
+                />
+
+                <span
+                  className="
+                    relative
+                    h-1.5
+                    w-1.5
+                    rounded-full
+                    bg-[#4da3ff]
+                  "
+                />
+              </span>
+
+              <p
+                className="
+                  text-[10px]
+                  font-extrabold
+                  uppercase
+                  tracking-[0.28em]
+                  text-[#4da3ff]
+                  transition-all
+                  duration-500
+                  group-hover:text-white
+                  sm:text-xs
+                  sm:tracking-[0.32em]
+                "
+              >
+                We Sing to Convert
+              </p>
+
+              {/* right accent */}
+              <span
+                className="
+                  h-px
+                  w-8
+                  bg-gradient-to-l
+                  from-transparent
+                  to-[#007aff]
+                  transition-all
+                  duration-700
+                  group-hover:w-14
+                  sm:w-10
+                  sm:group-hover:w-20
+                "
+              />
+            </div>
+
+            {/* =================================================
+                SMALL DESCRIPTION
+            ================================================= */}
+
             <p
               className="
-                mt-4
-                max-w-2xl
-                text-sm
-                font-semibold
-                leading-7
-                text-white/65
-                sm:text-base
+                mt-5
+                max-w-xl
+                text-xs
+                leading-6
+                text-white/35
+                transition-colors
+                duration-500
+                group-hover:text-white/45
+                sm:text-sm
               "
             >
-              Respond: We Sing to Convert.
+              A dedicated space for the music team to prepare,
+              organise, and minister with excellence.
             </p>
 
-            {/* Actions */}
+            {/* =================================================
+                ACTIONS
+            ================================================= */}
+
             <div
               className="
                 mt-7
@@ -195,7 +391,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 type="button"
                 onClick={() => setActiveTab('songs')}
                 className="
-                  group
+                  group/button
                   flex
                   items-center
                   gap-2
@@ -218,7 +414,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               >
                 <Music className="h-4 w-4" />
 
-                <span>Explore Song Bank</span>
+                <span>
+                  Explore Song Bank
+                </span>
 
                 <ArrowRight
                   className="
@@ -226,7 +424,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     w-4
                     transition-transform
                     duration-200
-                    group-hover:translate-x-1
+                    group-hover/button:translate-x-1
                   "
                 />
               </button>
@@ -295,13 +493,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 "
               >
                 <Wrench className="h-3.5 w-3.5 text-[#4da3ff]" />
-                <span>Music Tools</span>
+
+                <span>
+                  Music Tools
+                </span>
               </button>
             </div>
           </div>
         </div>
       </section>
-
 
       {/* =========================================================
           NEXT MINISTRATION
@@ -319,7 +519,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             backdrop-blur-2xl
           "
         >
-          {/* Section header */}
           <div
             className="
               flex
@@ -464,7 +663,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
             </div>
 
-            {/* Actions */}
             <div
               className="
                 flex
@@ -533,7 +731,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
 
-          {/* Stats */}
           <div
             className="
               grid
@@ -661,7 +858,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
 
-          {/* Setlist */}
           <div className="p-5 sm:p-6">
             <div
               className="
@@ -845,7 +1041,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </section>
       )}
 
-
       {/* =========================================================
           QUICK ACCESS
       ========================================================= */}
@@ -1003,7 +1198,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
 
-
           {/* Ministrations */}
           <div
             onClick={() => setActiveTab('ministrations')}
@@ -1121,7 +1315,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
             </div>
           </div>
-
 
           {/* Music Team */}
           <div
@@ -1241,7 +1434,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
       </section>
-
 
       {/* =========================================================
           RECENT SONGS
