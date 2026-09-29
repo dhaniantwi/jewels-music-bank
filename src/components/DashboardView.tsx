@@ -38,46 +38,6 @@ interface DashboardViewProps {
   openStageMode: () => void;
 }
 
-/* ================================================================
-   SMALL REUSABLE COMPONENTS
-   ================================================================ */
-
-interface SectionLabelProps {
-  children: React.ReactNode;
-}
-
-const SectionLabel: React.FC<SectionLabelProps> = ({ children }) => (
-  <div className="mb-3 flex items-center gap-2">
-    <span className="h-px w-8 bg-blue-400/60" />
-    <span className="text-[9px] font-semibold uppercase tracking-[0.32em] text-blue-300/60">
-      {children}
-    </span>
-  </div>
-);
-
-interface ArrowButtonProps {
-  onClick?: () => void;
-  children?: React.ReactNode;
-}
-
-const ArrowButton: React.FC<ArrowButtonProps> = ({
-  onClick,
-  children,
-}) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className="group flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/25 transition-colors hover:text-blue-300"
-  >
-    {children || 'View all'}
-    <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-1" />
-  </button>
-);
-
-/* ================================================================
-   MAIN DASHBOARD
-   ================================================================ */
-
 export const DashboardView: React.FC<DashboardViewProps> = ({
   songs,
   ministrations,
@@ -95,732 +55,1137 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const totalMinistrations = ministrations?.length || 0;
   const totalTeam = team?.length || 0;
 
-  /*
-   * Keep these previews deliberately small.
-   *
-   * The dashboard is not the actual Song Bank or Music Team page.
-   * Those pages already exist, so the dashboard only needs a
-   * lightweight snapshot.
-   */
-  const recentSongs = React.useMemo(
-    () => [...(songs || [])].slice(-4).reverse(),
-    [songs],
-  );
-
-  const featuredTeam = React.useMemo(
-    () => [...(team || [])].slice(0, 4),
-    [team],
-  );
-
+  const recentSongs = [...(songs || [])].slice(-5).reverse();
+  const featuredTeam = [...(team || [])].slice(0, 5);
   const nextMinistration = ministrations?.[0];
 
-  const getInitials = React.useCallback((name: string = '') => {
-    const parts = name.trim().split(/\s+/).filter(Boolean);
-
-    if (parts.length === 0) return '?';
-
-    if (parts.length === 1) {
-      return parts[0].slice(0, 2).toUpperCase();
-    }
-
-    return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
-  }, []);
-
-  const getSongNumber = (index: number) =>
-    String(index + 1).padStart(2, '0');
-
   return (
-    <div className="min-h-screen overflow-hidden bg-[#000000] text-white">
-      {/* ==========================================================
-          LIGHTWEIGHT PAGE ATMOSPHERE
-      ========================================================== */}
+    <div className="relative min-h-screen overflow-hidden bg-black text-white">
+
+      {/* ============================================================
+          AMBIENT WORLD
+      ============================================================ */}
 
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <div className="absolute left-[-180px] top-[-180px] h-[500px] w-[500px] rounded-full bg-blue-600/[0.045] blur-[110px]" />
-
-        <div className="absolute right-[-220px] top-[500px] h-[520px] w-[520px] rounded-full bg-blue-500/[0.035] blur-[120px]" />
 
         <div
-          className="absolute inset-0 opacity-[0.018]"
+          className="absolute left-1/2 top-[-450px] h-[1000px] w-[1000px] -translate-x-1/2 rounded-full blur-[160px]"
+          style={{
+            background:
+              'radial-gradient(circle, rgba(37,99,235,0.18) 0%, rgba(37,99,235,0.05) 42%, transparent 70%)',
+          }}
+        />
+
+        <div
+          className="absolute -left-[350px] top-[35%] h-[700px] w-[700px] rounded-full blur-[150px]"
+          style={{
+            background:
+              'radial-gradient(circle, rgba(29,78,216,0.13) 0%, transparent 68%)',
+          }}
+        />
+
+        <div
+          className="absolute -right-[350px] top-[55%] h-[750px] w-[750px] rounded-full blur-[160px]"
+          style={{
+            background:
+              'radial-gradient(circle, rgba(59,130,246,0.11) 0%, transparent 68%)',
+          }}
+        />
+
+        <div
+          className="absolute inset-0 opacity-[0.025]"
           style={{
             backgroundImage:
-              'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)',
-            backgroundSize: '80px 80px',
+              'url("data:image/svg+xml,%3Csvg viewBox=%270 0 180 180%27 xmlns=%27http://www.w3.org/2000/svg%27%3E%3Cfilter id=%27n%27%3E%3CfeTurbulence type=%27fractalNoise%27 baseFrequency=%270.85%27 numOctaves=%272%27 stitchTiles=%27stitch%27/%3E%3C/filter%3E%3Crect width=%27100%25%27 height=%27100%25%27 filter=%27url(%23n)%27 opacity=%270.55%27/%3E%3C/svg%3E")',
           }}
         />
       </div>
 
-      <main className="relative z-10 mx-auto max-w-[1550px] px-4 pb-20 sm:px-6 lg:px-10">
-        {/* ========================================================
-            HERO
-        ======================================================== */}
+      <main className="relative z-10 mx-auto max-w-[1800px] px-4 pb-24 pt-5 sm:px-6 lg:px-8">
 
-        <section className="relative flex min-h-[610px] items-center">
-          {/* Small decorative orbit */}
-          <div className="pointer-events-none absolute right-[5%] top-[14%] hidden h-[390px] w-[390px] rounded-full border border-blue-400/[0.07] lg:block">
-            <div className="absolute inset-[65px] rounded-full border border-blue-400/[0.05]" />
+        {/* ============================================================
+            HERO — JEWELS EXPERIENCE
+        ============================================================ */}
 
-            <div className="absolute left-1/2 top-[-3px] h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-blue-400 shadow-[0_0_16px_5px_rgba(59,130,246,0.25)]" />
-          </div>
+        <section className="relative min-h-[760px] overflow-hidden rounded-[42px] border border-white/[0.09] bg-[#030406] shadow-[0_40px_140px_rgba(0,0,0,0.8)]">
 
-          <div className="grid w-full gap-14 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
-            {/* ----------------------------------------------------
-                HERO COPY
-            ---------------------------------------------------- */}
+          {/* Perspective grid */}
+          <div
+            className="absolute inset-x-[-20%] bottom-[-38%] h-[75%] opacity-[0.12]"
+            style={{
+              backgroundImage:
+                'linear-gradient(rgba(59,130,246,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.5) 1px, transparent 1px)',
+              backgroundSize: '70px 70px',
+              transform: 'perspective(500px) rotateX(62deg)',
+              transformOrigin: 'center top',
+              maskImage:
+                'linear-gradient(to bottom, transparent, black 25%, black 70%, transparent)',
+              WebkitMaskImage:
+                'linear-gradient(to bottom, transparent, black 25%, black 70%, transparent)',
+            }}
+          />
 
-            <div className="max-w-4xl pt-12 lg:pt-0">
-              <div className="mb-7 flex items-center gap-3">
-                <span className="h-px w-12 bg-gradient-to-r from-transparent to-blue-400" />
+          {/* Top atmosphere */}
+          <div
+            className="absolute left-1/2 top-[-420px] h-[900px] w-[900px] -translate-x-1/2 rounded-full"
+            style={{
+              background:
+                'radial-gradient(circle, rgba(59,130,246,0.23) 0%, rgba(37,99,235,0.09) 34%, transparent 68%)',
+              filter: 'blur(40px)',
+              animation: 'heroBreath 7s ease-in-out infinite',
+            }}
+          />
 
-                <span className="text-[10px] font-semibold uppercase tracking-[0.4em] text-blue-300/75">
-                  Jewels of His Crown
+          {/* Ring 1 */}
+          <div
+            className="absolute left-1/2 top-[45%] h-[500px] w-[900px] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-blue-400/[0.06]"
+            style={{
+              transform: 'translate(-50%, -50%) rotate(-7deg)',
+              animation: 'ringFloat 12s ease-in-out infinite',
+            }}
+          />
+
+          {/* Ring 2 */}
+          <div
+            className="absolute left-1/2 top-[45%] h-[350px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-white/[0.04]"
+            style={{
+              transform: 'translate(-50%, -50%) rotate(12deg)',
+              animation: 'ringFloatReverse 15s ease-in-out infinite',
+            }}
+          />
+
+          {/* Horizontal laser */}
+          <div
+            className="absolute left-[-30%] top-[49%] h-px w-[160%]"
+            style={{
+              background:
+                'linear-gradient(90deg, transparent, rgba(96,165,250,0.65), rgba(255,255,255,0.18), rgba(96,165,250,0.65), transparent)',
+              boxShadow: '0 0 20px rgba(59,130,246,0.3)',
+              animation: 'laserMove 8s ease-in-out infinite',
+            }}
+          />
+
+          {/* Corner lines */}
+          <div className="absolute left-7 top-7 h-16 w-16 border-l border-t border-blue-400/20 sm:left-10 sm:top-10" />
+          <div className="absolute right-7 top-7 h-16 w-16 border-r border-t border-blue-400/20 sm:right-10 sm:top-10" />
+          <div className="absolute bottom-7 left-7 h-16 w-16 border-b border-l border-blue-400/10 sm:bottom-10 sm:left-10" />
+          <div className="absolute bottom-7 right-7 h-16 w-16 border-b border-r border-blue-400/10 sm:bottom-10 sm:right-10" />
+
+          {/* Floating particles */}
+          {Array.from({ length: 18 }).map((_, index) => (
+            <span
+              key={index}
+              className="absolute h-[2px] w-[2px] rounded-full bg-blue-200"
+              style={{
+                left: `${5 + ((index * 17) % 90)}%`,
+                top: `${8 + ((index * 29) % 82)}%`,
+                opacity: 0.15 + (index % 4) * 0.1,
+                boxShadow: '0 0 12px rgba(96,165,250,0.8)',
+                animation: `particle ${5 + (index % 5)}s ease-in-out infinite`,
+                animationDelay: `${index * 0.35}s`,
+              }}
+            />
+          ))}
+
+          {/* Main vignette */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                'radial-gradient(circle at 50% 45%, transparent 0%, rgba(0,0,0,0.08) 40%, rgba(0,0,0,0.72) 100%)',
+            }}
+          />
+
+          {/* ========================================================
+              HERO CONTENT
+          ======================================================== */}
+
+          <div className="relative z-10 flex min-h-[760px] flex-col items-center justify-center px-5 py-24 text-center">
+
+            {/* Tiny top identity */}
+            <div
+              className="mb-10 flex items-center gap-3"
+              style={{ animation: 'rise 1s ease-out both' }}
+            >
+              <span className="h-px w-12 bg-gradient-to-r from-transparent to-blue-400/50 sm:w-20" />
+
+              <span className="flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.025] px-4 py-2 text-[9px] font-bold uppercase tracking-[0.38em] text-white/45 backdrop-blur-xl">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="absolute h-full w-full animate-ping rounded-full bg-blue-400 opacity-60" />
+                  <span className="relative h-1.5 w-1.5 rounded-full bg-blue-300" />
                 </span>
+                Jewels of His Crown
+              </span>
 
-                <span className="h-1.5 w-1.5 rounded-full bg-blue-400 shadow-[0_0_12px_3px_rgba(59,130,246,0.3)]" />
-              </div>
+              <span className="h-px w-12 bg-gradient-to-l from-transparent to-blue-400/50 sm:w-20" />
+            </div>
 
-              <h1 className="relative text-[clamp(5rem,12vw,11rem)] font-black leading-[0.74] tracking-[-0.075em] text-white">
+            {/* Small label */}
+            <div
+              className="mb-4 flex items-center gap-2 text-[9px] font-bold uppercase tracking-[0.5em] text-blue-300/45"
+              style={{ animation: 'rise 1s ease-out 0.15s both' }}
+            >
+              <Sparkles className="h-3 w-3" />
+              Music Ministry
+              <Sparkles className="h-3 w-3" />
+            </div>
+
+            {/* MAIN WORD */}
+            <div className="relative">
+
+              <h1
+                className="relative select-none text-[74px] font-black leading-[0.75] tracking-[-0.09em] text-white sm:text-[120px] md:text-[160px] lg:text-[205px] xl:text-[235px]"
+                style={{
+                  animation:
+                    'jewelReveal 1.6s cubic-bezier(.16,1,.3,1) both',
+                  textShadow:
+                    '0 0 35px rgba(255,255,255,0.04), 0 0 120px rgba(37,99,235,0.12)',
+                }}
+              >
                 JEWELS
               </h1>
 
-              <div className="mt-7 flex items-center gap-4">
-                <div className="h-px w-16 bg-gradient-to-r from-blue-400 to-transparent sm:w-24" />
-
-                <p className="text-sm font-medium uppercase tracking-[0.2em] text-white/45 sm:text-base">
-                  We Sing to Convert.
-                </p>
+              {/* Gradient edge */}
+              <div
+                className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white via-white/80 to-blue-300/50 bg-clip-text text-transparent opacity-0"
+                style={{
+                  animation: 'edgeReveal 1.8s ease-out 0.6s forwards',
+                }}
+              >
+                JEWELS
               </div>
 
-              <p className="mt-9 max-w-xl text-sm leading-7 text-white/40 sm:text-base">
-                Your ministry sound, organised in one place. Prepare songs,
-                coordinate ministrations, equip the team, and carry the sound
-                of the ministry wherever it goes.
-              </p>
-
-              <div className="mt-10 flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('songs')}
-                  className="group rounded-2xl border border-blue-400/25 bg-blue-500/10 px-6 py-3.5 text-sm font-semibold text-blue-100 transition-all duration-300 hover:-translate-y-0.5 hover:border-blue-300/45 hover:bg-blue-500/15"
-                >
-                  <span className="flex items-center gap-2">
-                    <Music2 className="h-4 w-4" />
-                    Song Bank
-                    <ArrowUpRight className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={openStageMode}
-                  className="group rounded-2xl border border-white/10 bg-white/[0.035] px-6 py-3.5 text-sm font-semibold text-white/70 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.055] hover:text-white"
-                >
-                  <span className="flex items-center gap-2">
-                    <Play className="h-4 w-4 fill-current" />
-                    Stage Mode
-                  </span>
-                </button>
+              {/* Moving shine */}
+              <div className="pointer-events-none absolute inset-0 overflow-hidden">
+                <div
+                  className="absolute top-[-20%] h-[150%] w-[15%] -skew-x-[20deg] bg-gradient-to-r from-transparent via-white/30 to-transparent blur-lg"
+                  style={{
+                    left: '-30%',
+                    animation: 'shine 5s ease-in-out 1.7s infinite',
+                  }}
+                />
               </div>
             </div>
 
-            {/* ----------------------------------------------------
-                HERO OVERVIEW
-            ---------------------------------------------------- */}
+            {/* Decorative line */}
+            <div
+              className="mt-9 flex items-center gap-4"
+              style={{ animation: 'rise 1s ease-out 0.55s both' }}
+            >
+              <span className="h-px w-14 bg-gradient-to-r from-transparent to-blue-400/50 sm:w-24" />
 
-            <div className="hidden lg:block">
-              <div className="relative overflow-hidden rounded-[30px] border border-white/[0.08] bg-white/[0.02] p-6 backdrop-blur-sm">
-                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-400/50 to-transparent" />
+              <span className="relative h-2 w-2 rotate-45 border border-blue-300/70 bg-blue-400/20 shadow-[0_0_15px_rgba(96,165,250,0.6)]" />
 
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-[9px] font-semibold uppercase tracking-[0.3em] text-white/25">
-                      Ministry System
-                    </p>
+              <span className="h-px w-14 bg-gradient-to-l from-transparent to-blue-400/50 sm:w-24" />
+            </div>
 
-                    <h2 className="mt-2 text-lg font-semibold text-white">
-                      Command Overview
-                    </h2>
-                  </div>
+            {/* SLOGAN */}
+            <h2
+              className="mt-7 text-sm font-medium uppercase tracking-[0.42em] text-white/70 sm:text-base md:text-lg"
+              style={{ animation: 'rise 1s ease-out 0.65s both' }}
+            >
+              We Sing to Convert.
+            </h2>
 
-                  <div className="flex items-center gap-2 rounded-full border border-emerald-400/15 bg-emerald-400/[0.05] px-3 py-1.5">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                    <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-emerald-300/70">
-                      Online
-                    </span>
-                  </div>
-                </div>
+            {/* Description */}
+            <p
+              className="mt-6 max-w-2xl text-xs leading-7 text-white/30 sm:text-sm sm:leading-8"
+              style={{ animation: 'rise 1s ease-out 0.8s both' }}
+            >
+              Songs prepared with purpose. Voices aligned with purpose.
+              A digital environment built for the sound of
+              <span className="text-white/55"> Jewels of His Crown.</span>
+            </p>
 
-                <div className="mt-7 grid grid-cols-3 gap-3">
-                  <div className="rounded-2xl border border-white/[0.06] bg-black/30 p-4">
-                    <Music2 className="h-4 w-4 text-blue-300/60" />
+            {/* Buttons */}
+            <div
+              className="mt-9 flex flex-col gap-3 sm:flex-row"
+              style={{ animation: 'rise 1s ease-out 0.95s both' }}
+            >
 
-                    <p className="mt-5 text-2xl font-bold text-white">
-                      {totalSongs}
-                    </p>
+              <button
+                onClick={() => setActiveTab('songs')}
+                className="group relative flex h-12 items-center justify-center gap-3 overflow-hidden rounded-full bg-white px-7 text-xs font-bold text-black transition-all duration-500 hover:scale-[1.04] hover:shadow-[0_0_45px_rgba(96,165,250,0.22)]"
+              >
+                <Music2 className="h-4 w-4" />
+                Song Bank
+                <ArrowUpRight className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
 
-                    <p className="mt-1 text-[9px] uppercase tracking-[0.16em] text-white/25">
-                      Songs
-                    </p>
-                  </div>
+                <span className="absolute inset-y-0 left-[-100%] w-[60%] skew-x-[-20deg] bg-white/60 blur-md transition-all duration-700 group-hover:left-[130%]" />
+              </button>
 
-                  <div className="rounded-2xl border border-white/[0.06] bg-black/30 p-4">
-                    <Radio className="h-4 w-4 text-blue-300/60" />
+              <button
+                onClick={openStageMode}
+                className="group flex h-12 items-center justify-center gap-3 rounded-full border border-white/[0.1] bg-white/[0.035] px-7 text-xs font-semibold text-white/75 backdrop-blur-xl transition-all duration-500 hover:border-blue-400/30 hover:bg-blue-500/[0.08] hover:text-white"
+              >
+                <Play className="h-4 w-4 text-blue-300" />
+                Enter Stage Mode
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </button>
+            </div>
 
-                    <p className="mt-5 text-2xl font-bold text-white">
-                      {totalMinistrations}
-                    </p>
+            {/* Hero bottom information */}
+            <div
+              className="absolute bottom-8 left-1/2 flex -translate-x-1/2 items-center gap-4 whitespace-nowrap text-[8px] font-bold uppercase tracking-[0.4em] text-white/20 sm:text-[9px]"
+              style={{ animation: 'rise 1s ease-out 1.2s both' }}
+            >
+              <span className="flex items-center gap-2">
+                <Volume2 className="h-3 w-3" />
+                Ministry Sound
+              </span>
 
-                    <p className="mt-1 text-[9px] uppercase tracking-[0.16em] text-white/25">
-                      Events
-                    </p>
-                  </div>
+              <span className="h-3 w-px bg-white/10" />
 
-                  <div className="rounded-2xl border border-white/[0.06] bg-black/30 p-4">
-                    <Users className="h-4 w-4 text-blue-300/60" />
+              <span>{totalSongs} Songs</span>
 
-                    <p className="mt-5 text-2xl font-bold text-white">
-                      {totalTeam}
-                    </p>
+              <span className="h-3 w-px bg-white/10" />
 
-                    <p className="mt-1 text-[9px] uppercase tracking-[0.16em] text-white/25">
-                      Team
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-4 rounded-2xl border border-white/[0.06] bg-white/[0.015] p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/[0.08] text-blue-300">
-                      <Waves className="h-4 w-4" />
-                    </div>
-
-                    <div className="flex-1">
-                      <p className="text-xs font-semibold text-white/70">
-                        Ministry Workspace
-                      </p>
-
-                      <p className="mt-1 text-[10px] text-white/25">
-                        {isMD
-                          ? 'Music Director access'
-                          : 'Music team access'}
-                      </p>
-                    </div>
-
-                    <ChevronRight className="h-4 w-4 text-white/15" />
-                  </div>
-                </div>
-              </div>
+              <span>Live Environment</span>
             </div>
           </div>
         </section>
 
-        {/* ========================================================
+        {/* ============================================================
+            FLOATING SYSTEM PANEL
+        ============================================================ */}
+
+        <div className="relative -mt-7 px-3 sm:px-10">
+
+          <div className="relative overflow-hidden rounded-[24px] border border-white/[0.09] bg-[#080a0e]/95 shadow-[0_25px_70px_rgba(0,0,0,0.6)] backdrop-blur-2xl">
+
+            <div
+              className="absolute inset-0 opacity-40"
+              style={{
+                background:
+                  'linear-gradient(90deg, rgba(37,99,235,0.06), transparent 30%, transparent 70%, rgba(37,99,235,0.05))',
+              }}
+            />
+
+            <div className="relative grid min-h-[78px] grid-cols-2 divide-white/[0.06] sm:grid-cols-4 sm:divide-x">
+
+              <div className="flex items-center justify-center gap-3 px-4 py-4">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute h-full w-full animate-ping rounded-full bg-emerald-400 opacity-50" />
+                  <span className="relative h-2 w-2 rounded-full bg-emerald-400" />
+                </span>
+
+                <div>
+                  <p className="text-[8px] font-bold uppercase tracking-[0.25em] text-white/25">
+                    Status
+                  </p>
+                  <p className="mt-1 text-xs font-semibold text-emerald-300/75">
+                    System Live
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-center gap-3 px-4 py-4">
+                <Music2 className="h-4 w-4 text-blue-300/60" />
+
+                <div>
+                  <p className="text-[8px] font-bold uppercase tracking-[0.25em] text-white/25">
+                    Repertoire
+                  </p>
+                  <p className="mt-1 text-xs font-semibold text-white/65">
+                    {totalSongs} Songs
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-center gap-3 px-4 py-4">
+                <Radio className="h-4 w-4 text-purple-300/60" />
+
+                <div>
+                  <p className="text-[8px] font-bold uppercase tracking-[0.25em] text-white/25">
+                    Schedule
+                  </p>
+                  <p className="mt-1 text-xs font-semibold text-white/65">
+                    {totalMinistrations} Ministrations
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-center gap-3 px-4 py-4">
+                <Users className="h-4 w-4 text-cyan-300/60" />
+
+                <div>
+                  <p className="text-[8px] font-bold uppercase tracking-[0.25em] text-white/25">
+                    Team
+                  </p>
+                  <p className="mt-1 text-xs font-semibold text-white/65">
+                    {totalTeam} Members
+                  </p>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        {/* ============================================================
             COMMAND CENTER
-        ======================================================== */}
+        ============================================================ */}
 
-        <section className="py-14">
-          <div className="mb-8 flex items-end justify-between">
+        <section className="mt-24">
+
+          <div className="flex items-end justify-between">
+
             <div>
-              <SectionLabel>Command Center</SectionLabel>
+              <div className="mb-3 flex items-center gap-2 text-[9px] font-bold uppercase tracking-[0.4em] text-blue-400/55">
+                <span className="h-px w-6 bg-blue-400/40" />
+                Command Center
+              </div>
 
-              <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-                Everything the ministry needs.
+              <h2 className="text-3xl font-bold tracking-[-0.03em] text-white sm:text-4xl">
+                The sound starts here.
               </h2>
             </div>
 
-            <span className="hidden text-[9px] font-semibold uppercase tracking-[0.25em] text-white/15 sm:block">
-              JHC / MUSIC HUB
-            </span>
+            <div className="hidden items-center gap-2 text-[9px] font-bold uppercase tracking-[0.3em] text-white/15 sm:flex">
+              <Waves className="h-4 w-4" />
+              Jewels System
+            </div>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-12">
-            {/* SONG BANK CARD */}
+          {/* Big command grid */}
+          <div className="mt-9 grid gap-4 lg:grid-cols-12">
 
+            {/* SONG BANK — LARGE */}
             <button
-              type="button"
               onClick={() => setActiveTab('songs')}
-              className="group relative min-h-[310px] overflow-hidden rounded-[30px] border border-blue-400/15 bg-gradient-to-br from-blue-950/25 via-black to-black p-7 text-left transition-all duration-300 hover:-translate-y-1 hover:border-blue-400/30 lg:col-span-7"
+              className="group relative min-h-[320px] overflow-hidden rounded-[32px] border border-white/[0.08] bg-[#07090d] p-7 text-left lg:col-span-7"
             >
-              <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full border border-blue-400/[0.08]" />
 
-              <div className="absolute -right-4 -top-4 h-36 w-36 rounded-full border border-blue-400/[0.05]" />
+              <div
+                className="absolute right-[-15%] top-[-30%] h-[500px] w-[500px] rounded-full blur-[100px]"
+                style={{
+                  background:
+                    'radial-gradient(circle, rgba(37,99,235,0.16), transparent 68%)',
+                }}
+              />
 
-              <div className="absolute bottom-0 right-0 h-48 w-48 rounded-full bg-blue-500/[0.05] blur-3xl" />
+              {/* Decorative waveform */}
+              <div className="absolute bottom-0 right-0 flex h-[75%] w-[55%] items-end justify-end gap-[4px] opacity-[0.08]">
 
-              <div className="relative z-10 flex h-full flex-col justify-between">
+                {Array.from({ length: 40 }).map((_, i) => (
+                  <span
+                    key={i}
+                    className="w-[4px] rounded-full bg-blue-300"
+                    style={{
+                      height: `${25 + ((i * 31) % 130)}px`,
+                      animation: `wave ${1.5 + (i % 4) * 0.25}s ease-in-out infinite`,
+                      animationDelay: `${i * 0.05}s`,
+                    }}
+                  />
+                ))}
+
+              </div>
+
+              <div className="relative flex h-full flex-col justify-between">
+
                 <div className="flex items-start justify-between">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-blue-400/15 bg-blue-400/[0.07] text-blue-300">
-                    <Disc3 className="h-5 w-5 transition-transform duration-500 group-hover:rotate-90" />
+
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-blue-400/15 bg-blue-500/[0.08] text-blue-300 shadow-[0_0_35px_rgba(37,99,235,0.08)]">
+                    <Disc3 className="h-6 w-6" />
                   </div>
 
-                  <div className="rounded-full border border-white/[0.07] bg-white/[0.02] px-3 py-1.5">
-                    <span className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/30">
-                      {totalSongs} tracks
-                    </span>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.07] bg-white/[0.025] transition-all duration-300 group-hover:border-blue-400/30 group-hover:bg-blue-500/10">
+                    <ArrowUpRight className="h-4 w-4 text-white/30 transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-blue-300" />
                   </div>
+
                 </div>
 
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-blue-300/55">
-                    The Library
+
+                  <p className="mb-2 text-[9px] font-bold uppercase tracking-[0.35em] text-blue-300/50">
+                    Repertoire
                   </p>
 
-                  <div className="mt-2 flex items-end justify-between gap-5">
-                    <div>
-                      <h3 className="text-4xl font-black tracking-[-0.045em] text-white sm:text-5xl">
-                        Song Bank
-                      </h3>
+                  <h3 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+                    Song Bank
+                  </h3>
 
-                      <p className="mt-3 max-w-md text-sm leading-6 text-white/30">
-                        Every song prepared, organised and ready for the next
-                        ministration.
-                      </p>
-                    </div>
+                  <p className="mt-3 max-w-md text-sm leading-6 text-white/30">
+                    Every song prepared, organized and ready
+                    for the next sound.
+                  </p>
 
-                    <div className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.02] sm:flex">
-                      <ArrowRight className="h-4 w-4 text-white/35 transition-transform group-hover:translate-x-1 group-hover:text-blue-300" />
-                    </div>
+                  <div className="mt-7 flex items-center gap-3">
+
+                    <span className="flex h-8 items-center rounded-full border border-white/[0.07] bg-white/[0.025] px-3 text-[9px] font-bold uppercase tracking-[0.2em] text-white/35">
+                      {totalSongs} Songs
+                    </span>
+
+                    <span className="text-[10px] font-semibold text-blue-300/60">
+                      Explore →
+                    </span>
+
                   </div>
                 </div>
               </div>
             </button>
 
-            {/* MINISTRATIONS CARD */}
-
+            {/* MINISTRATIONS */}
             <button
-              type="button"
               onClick={() => setActiveTab('ministrations')}
-              className="group relative min-h-[310px] overflow-hidden rounded-[30px] border border-white/[0.08] bg-white/[0.02] p-7 text-left transition-all duration-300 hover:-translate-y-1 hover:border-white/[0.16] lg:col-span-5"
+              className="group relative min-h-[320px] overflow-hidden rounded-[32px] border border-white/[0.08] bg-[#07080c] p-7 text-left lg:col-span-5"
             >
-              <div className="absolute right-[-70px] top-[-70px] h-56 w-56 rounded-full bg-indigo-500/[0.06] blur-3xl" />
 
-              <div className="relative z-10 flex h-full flex-col justify-between">
+              <div
+                className="absolute -right-20 -top-20 h-72 w-72 rounded-full blur-[90px]"
+                style={{
+                  background:
+                    'radial-gradient(circle, rgba(168,85,247,0.15), transparent 68%)',
+                }}
+              />
+
+              <div className="relative flex h-full flex-col justify-between">
+
                 <div className="flex items-start justify-between">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.035] text-white/50">
-                    <Radio className="h-5 w-5" />
+
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-purple-400/15 bg-purple-500/[0.08] text-purple-300">
+                    <Radio className="h-6 w-6" />
                   </div>
 
-                  <span className="rounded-full border border-white/[0.07] px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-white/25">
-                    Schedule
-                  </span>
+                  <ArrowUpRight className="h-5 w-5 text-white/20 transition-all group-hover:-translate-y-1 group-hover:translate-x-1 group-hover:text-purple-300" />
+
                 </div>
 
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-white/25">
-                    Ministry Calendar
+
+                  <p className="mb-2 text-[9px] font-bold uppercase tracking-[0.35em] text-purple-300/50">
+                    Schedule
                   </p>
 
-                  <h3 className="mt-2 text-3xl font-black tracking-[-0.04em] text-white">
+                  <h3 className="text-3xl font-bold tracking-tight text-white">
                     Ministrations
                   </h3>
 
-                  <div className="mt-5 flex items-center justify-between">
-                    <p className="text-sm text-white/30">
-                      {totalMinistrations} upcoming assignment
-                      {totalMinistrations === 1 ? '' : 's'}
-                    </p>
+                  <p className="mt-3 max-w-sm text-sm leading-6 text-white/30">
+                    Know where the sound is going next.
+                  </p>
 
-                    <ArrowUpRight className="h-4 w-4 text-white/20 transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-white/60" />
+                  <div className="mt-7 flex items-center gap-3">
+
+                    <span className="flex h-8 items-center rounded-full border border-white/[0.07] bg-white/[0.025] px-3 text-[9px] font-bold uppercase tracking-[0.2em] text-white/35">
+                      {totalMinistrations} Scheduled
+                    </span>
+
+                    <span className="text-[10px] font-semibold text-purple-300/60">
+                      Open →
+                    </span>
+
                   </div>
+
                 </div>
               </div>
             </button>
 
             {/* MUSIC TOOLS */}
-
             <button
-              type="button"
               onClick={openToolsModal}
-              className="group relative min-h-[205px] overflow-hidden rounded-[28px] border border-white/[0.08] bg-white/[0.018] p-6 text-left transition-all duration-300 hover:-translate-y-1 hover:border-cyan-300/20 lg:col-span-4"
+              className="group relative min-h-[190px] overflow-hidden rounded-[32px] border border-white/[0.08] bg-[#07090b] p-7 text-left lg:col-span-5"
             >
-              <div className="relative z-10">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] text-cyan-300/65">
-                  <Headphones className="h-5 w-5" />
+
+              <div
+                className="absolute -right-10 -top-10 h-60 w-60 rounded-full blur-[80px]"
+                style={{
+                  background:
+                    'radial-gradient(circle, rgba(34,211,238,0.12), transparent 68%)',
+                }}
+              />
+
+              <div className="relative flex h-full items-center gap-6">
+
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-cyan-400/15 bg-cyan-500/[0.07] text-cyan-300">
+                  <Headphones className="h-6 w-6" />
                 </div>
 
-                <h3 className="mt-7 text-xl font-bold text-white">
-                  Music Tools
-                </h3>
+                <div className="min-w-0 flex-1">
 
-                <p className="mt-2 max-w-xs text-xs leading-5 text-white/25">
-                  Pitch pipe, metronome and tools for rehearsal.
-                </p>
+                  <p className="text-[9px] font-bold uppercase tracking-[0.35em] text-cyan-300/50">
+                    Studio
+                  </p>
 
-                <div className="mt-5 flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.2em] text-cyan-300/55">
-                  Open tools
-                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                  <h3 className="mt-2 text-2xl font-bold text-white">
+                    Music Tools
+                  </h3>
+
+                  <p className="mt-2 text-xs leading-5 text-white/30">
+                    Pitch • tempo • transpose • rehearsal
+                  </p>
+
                 </div>
+
+                <ChevronRight className="h-5 w-5 shrink-0 text-white/20 transition-transform group-hover:translate-x-1 group-hover:text-cyan-300" />
+
               </div>
             </button>
 
             {/* STAGE MODE */}
-
             <button
-              type="button"
               onClick={openStageMode}
-              className="group relative min-h-[205px] overflow-hidden rounded-[28px] border border-white/[0.08] bg-white/[0.018] p-6 text-left transition-all duration-300 hover:-translate-y-1 hover:border-blue-300/20 lg:col-span-4"
+              className="group relative min-h-[190px] overflow-hidden rounded-[32px] border border-white/[0.08] bg-[#07090b] p-7 text-left lg:col-span-7"
             >
-              <div className="relative z-10">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] text-blue-300/65">
-                  <Zap className="h-5 w-5" />
+
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/[0.04] via-transparent to-transparent" />
+
+              <div className="relative flex h-full items-center justify-between gap-6">
+
+                <div className="flex items-center gap-5">
+
+                  <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-blue-400/20 bg-blue-500/[0.08]">
+
+                    <span className="absolute h-8 w-8 animate-ping rounded-full bg-blue-400/10" />
+
+                    <Play className="relative ml-0.5 h-5 w-5 fill-blue-300 text-blue-300" />
+
+                  </div>
+
+                  <div>
+
+                    <p className="text-[9px] font-bold uppercase tracking-[0.35em] text-blue-300/50">
+                      Live Environment
+                    </p>
+
+                    <h3 className="mt-2 text-2xl font-bold text-white">
+                      Stage Mode
+                    </h3>
+
+                    <p className="mt-2 text-xs text-white/30">
+                      Put the next ministration on stage.
+                    </p>
+
+                  </div>
+
                 </div>
 
-                <h3 className="mt-7 text-xl font-bold text-white">
-                  Stage Mode
-                </h3>
-
-                <p className="mt-2 max-w-xs text-xs leading-5 text-white/25">
-                  Enter the performance view for the selected item.
-                </p>
-
-                <div className="mt-5 flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.2em] text-blue-300/55">
-                  Enter stage mode
-                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                <div className="hidden h-11 w-11 items-center justify-center rounded-full border border-white/[0.07] bg-white/[0.025] sm:flex">
+                  <ArrowRight className="h-4 w-4 text-white/30 transition-transform group-hover:translate-x-1 group-hover:text-blue-300" />
                 </div>
+
               </div>
             </button>
 
-            {/* MUSIC TEAM */}
-
-            <button
-              type="button"
-              onClick={() => setActiveTab('team')}
-              className="group relative min-h-[205px] overflow-hidden rounded-[28px] border border-white/[0.08] bg-white/[0.018] p-6 text-left transition-all duration-300 hover:-translate-y-1 hover:border-violet-300/20 lg:col-span-4"
-            >
-              <div className="relative z-10">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] text-violet-300/65">
-                  <Users className="h-5 w-5" />
-                </div>
-
-                <h3 className="mt-7 text-xl font-bold text-white">
-                  Music Team
-                </h3>
-
-                <p className="mt-2 max-w-xs text-xs leading-5 text-white/25">
-                  The people carrying the sound of the ministry.
-                </p>
-
-                <div className="mt-5 flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.2em] text-violet-300/55">
-                  View team
-                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
-                </div>
-              </div>
-            </button>
           </div>
         </section>
 
-        {/* ========================================================
-            UPCOMING NEXT
-        ======================================================== */}
+        {/* ============================================================
+            NEXT MINISTRATION
+        ============================================================ */}
 
-        <section className="py-14">
-          <div className="mb-8 flex items-end justify-between">
+        <section className="mt-24">
+
+          <div className="flex items-end justify-between">
+
             <div>
-              <SectionLabel>Upcoming Next</SectionLabel>
+              <div className="mb-3 flex items-center gap-2 text-[9px] font-bold uppercase tracking-[0.4em] text-blue-400/55">
+                <span className="h-px w-6 bg-blue-400/40" />
+                Next Assignment
+              </div>
 
-              <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-                What is coming up.
+              <h2 className="text-3xl font-bold tracking-[-0.03em] text-white sm:text-4xl">
+                What are we singing next?
               </h2>
             </div>
 
-            <ArrowButton
+            <button
               onClick={() => setActiveTab('ministrations')}
-            />
+              className="hidden items-center gap-2 text-[10px] font-bold uppercase tracking-[0.25em] text-white/25 transition-colors hover:text-white sm:flex"
+            >
+              All ministrations
+              <ArrowUpRight className="h-3.5 w-3.5" />
+            </button>
+
           </div>
 
           {nextMinistration ? (
             <button
-              type="button"
               onClick={() => onSelectMinistration(nextMinistration)}
-              className="group relative w-full overflow-hidden rounded-[30px] border border-white/[0.08] bg-gradient-to-br from-blue-950/20 via-white/[0.018] to-black p-6 text-left transition-all duration-300 hover:border-blue-400/20 sm:p-8"
+              className="group relative mt-9 block w-full overflow-hidden rounded-[36px] border border-white/[0.08] bg-[#06080c] text-left transition-all duration-500 hover:border-blue-400/25"
             >
-              <div className="absolute right-[-100px] top-[-110px] h-[330px] w-[330px] rounded-full border border-blue-400/[0.05]" />
 
-              <div className="relative z-10 grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
+              {/* Large glow */}
+              <div
+                className="absolute right-[-10%] top-[-120%] h-[700px] w-[700px] rounded-full blur-[130px] transition-all duration-700 group-hover:scale-110"
+                style={{
+                  background:
+                    'radial-gradient(circle, rgba(37,99,235,0.15), transparent 68%)',
+                }}
+              />
+
+              {/* Wave architecture */}
+              <div className="absolute bottom-0 right-0 flex h-full w-[50%] items-center justify-end gap-[4px] opacity-[0.06]">
+
+                {Array.from({ length: 55 }).map((_, i) => (
+                  <span
+                    key={i}
+                    className="w-[3px] rounded-full bg-blue-300"
+                    style={{
+                      height: `${20 + ((i * 19) % 150)}px`,
+                      animation: `wave ${1.8 + (i % 5) * 0.2}s ease-in-out infinite`,
+                      animationDelay: `${i * 0.04}s`,
+                    }}
+                  />
+                ))}
+
+              </div>
+
+              {/* Number */}
+              <div className="absolute right-8 top-6 select-none text-[90px] font-black leading-none text-white/[0.025] sm:right-12 sm:text-[130px]">
+                01
+              </div>
+
+              <div className="relative grid gap-10 p-7 sm:p-10 lg:grid-cols-[1fr_auto] lg:items-center">
+
                 <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-full border border-blue-400/15 bg-blue-500/[0.07] px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-blue-300/70">
-                      Next Assignment
+
+                  <div className="mb-6 flex flex-wrap items-center gap-3">
+
+                    <span className="flex items-center gap-2 rounded-full border border-blue-400/15 bg-blue-500/[0.07] px-3 py-2 text-[8px] font-bold uppercase tracking-[0.3em] text-blue-300">
+                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-400" />
+                      Upcoming
                     </span>
 
-                    <span className="h-1 w-1 rounded-full bg-white/15" />
+                    {isMD && (
+                      <span className="rounded-full border border-white/[0.07] bg-white/[0.025] px-3 py-2 text-[8px] font-bold uppercase tracking-[0.25em] text-white/25">
+                        Music Director
+                      </span>
+                    )}
 
-                    <span className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/20">
-                      Ready
-                    </span>
                   </div>
 
-                  <h3 className="mt-5 text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl">
+                  <h3 className="max-w-3xl text-3xl font-bold tracking-[-0.03em] text-white sm:text-5xl">
                     {nextMinistration.title || 'Upcoming Ministration'}
                   </h3>
 
-                  <div className="mt-5 flex flex-wrap gap-x-6 gap-y-3">
-                    <div className="flex items-center gap-2 text-xs text-white/30">
-                      <CalendarDays className="h-4 w-4 text-blue-300/50" />
-                      {nextMinistration.date || 'Date to be announced'}
-                    </div>
+                  <div className="mt-7 flex flex-wrap gap-x-7 gap-y-4 text-xs text-white/35">
+
+                    {nextMinistration.date && (
+                      <span className="flex items-center gap-2">
+                        <CalendarDays className="h-4 w-4 text-blue-300/60" />
+                        {nextMinistration.date}
+                      </span>
+                    )}
 
                     {nextMinistration.time && (
-                      <div className="flex items-center gap-2 text-xs text-white/30">
-                        <Clock3 className="h-4 w-4 text-blue-300/50" />
+                      <span className="flex items-center gap-2">
+                        <Clock3 className="h-4 w-4 text-blue-300/60" />
                         {nextMinistration.time}
-                      </div>
+                      </span>
                     )}
 
                     {nextMinistration.venue && (
-                      <div className="flex items-center gap-2 text-xs text-white/30">
-                        <MapPin className="h-4 w-4 text-blue-300/50" />
+                      <span className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-blue-300/60" />
                         {nextMinistration.venue}
-                      </div>
+                      </span>
                     )}
+
                   </div>
+
                 </div>
 
-                <div className="flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-white/[0.025]">
-                  <ArrowUpRight className="h-5 w-5 text-white/30 transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-blue-300" />
+                <div className="flex h-16 w-16 items-center justify-center self-end rounded-full border border-white/[0.08] bg-white/[0.025] transition-all duration-500 group-hover:border-blue-400/30 group-hover:bg-blue-500/10 lg:self-center">
+
+                  <ChevronRight className="h-5 w-5 text-white/30 transition-all duration-500 group-hover:translate-x-1 group-hover:text-blue-300" />
+
                 </div>
+
               </div>
             </button>
           ) : (
-            <div className="rounded-[30px] border border-white/[0.07] bg-white/[0.018] p-10 text-center">
-              <CalendarDays className="mx-auto h-7 w-7 text-white/15" />
+            <div className="mt-9 rounded-[36px] border border-dashed border-white/[0.08] bg-[#06080c] p-16 text-center">
 
-              <h3 className="mt-4 text-lg font-semibold text-white/55">
-                No upcoming ministrations
-              </h3>
+              <Radio className="mx-auto h-10 w-10 text-white/10" />
 
-              <p className="mt-2 text-sm text-white/25">
-                New assignments will appear here when they are added.
+              <p className="mt-5 text-sm text-white/25">
+                No upcoming ministration yet.
               </p>
+
             </div>
           )}
+
         </section>
 
-        {/* ========================================================
-            LOWER PREVIEWS
-            IMPORTANT:
-            These remain previews, not full pages.
-        ======================================================== */}
+        {/* ============================================================
+            REPERTOIRE + TEAM
+        ============================================================ */}
 
-        <section className="py-14">
-          <div className="mb-8">
-            <SectionLabel>Ministry Activity</SectionLabel>
+        <section className="mt-24 grid gap-6 lg:grid-cols-[1.35fr_0.65fr]">
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          {/* RECENT SONGS */}
+          <div className="overflow-hidden rounded-[36px] border border-white/[0.08] bg-[#06080c]">
+
+            <div className="flex items-center justify-between border-b border-white/[0.06] px-6 py-6 sm:px-8">
+
               <div>
-                <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-                  A glimpse of what is happening.
+
+                <div className="mb-2 flex items-center gap-2 text-[8px] font-bold uppercase tracking-[0.35em] text-blue-400/50">
+                  <Music2 className="h-3 w-3" />
+                  Repertoire
+                </div>
+
+                <h2 className="text-xl font-bold text-white">
+                  Recent additions
                 </h2>
 
-                <p className="mt-2 max-w-2xl text-sm text-white/25">
-                  A quick preview of the latest songs and the people behind
-                  the ministry sound.
-                </p>
               </div>
+
+              <button
+                onClick={() => setActiveTab('songs')}
+                className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.2em] text-white/25 transition-colors hover:text-blue-300"
+              >
+                View all
+                <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+
             </div>
-          </div>
 
-          <div className="grid gap-5 lg:grid-cols-2">
-            {/* ====================================================
-                RECENT ADDITIONS
-                COMPACT PREVIEW
-            ==================================================== */}
+            <div className="divide-y divide-white/[0.05]">
 
-            <div className="relative overflow-hidden rounded-[30px] border border-white/[0.08] bg-white/[0.018] p-6 sm:p-7">
-              <div className="absolute right-[-100px] top-[-100px] h-60 w-60 rounded-full bg-blue-500/[0.04] blur-3xl" />
+              {recentSongs.length > 0 ? (
+                recentSongs.map((song, index) => (
+                  <button
+                    key={song.id}
+                    onClick={() => onSelectSong(song)}
+                    className="group flex w-full items-center gap-5 px-6 py-5 text-left transition-all duration-300 hover:bg-blue-500/[0.025] sm:px-8"
+                  >
 
-              <div className="relative z-10">
-                <div className="mb-6 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-blue-400/10 bg-blue-500/[0.06]">
-                      <Sparkles className="h-4 w-4 text-blue-300/65" />
+                    <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025]">
+
+                      <span className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent" />
+
+                      <span className="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-blue-400/50 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+
+                      <Music2 className="relative h-4 w-4 text-white/30 transition-colors group-hover:text-blue-300" />
+
                     </div>
 
-                    <div>
-                      <p className="text-[9px] font-semibold uppercase tracking-[0.25em] text-white/20">
-                        Latest
+                    <div className="min-w-0 flex-1">
+
+                      <p className="truncate text-sm font-semibold text-white/70 transition-colors group-hover:text-white">
+                        {song.title}
                       </p>
 
-                      <h3 className="mt-1 text-lg font-bold text-white">
-                        Recent Additions
-                      </h3>
-                    </div>
-                  </div>
-
-                  <ArrowButton onClick={() => setActiveTab('songs')}>
-                    Song Bank
-                  </ArrowButton>
-                </div>
-
-                {recentSongs.length > 0 ? (
-                  <div className="divide-y divide-white/[0.06]">
-                    {recentSongs.map((song, index) => (
-                      <button
-                        type="button"
-                        key={song.id}
-                        onClick={() => onSelectSong(song)}
-                        className="group flex w-full items-center gap-4 py-4 text-left first:pt-0 last:pb-0"
-                      >
-                        <span className="w-7 shrink-0 text-[10px] font-semibold tabular-nums text-white/15">
-                          {getSongNumber(index)}
+                      <div className="mt-1 flex items-center gap-2">
+                        <span className="text-[8px] font-bold uppercase tracking-[0.25em] text-white/20">
+                          Track {String(index + 1).padStart(2, '0')}
                         </span>
 
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.07] bg-black/30 text-blue-300/55 transition-colors group-hover:border-blue-400/20 group-hover:bg-blue-500/[0.06] group-hover:text-blue-300">
-                          <Music2 className="h-4 w-4" />
-                        </div>
+                        <span className="h-1 w-1 rounded-full bg-blue-400/30" />
 
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold text-white/70 transition-colors group-hover:text-white">
-                            {song.title || 'Untitled Song'}
-                          </p>
+                        <span className="text-[8px] font-bold uppercase tracking-[0.2em] text-blue-300/30">
+                          Jewels
+                        </span>
+                      </div>
 
-                          <p className="mt-1 text-[9px] uppercase tracking-[0.16em] text-white/20">
-                            Song Bank
-                          </p>
-                        </div>
-
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/[0.06] bg-white/[0.015] transition-all group-hover:border-blue-300/20 group-hover:bg-blue-500/[0.06]">
-                          <ChevronRight className="h-3.5 w-3.5 text-white/20 transition-transform group-hover:translate-x-0.5 group-hover:text-blue-300" />
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="rounded-2xl border border-dashed border-white/[0.07] p-8 text-center">
-                    <Music2 className="mx-auto h-5 w-5 text-white/15" />
-
-                    <p className="mt-3 text-sm text-white/25">
-                      No recent additions yet.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* ====================================================
-                MUSIC TEAM
-                COMPACT PREVIEW
-            ==================================================== */}
-
-            <div className="relative overflow-hidden rounded-[30px] border border-white/[0.08] bg-white/[0.018] p-6 sm:p-7">
-              <div className="absolute bottom-[-100px] right-[-100px] h-60 w-60 rounded-full bg-violet-500/[0.035] blur-3xl" />
-
-              <div className="relative z-10">
-                <div className="mb-6 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-violet-400/10 bg-violet-500/[0.05]">
-                      <Users className="h-4 w-4 text-violet-300/65" />
                     </div>
 
-                    <div>
-                      <p className="text-[9px] font-semibold uppercase tracking-[0.25em] text-white/20">
-                        The People
-                      </p>
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full border border-transparent text-white/10 transition-all group-hover:border-white/[0.07] group-hover:bg-white/[0.025] group-hover:text-blue-300">
 
-                      <h3 className="mt-1 text-lg font-bold text-white">
-                        Music Team
-                      </h3>
+                      <ChevronRight className="h-4 w-4" />
+
                     </div>
-                  </div>
 
-                  <ArrowButton onClick={() => setActiveTab('team')}>
-                    View team
-                  </ArrowButton>
-                </div>
-
-                {featuredTeam.length > 0 ? (
-                  <div className="space-y-2">
-                    {featuredTeam.map((member) => (
-                      <button
-                        type="button"
-                        key={member.id}
-                        onClick={() => setActiveTab('team')}
-                        className="group flex w-full items-center gap-4 rounded-2xl border border-transparent p-2 text-left transition-all duration-200 hover:border-white/[0.06] hover:bg-white/[0.025]"
-                      >
-                        <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/[0.07] bg-gradient-to-br from-blue-500/[0.12] to-violet-500/[0.05] text-[10px] font-bold text-white/55">
-                          {getInitials(member.name)}
-
-                          <span className="absolute bottom-[-2px] right-[-2px] h-2.5 w-2.5 rounded-full border-2 border-[#080808] bg-emerald-400" />
-                        </div>
-
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold text-white/70 transition-colors group-hover:text-white">
-                            {member.name}
-                          </p>
-
-                          <p className="mt-1 truncate text-[9px] uppercase tracking-[0.15em] text-white/20">
-                            {member.role || 'Music Team'}
-                          </p>
-                        </div>
-
-                        <ChevronRight className="h-4 w-4 shrink-0 text-white/15 transition-all group-hover:translate-x-0.5 group-hover:text-white/40" />
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="rounded-2xl border border-dashed border-white/[0.07] p-8 text-center">
-                    <Users className="mx-auto h-5 w-5 text-white/15" />
-
-                    <p className="mt-3 text-sm text-white/25">
-                      No team members yet.
-                    </p>
-                  </div>
-                )}
-
-                {totalTeam > featuredTeam.length && (
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('team')}
-                    className="mt-4 flex w-full items-center justify-between rounded-2xl border border-white/[0.06] bg-white/[0.015] px-4 py-3 transition-colors hover:border-violet-300/15 hover:bg-violet-500/[0.025]"
-                  >
-                    <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-white/25">
-                      +{totalTeam - featuredTeam.length} more member
-                      {totalTeam - featuredTeam.length === 1 ? '' : 's'}
-                    </span>
-
-                    <span className="flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-violet-300/55">
-                      Open team
-                      <ArrowRight className="h-3 w-3" />
-                    </span>
                   </button>
-                )}
-              </div>
+                ))
+              ) : (
+                <div className="px-8 py-16 text-center">
+                  <Music2 className="mx-auto h-8 w-8 text-white/10" />
+                  <p className="mt-4 text-sm text-white/25">
+                    No songs available yet.
+                  </p>
+                </div>
+              )}
+
             </div>
           </div>
-        </section>
 
-        {/* ========================================================
-            BRAND FOOTER
-        ======================================================== */}
+          {/* TEAM */}
+          <div className="overflow-hidden rounded-[36px] border border-white/[0.08] bg-[#06080c]">
 
-        <section className="relative py-24 sm:py-28">
-          <div className="mx-auto max-w-3xl text-center">
-            <div className="mx-auto mb-8 flex items-center justify-center gap-4">
-              <span className="h-px w-14 bg-gradient-to-r from-transparent to-blue-400/40" />
+            <div className="flex items-center justify-between border-b border-white/[0.06] px-6 py-6">
 
-              <span className="h-1.5 w-1.5 rounded-full bg-blue-400 shadow-[0_0_14px_4px_rgba(59,130,246,0.2)]" />
+              <div>
 
-              <span className="h-px w-14 bg-gradient-to-l from-transparent to-blue-400/40" />
+                <div className="mb-2 flex items-center gap-2 text-[8px] font-bold uppercase tracking-[0.35em] text-purple-400/50">
+                  <Mic2 className="h-3 w-3" />
+                  The voices
+                </div>
+
+                <h2 className="text-xl font-bold text-white">
+                  Music team
+                </h2>
+
+              </div>
+
+              <button
+                onClick={() => setActiveTab('team')}
+                className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.2em] text-white/25 transition-colors hover:text-purple-300"
+              >
+                Team
+                <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+
             </div>
 
-            <p className="text-[10px] font-semibold uppercase tracking-[0.4em] text-blue-300/50">
+            <div className="p-6">
+
+              {featuredTeam.length > 0 ? (
+                <div className="space-y-2">
+
+                  {featuredTeam.map((member, index) => (
+                    <div
+                      key={member.id || index}
+                      className="group flex items-center gap-3 rounded-2xl border border-transparent p-3 transition-all duration-300 hover:border-white/[0.06] hover:bg-white/[0.02]"
+                    >
+
+                      <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.07] bg-gradient-to-br from-white/[0.07] to-transparent">
+
+                        <Mic2 className="h-4 w-4 text-white/25 transition-colors group-hover:text-purple-300" />
+
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+
+                        <p className="truncate text-xs font-semibold text-white/65 group-hover:text-white/80">
+                          {member.name}
+                        </p>
+
+                        <p className="mt-1 truncate text-[8px] font-bold uppercase tracking-[0.2em] text-white/20">
+                          {member.role || 'Music Team'}
+                        </p>
+
+                      </div>
+
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/60 shadow-[0_0_9px_rgba(52,211,153,0.4)]" />
+
+                    </div>
+                  ))}
+
+                </div>
+              ) : (
+                <div className="flex min-h-[280px] flex-col items-center justify-center text-center">
+
+                  <Users className="h-9 w-9 text-white/10" />
+
+                  <p className="mt-4 text-sm text-white/25">
+                    No team members available.
+                  </p>
+
+                </div>
+              )}
+
+            </div>
+          </div>
+
+        </section>
+
+        {/* ============================================================
+            FINAL BRAND STATEMENT
+        ============================================================ */}
+
+        <section className="relative mt-24 overflow-hidden rounded-[38px] border border-white/[0.07] bg-[#030406] px-6 py-20 text-center sm:px-10">
+
+          <div
+            className="absolute left-1/2 top-1/2 h-[450px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[120px]"
+            style={{
+              background:
+                'radial-gradient(circle, rgba(37,99,235,0.1), transparent 68%)',
+            }}
+          />
+
+          <div className="relative">
+
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-blue-400/15 bg-blue-500/[0.07] text-blue-300 shadow-[0_0_40px_rgba(37,99,235,0.08)]">
+              <Zap className="h-5 w-5" />
+            </div>
+
+            <p className="mt-7 text-[8px] font-bold uppercase tracking-[0.5em] text-blue-300/45">
               Jewels of His Crown
             </p>
 
-            <h2 className="mt-6 text-4xl font-black tracking-[-0.05em] text-white sm:text-6xl">
-              We Sing to Convert.
+            <h2 className="mt-5 text-3xl font-black tracking-[-0.04em] text-white sm:text-5xl">
+              One ministry.
+              <span className="text-white/25"> One sound.</span>
             </h2>
 
-            <div className="mt-7 flex items-center justify-center gap-2 text-white/15">
-              <Volume2 className="h-4 w-4" />
+            <p className="mx-auto mt-5 max-w-xl text-xs leading-7 text-white/25 sm:text-sm">
+              Prepared in unity. Delivered with purpose.
+              Built to help the ministry carry its sound wherever it goes.
+            </p>
 
-              <span className="text-[9px] font-semibold uppercase tracking-[0.25em]">
-                Music Ministry
-              </span>
+            <div className="mt-9 flex items-center justify-center gap-4 text-[8px] font-bold uppercase tracking-[0.45em] text-white/15">
+              <span className="h-px w-12 bg-white/[0.08]" />
+              We Sing to Convert
+              <span className="h-px w-12 bg-white/[0.08]" />
             </div>
+
           </div>
         </section>
+
       </main>
+
+      {/* ============================================================
+          ANIMATION ENGINE
+      ============================================================ */}
+
+      <style>{`
+        @keyframes jewelReveal {
+          0% {
+            opacity: 0;
+            transform: translateY(55px) scale(0.9);
+            filter: blur(16px);
+            letter-spacing: -0.14em;
+          }
+
+          45% {
+            opacity: 1;
+            filter: blur(0);
+          }
+
+          100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            letter-spacing: -0.09em;
+          }
+        }
+
+        @keyframes edgeReveal {
+          from {
+            opacity: 0;
+            transform: translateY(8px);
+          }
+
+          to {
+            opacity: 0.18;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes rise {
+          from {
+            opacity: 0;
+            transform: translateY(22px);
+          }
+
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes heroBreath {
+          0%,
+          100% {
+            transform: translateX(-50%) scale(1);
+            opacity: 0.8;
+          }
+
+          50% {
+            transform: translateX(-50%) scale(1.1);
+            opacity: 1;
+          }
+        }
+
+        @keyframes ringFloat {
+          0%,
+          100% {
+            transform: translate(-50%, -50%) rotate(-7deg) scale(1);
+          }
+
+          50% {
+            transform: translate(-50%, -50%) rotate(1deg) scale(1.05);
+          }
+        }
+
+        @keyframes ringFloatReverse {
+          0%,
+          100% {
+            transform: translate(-50%, -50%) rotate(12deg) scale(1);
+          }
+
+          50% {
+            transform: translate(-50%, -50%) rotate(4deg) scale(0.96);
+          }
+        }
+
+        @keyframes laserMove {
+          0%,
+          100% {
+            transform: translateX(-5%);
+            opacity: 0.2;
+          }
+
+          50% {
+            transform: translateX(5%);
+            opacity: 0.7;
+          }
+        }
+
+        @keyframes shine {
+          0% {
+            left: -30%;
+            opacity: 0;
+          }
+
+          15% {
+            opacity: 1;
+          }
+
+          42% {
+            left: 120%;
+            opacity: 0;
+          }
+
+          100% {
+            left: 120%;
+            opacity: 0;
+          }
+        }
+
+        @keyframes particle {
+          0%,
+          100% {
+            transform: translate3d(0, 0, 0);
+          }
+
+          25% {
+            transform: translate3d(12px, -20px, 0);
+          }
+
+          50% {
+            transform: translate3d(-8px, -40px, 0);
+          }
+
+          75% {
+            transform: translate3d(16px, -15px, 0);
+          }
+        }
+
+        @keyframes wave {
+          0%,
+          100% {
+            transform: scaleY(0.45);
+            opacity: 0.25;
+          }
+
+          50% {
+            transform: scaleY(1);
+            opacity: 0.8;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          *,
+          *::before,
+          *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+          }
+        }
+      `}</style>
     </div>
   );
 };
