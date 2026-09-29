@@ -67,37 +67,47 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         className="
           group
           relative
+          min-h-[520px]
           overflow-hidden
-          rounded-[28px]
+          rounded-[32px]
           border
-          border-white/10
-          bg-[#111113]/90
+          border-white/[0.08]
+          bg-[#09090b]
           shadow-2xl
-          shadow-black/20
-          backdrop-blur-2xl
+          shadow-black/30
         "
       >
+
         {/* =====================================================
-            AMBIENT BACKGROUND
+            CINEMATIC BACKGROUND LIGHTING
         ===================================================== */}
 
         <div
           className="
             pointer-events-none
             absolute
+            inset-0
+            bg-[radial-gradient(circle_at_50%_42%,rgba(0,122,255,0.13),transparent_38%)]
+            transition-all
+            duration-1000
+            group-hover:bg-[radial-gradient(circle_at_50%_42%,rgba(0,122,255,0.19),transparent_42%)]
+          "
+        />
+
+        <div
+          className="
+            pointer-events-none
+            absolute
             left-1/2
-            top-1/2
-            h-[420px]
-            w-[420px]
+            top-[34%]
+            h-[360px]
+            w-[360px]
             -translate-x-1/2
             -translate-y-1/2
             rounded-full
             bg-[#007aff]/[0.055]
-            blur-3xl
-            transition-all
-            duration-1000
-            group-hover:bg-[#007aff]/[0.09]
-            group-hover:scale-110
+            blur-[90px]
+            animate-pulse
           "
         />
 
@@ -105,16 +115,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           className="
             pointer-events-none
             absolute
-            -right-32
-            -top-32
-            h-80
-            w-80
+            -left-40
+            top-[-100px]
+            h-[420px]
+            w-[420px]
             rounded-full
-            bg-[#007aff]/10
-            blur-3xl
-            transition-all
-            duration-1000
-            group-hover:bg-[#007aff]/20
+            bg-[#007aff]/[0.045]
+            blur-[100px]
           "
         />
 
@@ -122,13 +129,95 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           className="
             pointer-events-none
             absolute
-            -bottom-32
-            -left-32
-            h-80
-            w-80
+            -bottom-40
+            -right-40
+            h-[450px]
+            w-[450px]
             rounded-full
             bg-blue-500/[0.035]
-            blur-3xl
+            blur-[110px]
+          "
+        />
+
+        {/* =====================================================
+            VERY SUBTLE GRID / STAGE EFFECT
+        ===================================================== */}
+
+        <div
+          className="
+            pointer-events-none
+            absolute
+            inset-0
+            opacity-[0.025]
+            [background-image:linear-gradient(rgba(255,255,255,0.5)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.5)_1px,transparent_1px)]
+            [background-size:48px_48px]
+          "
+        />
+
+        {/* =====================================================
+            FLOATING LIGHT PARTICLES
+        ===================================================== */}
+
+        <span
+          className="
+            pointer-events-none
+            absolute
+            left-[15%]
+            top-[24%]
+            h-1
+            w-1
+            rounded-full
+            bg-[#4da3ff]
+            opacity-40
+            shadow-[0_0_12px_rgba(77,163,255,0.8)]
+            animate-pulse
+          "
+        />
+
+        <span
+          className="
+            pointer-events-none
+            absolute
+            right-[18%]
+            top-[29%]
+            h-1.5
+            w-1.5
+            rounded-full
+            bg-white
+            opacity-20
+            shadow-[0_0_15px_rgba(255,255,255,0.8)]
+            animate-pulse
+          "
+        />
+
+        <span
+          className="
+            pointer-events-none
+            absolute
+            left-[24%]
+            bottom-[27%]
+            h-1
+            w-1
+            rounded-full
+            bg-[#007aff]
+            opacity-30
+            shadow-[0_0_10px_rgba(0,122,255,0.8)]
+            animate-pulse
+          "
+        />
+
+        <span
+          className="
+            pointer-events-none
+            absolute
+            right-[27%]
+            bottom-[23%]
+            h-1
+            w-1
+            rounded-full
+            bg-[#4da3ff]
+            opacity-25
+            shadow-[0_0_10px_rgba(77,163,255,0.8)]
             animate-pulse
           "
         />
@@ -144,86 +233,113 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             left-1/2
             top-0
             h-px
-            w-2/3
+            w-1/2
             -translate-x-1/2
             bg-gradient-to-r
             from-transparent
-            via-[#007aff]/60
+            via-[#007aff]/70
             to-transparent
-            opacity-60
             transition-all
-            duration-700
-            group-hover:w-4/5
-            group-hover:opacity-100
+            duration-1000
+            group-hover:w-3/4
           "
         />
+
+        {/* =====================================================
+            MAIN HERO CONTENT
+        ===================================================== */}
 
         <div
           className="
             relative
             flex
+            min-h-[520px]
             flex-col
             items-center
+            justify-center
             px-5
-            py-10
+            py-14
             text-center
             sm:px-8
-            sm:py-12
-            lg:py-14
+            lg:py-16
           "
         >
 
           {/* ===================================================
-              MINISTRY NAME
+              MINISTRY IDENTITY
           =================================================== */}
 
           <div
             className="
-              mb-7
+              mb-8
               flex
               items-center
-              gap-2.5
-              rounded-full
-              border
-              border-[#007aff]/20
-              bg-[#007aff]/10
-              px-4
-              py-2
-              shadow-lg
-              shadow-blue-500/5
+              gap-3
+              opacity-90
               transition-all
-              duration-500
-              group-hover:border-[#007aff]/40
-              group-hover:bg-[#007aff]/15
+              duration-700
+              group-hover:opacity-100
             "
           >
-            <Sparkles
+            <span
               className="
-                h-3.5
-                w-3.5
-                text-[#4da3ff]
-                animate-pulse
+                h-px
+                w-8
+                bg-gradient-to-r
+                from-transparent
+                to-[#007aff]/50
+                sm:w-12
               "
             />
 
-            <span
+            <div
               className="
-                text-[9px]
-                font-extrabold
-                uppercase
-                tracking-[0.22em]
-                text-[#4da3ff]
+                flex
+                items-center
+                gap-2
               "
             >
-              Jewels of His Crown
-            </span>
+              <Sparkles
+                className="
+                  h-3.5
+                  w-3.5
+                  text-[#4da3ff]
+                  animate-pulse
+                "
+              />
 
-            <Sparkles
+              <span
+                className="
+                  text-[9px]
+                  font-extrabold
+                  uppercase
+                  tracking-[0.28em]
+                  text-[#7abaff]
+                  sm:text-[10px]
+                  sm:tracking-[0.32em]
+                "
+              >
+                Jewels of His Crown
+              </span>
+
+              <Sparkles
+                className="
+                  h-3.5
+                  w-3.5
+                  text-[#4da3ff]
+                  animate-pulse
+                "
+              />
+            </div>
+
+            <span
               className="
-                h-3.5
-                w-3.5
-                text-[#4da3ff]
-                animate-pulse
+                h-px
+                w-8
+                bg-gradient-to-l
+                from-transparent
+                to-[#007aff]/50
+                sm:w-12
               "
             />
           </div>
@@ -234,148 +350,147 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
           <div className="relative">
 
-            <div
-              className="
-                pointer-events-none
-                absolute
-                inset-0
-                rounded-full
-                bg-[#007aff]/15
-                blur-3xl
-                opacity-50
-                transition-all
-                duration-700
-                group-hover:opacity-80
-              "
-            />
-
+            {/* large atmospheric glow */}
             <div
               className="
                 pointer-events-none
                 absolute
                 left-1/2
                 top-1/2
-                h-20
-                w-64
+                h-40
+                w-[420px]
                 -translate-x-1/2
                 -translate-y-1/2
                 rounded-full
+                bg-[#007aff]/[0.08]
+                blur-[70px]
+                transition-all
+                duration-1000
+                group-hover:bg-[#007aff]/[0.13]
+                group-hover:scale-110
+              "
+            />
+
+            {/* concentrated wordmark glow */}
+            <div
+              className="
+                pointer-events-none
+                absolute
+                inset-0
+                rounded-full
                 bg-[#007aff]/10
-                blur-2xl
-                animate-pulse
+                blur-3xl
+                opacity-50
+                transition-opacity
+                duration-700
+                group-hover:opacity-90
               "
             />
 
             <h1
               className="
                 relative
-                text-[64px]
+                text-[72px]
                 font-black
                 uppercase
-                leading-none
-                tracking-[-0.065em]
+                leading-[0.85]
+                tracking-[-0.075em]
                 text-white
-                drop-shadow-[0_0_30px_rgba(0,122,255,0.18)]
+                drop-shadow-[0_0_35px_rgba(0,122,255,0.22)]
                 transition-all
                 duration-700
-                group-hover:scale-[1.015]
-                group-hover:tracking-[-0.075em]
-                sm:text-[86px]
-                lg:text-[104px]
+                group-hover:scale-[1.02]
+                group-hover:drop-shadow-[0_0_45px_rgba(0,122,255,0.32)]
+                sm:text-[100px]
+                sm:tracking-[-0.085em]
+                lg:text-[128px]
               "
             >
               Jewels
             </h1>
+
+            {/* subtle blue underline */}
+            <div
+              className="
+                absolute
+                -bottom-5
+                left-1/2
+                h-px
+                w-24
+                -translate-x-1/2
+                bg-gradient-to-r
+                from-transparent
+                via-[#007aff]/70
+                to-transparent
+                transition-all
+                duration-700
+                group-hover:w-36
+              "
+            />
           </div>
 
           {/* ===================================================
-              ORNAMENTAL TAGLINE
+              SIGNATURE SLOGAN
           =================================================== */}
 
           <div
             className="
-              relative
-              mt-7
+              mt-12
               flex
-              w-full
-              max-w-xl
               items-center
               justify-center
               gap-3
-              sm:gap-4
+              sm:gap-5
             "
           >
 
-            {/* Left ornament */}
-            <div
-              className="
-                flex
-                flex-1
-                items-center
-                justify-end
-                gap-1.5
-              "
-            >
+            {/* left ornament */}
+            <div className="flex items-center gap-2">
               <span
                 className="
                   h-px
-                  w-6
+                  w-8
                   bg-gradient-to-r
                   from-transparent
-                  to-[#007aff]/30
-                  sm:w-10
+                  to-[#007aff]/40
+                  transition-all
+                  duration-700
+                  group-hover:w-14
+                  sm:w-12
+                  sm:group-hover:w-20
                 "
               />
 
               <span
                 className="
-                  h-1
-                  w-1
+                  h-1.5
+                  w-1.5
                   rotate-45
-                  bg-[#4da3ff]
-                  shadow-[0_0_8px_rgba(77,163,255,0.8)]
+                  border
+                  border-[#4da3ff]/70
+                  shadow-[0_0_10px_rgba(77,163,255,0.7)]
                 "
               />
             </div>
 
-            {/* Slogan */}
-            <div
-              className="
-                relative
-                shrink-0
-                overflow-hidden
-                rounded-full
-                border
-                border-[#007aff]/20
-                bg-[#007aff]/[0.06]
-                px-5
-                py-2.5
-                shadow-[0_0_25px_rgba(0,122,255,0.08)]
-                transition-all
-                duration-500
-                group-hover:border-[#007aff]/40
-                group-hover:bg-[#007aff]/[0.10]
-                group-hover:shadow-[0_0_35px_rgba(0,122,255,0.14)]
-                sm:px-7
-              "
-            >
+            {/* central slogan */}
+            <div className="relative">
 
-              {/* Moving highlight */}
-              <span
+              {/* glow behind slogan */}
+              <div
                 className="
                   pointer-events-none
                   absolute
-                  inset-y-0
-                  -left-20
-                  w-16
-                  rotate-12
-                  bg-gradient-to-r
-                  from-transparent
-                  via-white/10
-                  to-transparent
-                  transition-transform
-                  duration-1000
-                  group-hover:translate-x-[420px]
+                  inset-x-0
+                  top-1/2
+                  h-8
+                  -translate-y-1/2
+                  rounded-full
+                  bg-[#007aff]/10
+                  blur-2xl
+                  transition-all
+                  duration-700
+                  group-hover:bg-[#007aff]/20
                 "
               />
 
@@ -392,7 +507,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     h-3
                     w-3
                     text-[#4da3ff]
-                    opacity-80
+                    opacity-70
+                    transition-all
+                    duration-500
+                    group-hover:opacity-100
                   "
                 />
 
@@ -401,13 +519,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     text-[10px]
                     font-black
                     uppercase
-                    tracking-[0.3em]
-                    text-[#7abaff]
+                    tracking-[0.32em]
+                    text-[#6eaeff]
                     transition-all
                     duration-500
                     group-hover:text-white
                     sm:text-xs
-                    sm:tracking-[0.38em]
+                    sm:tracking-[0.42em]
                   "
                 >
                   We Sing to Convert
@@ -418,40 +536,40 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     h-3
                     w-3
                     text-[#4da3ff]
-                    opacity-80
+                    opacity-70
+                    transition-all
+                    duration-500
+                    group-hover:opacity-100
                   "
                 />
               </div>
             </div>
 
-            {/* Right ornament */}
-            <div
-              className="
-                flex
-                flex-1
-                items-center
-                justify-start
-                gap-1.5
-              "
-            >
+            {/* right ornament */}
+            <div className="flex items-center gap-2">
               <span
                 className="
-                  h-1
-                  w-1
+                  h-1.5
+                  w-1.5
                   rotate-45
-                  bg-[#4da3ff]
-                  shadow-[0_0_8px_rgba(77,163,255,0.8)]
+                  border
+                  border-[#4da3ff]/70
+                  shadow-[0_0_10px_rgba(77,163,255,0.7)]
                 "
               />
 
               <span
                 className="
                   h-px
-                  w-6
+                  w-8
                   bg-gradient-to-l
                   from-transparent
-                  to-[#007aff]/30
-                  sm:w-10
+                  to-[#007aff]/40
+                  transition-all
+                  duration-700
+                  group-hover:w-14
+                  sm:w-12
+                  sm:group-hover:w-20
                 "
               />
             </div>
@@ -463,14 +581,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
           <p
             className="
-              mt-6
-              max-w-xl
+              mt-7
+              max-w-lg
               text-xs
               leading-6
               text-white/30
-              transition-colors
+              transition-all
               duration-500
-              group-hover:text-white/40
+              group-hover:text-white/45
               sm:text-sm
             "
           >
@@ -484,7 +602,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
           <div
             className="
-              mt-7
+              mt-8
               flex
               flex-wrap
               justify-center
