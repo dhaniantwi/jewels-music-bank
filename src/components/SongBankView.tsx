@@ -1,4 +1,4 @@
- import React, {
+import React, {
   useMemo,
   useState,
 } from 'react';
@@ -43,9 +43,16 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
   onDeleteSong,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [selectedKey, setSelectedKey] = useState('All');
-  const [playingSongId, setPlayingSongId] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] =
+    useState('All');
+  const [selectedKey, setSelectedKey] =
+    useState('All');
+
+  /*
+   * Only one expanded player exists at a time.
+   */
+  const [activePlayerSongId, setActivePlayerSongId] =
+    useState<string | null>(null);
 
   const isMD = activeRole === 'admin_md';
 
@@ -62,7 +69,8 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
   ];
 
   const filteredSongs = useMemo(() => {
-    const search = searchTerm.toLowerCase().trim();
+    const search =
+      searchTerm.toLowerCase().trim();
 
     return songs.filter(song => {
       const title = song.title || '';
@@ -74,11 +82,19 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
 
       const matchesSearch =
         !search ||
-        title.toLowerCase().includes(search) ||
-        artist.toLowerCase().includes(search) ||
-        lyrics.toLowerCase().includes(search) ||
+        title
+          .toLowerCase()
+          .includes(search) ||
+        artist
+          .toLowerCase()
+          .includes(search) ||
+        lyrics
+          .toLowerCase()
+          .includes(search) ||
         tags.some(tag =>
-          tag.toLowerCase().includes(search)
+          tag
+            .toLowerCase()
+            .includes(search)
         );
 
       const matchesCategory =
@@ -87,7 +103,8 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
 
       const matchesKey =
         selectedKey === 'All' ||
-        key.toLowerCase() === selectedKey.toLowerCase();
+        key.toLowerCase() ===
+          selectedKey.toLowerCase();
 
       return (
         matchesSearch &&
@@ -102,6 +119,19 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
     selectedKey,
   ]);
 
+  /*
+   * Songs available to the audio playlist.
+   * Songs without an uploaded audio file are
+   * excluded from Previous / Next / Shuffle.
+   */
+  const playableSongs = useMemo(
+    () =>
+      filteredSongs.filter(song =>
+        Boolean(song.audioUrl)
+      ),
+    [filteredSongs]
+  );
+
   const hasActiveFilters =
     searchTerm.trim() !== '' ||
     selectedCategory !== 'All' ||
@@ -111,6 +141,13 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
     setSearchTerm('');
     setSelectedCategory('All');
     setSelectedKey('All');
+
+    /*
+     * If filters are reset while the player
+     * is open, close it so the playlist state
+     * is always rebuilt cleanly.
+     */
+    setActivePlayerSongId(null);
   };
 
   const handleQuickPlay = (
@@ -124,47 +161,65 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
     }
 
     /*
-     * Pressing the same song's button closes
-     * the expanded player.
+     * Pressing the same song closes the player.
      */
-    if (playingSongId === song.id) {
-      setPlayingSongId(null);
+    if (
+      activePlayerSongId === song.id
+    ) {
+      setActivePlayerSongId(null);
       return;
     }
 
     /*
-     * Opening another song automatically
-     * replaces the previous player.
+     * Pressing another song replaces the
+     * current player with that song.
      */
-    setPlayingSongId(song.id);
+    setActivePlayerSongId(song.id);
   };
 
   const handleClosePlayer = () => {
-    setPlayingSongId(null);
+    setActivePlayerSongId(null);
   };
 
-  const getSongCapabilities = (song: Song) => {
-    const arrangement = song.arrangement;
+  /*
+   * Find the current song's position inside
+   * the playable playlist.
+   */
+  const getPlayableIndex = (
+    songId: string
+  ) => {
+    return playableSongs.findIndex(
+      song => song.id === songId
+    );
+  };
+
+  const getSongCapabilities = (
+    song: Song
+  ) => {
+    const arrangement =
+      song.arrangement;
 
     return {
-      lead: Boolean(arrangement?.lead),
+      lead: Boolean(
+        arrangement?.lead
+      ),
 
       harmony: Boolean(
         arrangement &&
-        (
-          'soprano' in arrangement ||
-          'alto' in arrangement ||
-          'tenor' in arrangement
-        )
+          (
+            'soprano' in arrangement ||
+            'alto' in arrangement ||
+            'tenor' in arrangement
+          )
       ),
 
       band: Boolean(
         arrangement &&
-        (
-          'instrumentation' in arrangement ||
-          'instruments' in arrangement ||
-          'band' in arrangement
-        )
+          (
+            'instrumentation' in arrangement ||
+            'instruments' in arrangement ||
+            'band' in arrangement
+          )
       ),
     };
   };
@@ -227,7 +282,8 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
               backgroundSize: '56px 56px',
               transform:
                 'perspective(700px) rotateX(58deg) scale(1.45) translateY(24%)',
-              transformOrigin: 'center bottom',
+              transformOrigin:
+                'center bottom',
             }}
           />
 
@@ -322,7 +378,9 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
                   <Command className="h-4 w-4 text-white/35" />
 
                   <span className="text-xs font-bold text-white/45">
-                    {isMD ? 'MD Access' : 'Member Access'}
+                    {isMD
+                      ? 'MD Access'
+                      : 'Member Access'}
                   </span>
                 </div>
               </div>
@@ -492,7 +550,9 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
                 placeholder="Search title, artist, lyrics, or tags..."
                 value={searchTerm}
                 onChange={e =>
-                  setSearchTerm(e.target.value)
+                  setSearchTerm(
+                    e.target.value
+                  )
                 }
                 className="
                   w-full
@@ -518,7 +578,9 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
               {searchTerm && (
                 <button
                   type="button"
-                  onClick={() => setSearchTerm('')}
+                  onClick={() =>
+                    setSearchTerm('')
+                  }
                   className="
                     absolute
                     right-3
@@ -557,14 +619,17 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
               <div className="flex min-w-0 gap-1.5 overflow-x-auto pb-1 scrollbar-none">
                 {categories.map(category => {
                   const active =
-                    selectedCategory === category;
+                    selectedCategory ===
+                    category;
 
                   return (
                     <button
                       type="button"
                       key={category}
                       onClick={() =>
-                        setSelectedCategory(category)
+                        setSelectedCategory(
+                          category
+                        )
                       }
                       className={`
                         shrink-0
@@ -625,7 +690,9 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
             <select
               value={selectedKey}
               onChange={e =>
-                setSelectedKey(e.target.value)
+                setSelectedKey(
+                  e.target.value
+                )
               }
               className="
                 w-full
@@ -644,10 +711,15 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
                 lg:w-[180px]
               "
             >
-              <option value="All">All Keys</option>
+              <option value="All">
+                All Keys
+              </option>
 
               {CHROMATIC_KEYS.map(key => (
-                <option key={key} value={key}>
+                <option
+                  key={key}
+                  value={key}
+                >
                   {key}
                 </option>
               ))}
@@ -675,7 +747,8 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
             </h2>
 
             <p className="mt-1 text-xs font-medium text-white/25">
-              Showing {filteredSongs.length} of {songs.length} songs
+              Showing {filteredSongs.length} of{' '}
+              {songs.length} songs
             </p>
           </div>
 
@@ -715,364 +788,390 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
 
         {filteredSongs.length > 0 ? (
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-            {filteredSongs.map((song, index) => {
-              const isPlayingThis =
-                playingSongId === song.id;
+            {filteredSongs.map(
+              (song, index) => {
+                const isPlayerOpen =
+                  activePlayerSongId ===
+                  song.id;
 
-              const songTitle =
-                song.title || 'Untitled Song';
+                const songTitle =
+                  song.title ||
+                  'Untitled Song';
 
-              const songArtist =
-                song.artist || 'Unknown Artist';
+                const songArtist =
+                  song.artist ||
+                  'Unknown Artist';
 
-              const songCategory =
-                song.category || 'Other';
+                const songCategory =
+                  song.category ||
+                  'Other';
 
-              const songKey =
-                song.key || 'C';
+                const songKey =
+                  song.key || 'C';
 
-              const tempoDisplay =
-                typeof song.tempo === 'string'
-                  ? song.tempo.split(' ')[0]
-                  : '—';
+                const tempoDisplay =
+                  typeof song.tempo ===
+                  'string'
+                    ? song.tempo.split(' ')[0]
+                    : '—';
 
-              const capabilities =
-                getSongCapabilities(song);
+                const capabilities =
+                  getSongCapabilities(song);
 
-              return (
-                <article
-                  key={song.id}
-                  onClick={() =>
-                    onSelectSong(song)
-                  }
-                  className="
-                    group
-                    relative
-                    cursor-pointer
-                    overflow-hidden
-                    rounded-[28px]
-                    border
-                    border-white/[0.08]
-                    bg-[#090a0d]
-                    p-5
-                    shadow-2xl
-                    shadow-black/15
-                    transition-all
-                    duration-200
-                    hover:-translate-y-1
-                    hover:border-white/[0.14]
-                    hover:bg-[#0b0c10]
-                    hover:shadow-black/35
-                  "
-                  style={{
-                    animationDelay: `${Math.min(
-                      index * 35,
-                      220
-                    )}ms`,
-                  }}
-                >
-                  <div
+                const playableIndex =
+                  getPlayableIndex(
+                    song.id
+                  );
+
+                return (
+                  <article
+                    key={song.id}
+                    onClick={() =>
+                      onSelectSong(song)
+                    }
                     className="
-                      pointer-events-none
-                      absolute
-                      -right-20
-                      -top-20
-                      h-40
-                      w-40
-                      rounded-full
-                      bg-[#007aff]/[0.055]
-                      opacity-0
-                      blur-3xl
-                      transition-opacity
-                      duration-300
-                      group-hover:opacity-100
+                      group
+                      relative
+                      cursor-pointer
+                      overflow-hidden
+                      rounded-[28px]
+                      border
+                      border-white/[0.08]
+                      bg-[#090a0d]
+                      p-5
+                      shadow-2xl
+                      shadow-black/15
+                      transition-all
+                      duration-200
+                      hover:-translate-y-1
+                      hover:border-white/[0.14]
+                      hover:bg-[#0b0c10]
+                      hover:shadow-black/35
                     "
-                  />
+                    style={{
+                      animationDelay: `${Math.min(
+                        index * 35,
+                        220
+                      )}ms`,
+                    }}
+                  >
+                    <div
+                      className="
+                        pointer-events-none
+                        absolute
+                        -right-20
+                        -top-20
+                        h-40
+                        w-40
+                        rounded-full
+                        bg-[#007aff]/[0.055]
+                        opacity-0
+                        blur-3xl
+                        transition-opacity
+                        duration-300
+                        group-hover:opacity-100
+                      "
+                    />
 
-                  <div className="pointer-events-none absolute left-5 right-5 top-0 h-px bg-gradient-to-r from-transparent via-[#007aff]/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+                    <div className="pointer-events-none absolute left-5 right-5 top-0 h-px bg-gradient-to-r from-transparent via-[#007aff]/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
 
-                  {/* TOP */}
-                  <div className="relative flex items-start justify-between gap-3">
+                    {/* TOP */}
+                    <div className="relative flex items-start justify-between gap-3">
 
-                    <div className="flex min-w-0 items-center gap-3.5">
+                      <div className="flex min-w-0 items-center gap-3.5">
 
-                      <div
-                        className="
-                          relative
-                          flex
-                          h-14
-                          w-14
-                          shrink-0
-                          items-center
-                          justify-center
-                          overflow-hidden
-                          rounded-2xl
-                          border
-                          border-white/[0.08]
-                          bg-[#050609]
-                          shadow-inner
-                          shadow-white/[0.02]
-                          transition-all
-                          group-hover:border-[#007aff]/25
-                        "
-                      >
-                        <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] to-transparent" />
+                        <div
+                          className="
+                            relative
+                            flex
+                            h-14
+                            w-14
+                            shrink-0
+                            items-center
+                            justify-center
+                            overflow-hidden
+                            rounded-2xl
+                            border
+                            border-white/[0.08]
+                            bg-[#050609]
+                            shadow-inner
+                            shadow-white/[0.02]
+                            transition-all
+                            group-hover:border-[#007aff]/25
+                          "
+                        >
+                          <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] to-transparent" />
 
-                        {song.icon ? (
-                          <span className="relative text-xl">
-                            {song.icon}
-                          </span>
-                        ) : (
-                          <Music className="relative h-5 w-5 text-white/25 transition-colors group-hover:text-[#4da3ff]" />
-                        )}
-                      </div>
-
-                      <div className="min-w-0">
-                        <div className="mb-1 flex items-center gap-2">
-                          <span className="truncate text-[9px] font-extrabold uppercase tracking-[0.17em] text-[#4da3ff]">
-                            {songCategory}
-                          </span>
+                          {song.icon ? (
+                            <span className="relative text-xl">
+                              {song.icon}
+                            </span>
+                          ) : (
+                            <Music className="relative h-5 w-5 text-white/25 transition-colors group-hover:text-[#4da3ff]" />
+                          )}
                         </div>
 
-                        <h3 className="truncate text-lg font-black tracking-tight text-white sm:text-xl">
-                          {songTitle}
-                        </h3>
+                        <div className="min-w-0">
+                          <div className="mb-1 flex items-center gap-2">
+                            <span className="truncate text-[9px] font-extrabold uppercase tracking-[0.17em] text-[#4da3ff]">
+                              {songCategory}
+                            </span>
+                          </div>
 
-                        <p className="mt-0.5 truncate text-xs font-semibold text-white/30">
-                          {songArtist}
-                        </p>
+                          <h3 className="truncate text-lg font-black tracking-tight text-white sm:text-xl">
+                            {songTitle}
+                          </h3>
+
+                          <p className="mt-0.5 truncate text-xs font-semibold text-white/30">
+                            {songArtist}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex shrink-0 flex-col items-end gap-1.5">
+                        <span className="rounded-xl border border-[#007aff]/20 bg-[#007aff]/[0.09] px-2.5 py-1 text-[10px] font-extrabold text-[#4da3ff]">
+                          {songKey}
+                        </span>
+
+                        <span className="text-[10px] font-bold text-white/20">
+                          {tempoDisplay !== '—'
+                            ? `${tempoDisplay} BPM`
+                            : 'Tempo —'}
+                        </span>
                       </div>
                     </div>
 
-                    <div className="flex shrink-0 flex-col items-end gap-1.5">
-                      <span className="rounded-xl border border-[#007aff]/20 bg-[#007aff]/[0.09] px-2.5 py-1 text-[10px] font-extrabold text-[#4da3ff]">
-                        {songKey}
-                      </span>
+                    {/* CAPABILITIES */}
+                    <div
+                      className="
+                        relative
+                        my-4
+                        grid
+                        grid-cols-3
+                        gap-1.5
+                        rounded-2xl
+                        border
+                        border-white/[0.05]
+                        bg-black/25
+                        p-1.5
+                      "
+                    >
+                      <div className="rounded-xl bg-white/[0.025] px-2 py-2.5 text-center">
+                        <span className="block text-[8px] font-extrabold uppercase tracking-[0.15em] text-white/20">
+                          Lead
+                        </span>
 
-                      <span className="text-[10px] font-bold text-white/20">
-                        {tempoDisplay !== '—'
-                          ? `${tempoDisplay} BPM`
-                          : 'Tempo —'}
-                      </span>
+                        <span
+                          className={`mt-1 block truncate text-[10px] font-bold ${
+                            capabilities.lead
+                              ? 'text-emerald-300/70'
+                              : 'text-white/25'
+                          }`}
+                        >
+                          {capabilities.lead
+                            ? 'Ready'
+                            : 'Not set'}
+                        </span>
+                      </div>
+
+                      <div className="rounded-xl bg-white/[0.025] px-2 py-2.5 text-center">
+                        <span className="block text-[8px] font-extrabold uppercase tracking-[0.15em] text-white/20">
+                          Harmony
+                        </span>
+
+                        <span
+                          className={`mt-1 block truncate text-[10px] font-bold ${
+                            capabilities.harmony
+                              ? 'text-amber-300/70'
+                              : 'text-white/25'
+                          }`}
+                        >
+                          {capabilities.harmony
+                            ? 'Ready'
+                            : 'Not set'}
+                        </span>
+                      </div>
+
+                      <div className="rounded-xl bg-white/[0.025] px-2 py-2.5 text-center">
+                        <span className="block text-[8px] font-extrabold uppercase tracking-[0.15em] text-white/20">
+                          Band
+                        </span>
+
+                        <span
+                          className={`mt-1 block truncate text-[10px] font-bold ${
+                            capabilities.band
+                              ? 'text-[#4da3ff]'
+                              : 'text-white/25'
+                          }`}
+                        >
+                          {capabilities.band
+                            ? 'Chart'
+                            : 'Not set'}
+                        </span>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* CAPABILITIES */}
-                  <div
-                    className="
-                      relative
-                      my-4
-                      grid
-                      grid-cols-3
-                      gap-1.5
-                      rounded-2xl
-                      border
-                      border-white/[0.05]
-                      bg-black/25
-                      p-1.5
-                    "
-                  >
-                    <div className="rounded-xl bg-white/[0.025] px-2 py-2.5 text-center">
-                      <span className="block text-[8px] font-extrabold uppercase tracking-[0.15em] text-white/20">
-                        Lead
-                      </span>
+                    {/* FOOTER */}
+                    <div className="relative flex flex-col gap-3 border-t border-white/[0.05] pt-3">
 
-                      <span
-                        className={`mt-1 block truncate text-[10px] font-bold ${
-                          capabilities.lead
-                            ? 'text-emerald-300/70'
-                            : 'text-white/25'
-                        }`}
-                      >
-                        {capabilities.lead
-                          ? 'Ready'
-                          : 'Not set'}
-                      </span>
-                    </div>
-
-                    <div className="rounded-xl bg-white/[0.025] px-2 py-2.5 text-center">
-                      <span className="block text-[8px] font-extrabold uppercase tracking-[0.15em] text-white/20">
-                        Harmony
-                      </span>
-
-                      <span
-                        className={`mt-1 block truncate text-[10px] font-bold ${
-                          capabilities.harmony
-                            ? 'text-amber-300/70'
-                            : 'text-white/25'
-                        }`}
-                      >
-                        {capabilities.harmony
-                          ? 'Ready'
-                          : 'Not set'}
-                      </span>
-                    </div>
-
-                    <div className="rounded-xl bg-white/[0.025] px-2 py-2.5 text-center">
-                      <span className="block text-[8px] font-extrabold uppercase tracking-[0.15em] text-white/20">
-                        Band
-                      </span>
-
-                      <span
-                        className={`mt-1 block truncate text-[10px] font-bold ${
-                          capabilities.band
-                            ? 'text-[#4da3ff]'
-                            : 'text-white/25'
-                        }`}
-                      >
-                        {capabilities.band
-                          ? 'Chart'
-                          : 'Not set'}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* FOOTER */}
-                  <div className="relative flex flex-col gap-3 border-t border-white/[0.05] pt-3">
-
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-
-                      <button
-                        type="button"
-                        disabled={!song.audioUrl}
-                        onClick={e =>
-                          handleQuickPlay(e, song)
-                        }
-                        className={`
-                          flex
-                          items-center
-                          justify-center
-                          gap-1.5
-                          rounded-xl
-                          border
-                          px-3
-                          py-2
-                          text-xs
-                          font-bold
-                          transition-all
-                          active:scale-[0.97]
-                          ${
-                            !song.audioUrl
-                              ? `
-                                cursor-not-allowed
-                                border-white/[0.05]
-                                bg-white/[0.02]
-                                text-white/20
-                              `
-                              : isPlayingThis
-                                ? `
-                                  border-[#007aff]/40
-                                  bg-[#007aff]
-                                  text-white
-                                  shadow-lg
-                                  shadow-blue-500/20
-                                `
-                                : `
-                                  border-white/[0.06]
-                                  bg-white/[0.03]
-                                  text-[#4da3ff]
-                                  hover:border-[#007aff]/25
-                                  hover:bg-[#007aff]/[0.09]
-                                `
-                          }
-                        `}
-                      >
-                        {isPlayingThis ? (
-                          <span className="h-3.5 w-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                        ) : (
-                          <Play className="h-3.5 w-3.5 fill-current" />
-                        )}
-
-                        {!song.audioUrl
-                          ? 'No Audio'
-                          : isPlayingThis
-                            ? 'Playing...'
-                            : 'Play Song'}
-                      </button>
-
-                      <div className="flex items-center justify-end gap-1.5">
-
-                        {isMD && (
-                          <button
-                            type="button"
-                            onClick={e => {
-                              e.stopPropagation();
-                              onEditSong(song);
-                            }}
-                            title="Edit Song"
-                            className="
-                              flex
-                              h-9
-                              w-9
-                              items-center
-                              justify-center
-                              rounded-xl
-                              border
-                              border-white/[0.06]
-                              bg-white/[0.03]
-                              text-white/30
-                              transition-all
-                              hover:border-white/[0.12]
-                              hover:bg-white/[0.08]
-                              hover:text-white
-                            "
-                          >
-                            <Edit className="h-3.5 w-3.5" />
-                          </button>
-                        )}
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 
                         <button
                           type="button"
-                          onClick={e => {
-                            e.stopPropagation();
-                            onSelectSong(song);
-                          }}
-                          className="
+                          disabled={!song.audioUrl}
+                          onClick={e =>
+                            handleQuickPlay(
+                              e,
+                              song
+                            )
+                          }
+                          className={`
                             flex
                             items-center
-                            gap-1
+                            justify-center
+                            gap-1.5
                             rounded-xl
                             border
-                            border-white/[0.06]
-                            bg-white/[0.03]
                             px-3
                             py-2
                             text-xs
                             font-bold
-                            text-white/50
                             transition-all
-                            hover:border-[#007aff]/25
-                            hover:bg-[#007aff]/[0.09]
-                            hover:text-[#4da3ff]
-                          "
+                            active:scale-[0.97]
+                            ${
+                              !song.audioUrl
+                                ? `
+                                  cursor-not-allowed
+                                  border-white/[0.05]
+                                  bg-white/[0.02]
+                                  text-white/20
+                                `
+                                : isPlayerOpen
+                                  ? `
+                                    border-[#007aff]/40
+                                    bg-[#007aff]
+                                    text-white
+                                    shadow-lg
+                                    shadow-blue-500/20
+                                  `
+                                  : `
+                                    border-white/[0.06]
+                                    bg-white/[0.03]
+                                    text-[#4da3ff]
+                                    hover:border-[#007aff]/25
+                                    hover:bg-[#007aff]/[0.09]
+                                  `
+                            }
+                          `}
                         >
-                          View Song
-                          <ChevronRight className="h-3.5 w-3.5" />
+                          {!song.audioUrl ? (
+                            <Music className="h-3.5 w-3.5" />
+                          ) : isPlayerOpen ? (
+                            <span className="h-3.5 w-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                          ) : (
+                            <Play className="h-3.5 w-3.5 fill-current" />
+                          )}
+
+                          {!song.audioUrl
+                            ? 'No Audio'
+                            : isPlayerOpen
+                              ? 'Player Open'
+                              : 'Play Song'}
                         </button>
+
+                        <div className="flex items-center justify-end gap-1.5">
+
+                          {isMD && (
+                            <button
+                              type="button"
+                              onClick={e => {
+                                e.stopPropagation();
+                                onEditSong(song);
+                              }}
+                              title="Edit Song"
+                              className="
+                                flex
+                                h-9
+                                w-9
+                                items-center
+                                justify-center
+                                rounded-xl
+                                border
+                                border-white/[0.06]
+                                bg-white/[0.03]
+                                text-white/30
+                                transition-all
+                                hover:border-white/[0.12]
+                                hover:bg-white/[0.08]
+                                hover:text-white
+                              "
+                            >
+                              <Edit className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={e => {
+                              e.stopPropagation();
+                              onSelectSong(song);
+                            }}
+                            className="
+                              flex
+                              items-center
+                              gap-1
+                              rounded-xl
+                              border
+                              border-white/[0.06]
+                              bg-white/[0.03]
+                              px-3
+                              py-2
+                              text-xs
+                              font-bold
+                              text-white/50
+                              transition-all
+                              hover:border-[#007aff]/25
+                              hover:bg-[#007aff]/[0.09]
+                              hover:text-[#4da3ff]
+                            "
+                          >
+                            View Song
+                            <ChevronRight className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                       </div>
+
+                      {/* =====================================================
+                          FULL AUDIO PLAYER
+                      ===================================================== */}
+
+                      {isPlayerOpen &&
+                        song.audioUrl &&
+                        playableIndex >= 0 && (
+                          <div
+                            onClick={e =>
+                              e.stopPropagation()
+                            }
+                          >
+                            <SongAudioPlayer
+                              songs={
+                                playableSongs
+                              }
+                              initialSongIndex={
+                                playableIndex
+                              }
+                              isOpen={true}
+                              onClose={
+                                handleClosePlayer
+                              }
+                            />
+                          </div>
+                        )}
                     </div>
-
-                    {/* =====================================================
-                        EXPANDED AUDIO PLAYER
-                    ===================================================== */}
-
-                    {isPlayingThis && song.audioUrl && (
-                      <div
-                        onClick={e => e.stopPropagation()}
-                      >
-                        <SongAudioPlayer
-                          audioUrl={song.audioUrl}
-                          title={songTitle}
-                          originalKey={song.key || 'C'}
-                          isOpen={true}
-                          onClose={handleClosePlayer}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </article>
-              );
-            })}
+                  </article>
+                );
+              }
+            )}
           </div>
         ) : (
 
@@ -1217,4 +1316,3 @@ export const SongBankView: React.FC<SongBankViewProps> = ({
 };
 
 export default SongBankView;
- 
