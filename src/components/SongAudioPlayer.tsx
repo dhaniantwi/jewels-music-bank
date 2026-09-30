@@ -39,14 +39,26 @@ const SPEED_OPTIONS = [
   2,
 ];
 
-const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
+/*
+ * Media Session is not available in every browser.
+ * Keeping this helper means the player still works
+ * normally when Media Session is unavailable.
+ */
+const supportsMediaSession =
+  typeof navigator !== 'undefined' &&
+  'mediaSession' in navigator;
+
+const SongAudioPlayer: React.FC<
+  SongAudioPlayerProps
+> = ({
   songs,
   initialSongIndex,
   isOpen,
   onClose,
   onSongChange,
 }) => {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioRef =
+    useRef<HTMLAudioElement | null>(null);
 
   const validSongs = useMemo(
     () =>
@@ -93,9 +105,127 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
     validSongs[currentIndex];
 
   /*
-   * Keep current index valid if the
-   * playlist changes.
+   * ============================================================
+   * MEDIA SESSION HELPERS
+   * ============================================================
    */
+
+  const clearMediaSession = () => {
+    if (!supportsMediaSession) {
+      return;
+    }
+
+    try {
+      navigator.mediaSession.playbackState =
+        'none';
+
+      navigator.mediaSession.metadata = null;
+
+      navigator.mediaSession.setPositionState?.({
+        duration: 0,
+        playbackRate: 1,
+        position: 0,
+      });
+    } catch {
+      /*
+       * Some browsers implement Media Session
+       * partially. Never allow this to break
+       * the actual audio player.
+       */
+    }
+  };
+
+  /*
+   * Update lock-screen / notification metadata.
+   */
+  useEffect(() => {
+    if (
+      !supportsMediaSession ||
+      !isOpen ||
+      !currentSong
+    ) {
+      return;
+    }
+
+    const title =
+      currentSong.title ||
+      'Untitled Song';
+
+    const artist =
+      currentSong.artist ||
+      'Jewels of His Crown';
+
+    try {
+      navigator.mediaSession.metadata =
+        new MediaMetadata({
+          title,
+          artist,
+          album:
+            'Jewels Music Library',
+        });
+
+      navigator.mediaSession.playbackState =
+        isPlaying
+          ? 'playing'
+          : 'paused';
+    } catch {
+      /*
+       * Media Session is optional.
+       */
+    }
+  }, [
+    currentSong?.id,
+    currentSong?.title,
+    currentSong?.artist,
+    isPlaying,
+    isOpen,
+  ]);
+
+  /*
+   * Keep the operating system informed about
+   * the current playback position.
+   */
+  useEffect(() => {
+    if (
+      !supportsMediaSession ||
+      !isOpen ||
+      !duration ||
+      !Number.isFinite(duration)
+    ) {
+      return;
+    }
+
+    const position = Math.min(
+      Math.max(currentTime, 0),
+      duration
+    );
+
+    try {
+      navigator.mediaSession.setPositionState?.({
+        duration,
+        playbackRate:
+          speed || 1,
+        position,
+      });
+    } catch {
+      /*
+       * Ignore unsupported or invalid
+       * Media Session implementations.
+       */
+    }
+  }, [
+    currentTime,
+    duration,
+    speed,
+    isOpen,
+  ]);
+
+  /*
+   * ============================================================
+   * PLAYLIST VALIDATION
+   * ============================================================
+   */
+
   useEffect(() => {
     if (!validSongs.length) {
       setCurrentIndex(0);
@@ -115,9 +245,11 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
   }, [validSongs.length]);
 
   /*
-   * Set the song selected from Song Bank
-   * when the player opens.
+   * ============================================================
+   * OPEN / INITIAL SONG
+   * ============================================================
    */
+
   useEffect(() => {
     if (
       !isOpen ||
@@ -142,12 +274,11 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
   ]);
 
   /*
-   * Whenever the internal player changes
-   * songs, tell Song Bank.
-   *
-   * This is what makes the physical player
-   * move underneath the new song card.
+   * ============================================================
+   * INFORM SONG BANK WHEN SONG CHANGES
+   * ============================================================
    */
+
   useEffect(() => {
     if (!currentSong) {
       return;
@@ -160,10 +291,14 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
   ]);
 
   /*
-   * Volume.
+   * ============================================================
+   * VOLUME
+   * ============================================================
    */
+
   useEffect(() => {
-    const audio = audioRef.current;
+    const audio =
+      audioRef.current;
 
     if (!audio) {
       return;
@@ -177,10 +312,14 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
   ]);
 
   /*
-   * Playback speed.
+   * ============================================================
+   * PLAYBACK SPEED
+   * ============================================================
    */
+
   useEffect(() => {
-    const audio = audioRef.current;
+    const audio =
+      audioRef.current;
 
     if (!audio) {
       return;
@@ -193,11 +332,14 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
   ]);
 
   /*
-   * Load and automatically play the
-   * currently selected song.
+   * ============================================================
+   * LOAD CURRENT SONG
+   * ============================================================
    */
+
   useEffect(() => {
-    const audio = audioRef.current;
+    const audio =
+      audioRef.current;
 
     if (
       !audio ||
@@ -213,17 +355,42 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
 
     audio.pause();
     audio.currentTime = 0;
-    audio.src = currentSong.audioUrl;
+    audio.src =
+      currentSong.audioUrl;
     audio.load();
 
-    const startPlayback = async () => {
-      try {
-        await audio.play();
-        setIsPlaying(true);
-      } catch {
-        setIsPlaying(false);
-      }
-    };
+    const startPlayback =
+      async () => {
+        try {
+          await audio.play();
+
+          setIsPlaying(true);
+
+          if (
+            supportsMediaSession
+          ) {
+            try {
+              navigator.mediaSession.playbackState =
+                'playing';
+            } catch {
+              // Ignore browser limitation.
+            }
+          }
+        } catch {
+          setIsPlaying(false);
+
+          if (
+            supportsMediaSession
+          ) {
+            try {
+              navigator.mediaSession.playbackState =
+                'paused';
+            } catch {
+              // Ignore browser limitation.
+            }
+          }
+        }
+      };
 
     const handleCanPlay = () => {
       void startPlayback();
@@ -248,161 +415,322 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
   ]);
 
   /*
-   * Cleanup.
+   * ============================================================
+   * MEDIA SESSION ACTIONS
+   *
+   * These are the buttons that appear on:
+   *
+   * - Android lock screen
+   * - Notification media controls
+   * - Bluetooth/headset controls
+   * - Supported desktop browser media controls
+   *
+   * IMPORTANT:
+   * These actions call the EXACT same functions
+   * used by the visible player.
+   * ============================================================
    */
+
+  useEffect(() => {
+    if (
+      !supportsMediaSession ||
+      !isOpen
+    ) {
+      return;
+    }
+
+    const mediaSession =
+      navigator.mediaSession;
+
+    const registerAction = (
+      action:
+        | MediaSessionAction
+        | undefined,
+      handler: () => void
+    ) => {
+      if (!action) {
+        return;
+      }
+
+      try {
+        mediaSession.setActionHandler(
+          action,
+          handler
+        );
+      } catch {
+        /*
+         * Browser may not support
+         * a particular action.
+         */
+      }
+    };
+
+    /*
+     * Play
+     */
+    registerAction(
+      'play',
+      () => {
+        const audio =
+          audioRef.current;
+
+        if (!audio) {
+          return;
+        }
+
+        void audio
+          .play()
+          .then(() => {
+            setIsPlaying(true);
+          })
+          .catch(() => {
+            setIsPlaying(false);
+          });
+      }
+    );
+
+    /*
+     * Pause
+     */
+    registerAction(
+      'pause',
+      () => {
+        const audio =
+          audioRef.current;
+
+        if (!audio) {
+          return;
+        }
+
+        audio.pause();
+        setIsPlaying(false);
+      }
+    );
+
+    /*
+     * Previous
+     */
+    registerAction(
+      'previoustrack',
+      () => {
+        handlePrevious();
+      }
+    );
+
+    /*
+     * Next
+     */
+    registerAction(
+      'nexttrack',
+      () => {
+        handleNext();
+      }
+    );
+
+    /*
+     * Restart / seek backward
+     */
+    registerAction(
+      'seekbackward',
+      details => {
+        const audio =
+          audioRef.current;
+
+        if (!audio) {
+          return;
+        }
+
+        const offset =
+          details.seekOffset || 10;
+
+        audio.currentTime =
+          Math.max(
+            0,
+            audio.currentTime -
+              offset
+          );
+
+        setCurrentTime(
+          audio.currentTime
+        );
+      }
+    );
+
+    /*
+     * Seek forward
+     */
+    registerAction(
+      'seekforward',
+      details => {
+        const audio =
+          audioRef.current;
+
+        if (!audio) {
+          return;
+        }
+
+        const offset =
+          details.seekOffset || 10;
+
+        audio.currentTime =
+          Math.min(
+            audio.duration || 0,
+            audio.currentTime +
+              offset
+          );
+
+        setCurrentTime(
+          audio.currentTime
+        );
+      }
+    );
+
+    /*
+     * Seek to exact position.
+     */
+    registerAction(
+      'seekto',
+      details => {
+        const audio =
+          audioRef.current;
+
+        if (
+          !audio ||
+          typeof details.seekTime !==
+            'number'
+        ) {
+          return;
+        }
+
+        audio.currentTime =
+          details.seekTime;
+
+        setCurrentTime(
+          details.seekTime
+        );
+      }
+    );
+
+    /*
+     * Cleanup Media Session handlers.
+     */
+    return () => {
+      const actions:
+        MediaSessionAction[] = [
+        'play',
+        'pause',
+        'previoustrack',
+        'nexttrack',
+        'seekbackward',
+        'seekforward',
+        'seekto',
+      ];
+
+      actions.forEach(action => {
+        try {
+          mediaSession.setActionHandler(
+            action,
+            null
+          );
+        } catch {
+          // Ignore unsupported action.
+        }
+      });
+    };
+  }, [
+    isOpen,
+    currentSong?.id,
+    currentIndex,
+    shuffle,
+    repeatMode,
+    validSongs.length,
+  ]);
+
+  /*
+   * ============================================================
+   * CLEANUP
+   * ============================================================
+   */
+
   useEffect(() => {
     return () => {
-      const audio = audioRef.current;
+      const audio =
+        audioRef.current;
 
       if (audio) {
         audio.pause();
         audio.src = '';
       }
+
+      clearMediaSession();
     };
   }, []);
 
-  const handlePlayPause = async () => {
-    const audio = audioRef.current;
+  /*
+   * ============================================================
+   * PLAY / PAUSE
+   * ============================================================
+   */
 
-    if (
-      !audio ||
-      !currentSong?.audioUrl
-    ) {
-      return;
-    }
+  const handlePlayPause =
+    async () => {
+      const audio =
+        audioRef.current;
 
-    try {
-      if (audio.paused) {
-        await audio.play();
-        setIsPlaying(true);
-      } else {
-        audio.pause();
+      if (
+        !audio ||
+        !currentSong?.audioUrl
+      ) {
+        return;
+      }
+
+      try {
+        if (audio.paused) {
+          await audio.play();
+
+          setIsPlaying(true);
+
+          if (
+            supportsMediaSession
+          ) {
+            try {
+              navigator.mediaSession.playbackState =
+                'playing';
+            } catch {
+              // Ignore.
+            }
+          }
+        } else {
+          audio.pause();
+
+          setIsPlaying(false);
+
+          if (
+            supportsMediaSession
+          ) {
+            try {
+              navigator.mediaSession.playbackState =
+                'paused';
+            } catch {
+              // Ignore.
+            }
+          }
+        }
+      } catch {
         setIsPlaying(false);
       }
-    } catch {
-      setIsPlaying(false);
-    }
-  };
-
-  const handleRestart = () => {
-    const audio = audioRef.current;
-
-    if (!audio) {
-      return;
-    }
-
-    audio.currentTime = 0;
-    setCurrentTime(0);
-
-    if (audio.paused) {
-      void audio
-        .play()
-        .then(() => setIsPlaying(true))
-        .catch(() => {});
-    }
-  };
+    };
 
   /*
-   * Previous song.
+   * ============================================================
+   * RESTART
+   * ============================================================
    */
-  const handlePrevious = () => {
-    if (!validSongs.length) {
-      return;
-    }
 
-    const audio = audioRef.current;
-
-    /*
-     * If we're more than 3 seconds into
-     * the current song, restart it first.
-     */
-    if (
-      audio &&
-      audio.currentTime > 3
-    ) {
-      audio.currentTime = 0;
-      setCurrentTime(0);
-      return;
-    }
-
-    setCurrentIndex(previous => {
-      if (
-        shuffle &&
-        validSongs.length > 1
-      ) {
-        let nextIndex = previous;
-
-        while (
-          nextIndex === previous
-        ) {
-          nextIndex = Math.floor(
-            Math.random() *
-              validSongs.length
-          );
-        }
-
-        return nextIndex;
-      }
-
-      if (previous > 0) {
-        return previous - 1;
-      }
-
-      return repeatMode === 'all'
-        ? validSongs.length - 1
-        : 0;
-    });
-  };
-
-  /*
-   * Next song.
-   */
-  const handleNext = () => {
-    if (!validSongs.length) {
-      return;
-    }
-
-    setCurrentIndex(previous => {
-      if (
-        shuffle &&
-        validSongs.length > 1
-      ) {
-        let nextIndex = previous;
-
-        while (
-          nextIndex === previous
-        ) {
-          nextIndex = Math.floor(
-            Math.random() *
-              validSongs.length
-          );
-        }
-
-        return nextIndex;
-      }
-
-      if (
-        previous <
-        validSongs.length - 1
-      ) {
-        return previous + 1;
-      }
-
-      return repeatMode === 'all'
-        ? 0
-        : previous;
-    });
-  };
-
-  /*
-   * Automatic playback after a song
-   * finishes.
-   */
-  const handleEnded = () => {
-    setIsPlaying(false);
-
-    if (repeatMode === 'one') {
-      const audio = audioRef.current;
+  const handleRestart =
+    () => {
+      const audio =
+        audioRef.current;
 
       if (!audio) {
         return;
@@ -411,38 +739,197 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
       audio.currentTime = 0;
       setCurrentTime(0);
 
-      void audio
-        .play()
-        .then(() => setIsPlaying(true))
-        .catch(() => {});
+      if (audio.paused) {
+        void audio
+          .play()
+          .then(() => {
+            setIsPlaying(true);
+          })
+          .catch(() => {});
+      }
+    };
 
-      return;
-    }
+  /*
+   * ============================================================
+   * PREVIOUS SONG
+   * ============================================================
+   */
 
-    if (
-      currentIndex <
-      validSongs.length - 1
-    ) {
-      handleNext();
-      return;
-    }
+  const handlePrevious =
+    () => {
+      if (!validSongs.length) {
+        return;
+      }
 
-    if (repeatMode === 'all') {
-      handleNext();
-      return;
-    }
+      const audio =
+        audioRef.current;
 
-    setCurrentTime(duration);
-  };
+      /*
+       * If we are more than 3 seconds
+       * into the current song, restart it.
+       */
+      if (
+        audio &&
+        audio.currentTime > 3
+      ) {
+        audio.currentTime = 0;
+        setCurrentTime(0);
+        return;
+      }
+
+      setCurrentIndex(previous => {
+        if (
+          shuffle &&
+          validSongs.length > 1
+        ) {
+          let nextIndex =
+            previous;
+
+          while (
+            nextIndex === previous
+          ) {
+            nextIndex =
+              Math.floor(
+                Math.random() *
+                  validSongs.length
+              );
+          }
+
+          return nextIndex;
+        }
+
+        if (previous > 0) {
+          return previous - 1;
+        }
+
+        return repeatMode === 'all'
+          ? validSongs.length - 1
+          : 0;
+      });
+    };
+
+  /*
+   * ============================================================
+   * NEXT SONG
+   * ============================================================
+   */
+
+  const handleNext =
+    () => {
+      if (!validSongs.length) {
+        return;
+      }
+
+      setCurrentIndex(previous => {
+        if (
+          shuffle &&
+          validSongs.length > 1
+        ) {
+          let nextIndex =
+            previous;
+
+          while (
+            nextIndex === previous
+          ) {
+            nextIndex =
+              Math.floor(
+                Math.random() *
+                  validSongs.length
+              );
+          }
+
+          return nextIndex;
+        }
+
+        if (
+          previous <
+          validSongs.length - 1
+        ) {
+          return previous + 1;
+        }
+
+        return repeatMode === 'all'
+          ? 0
+          : previous;
+      });
+    };
+
+  /*
+   * ============================================================
+   * SONG ENDED
+   * ============================================================
+   */
+
+  const handleEnded =
+    () => {
+      setIsPlaying(false);
+
+      if (
+        repeatMode === 'one'
+      ) {
+        const audio =
+          audioRef.current;
+
+        if (!audio) {
+          return;
+        }
+
+        audio.currentTime = 0;
+        setCurrentTime(0);
+
+        void audio
+          .play()
+          .then(() => {
+            setIsPlaying(true);
+          })
+          .catch(() => {});
+
+        return;
+      }
+
+      if (
+        currentIndex <
+        validSongs.length - 1
+      ) {
+        handleNext();
+        return;
+      }
+
+      if (
+        repeatMode === 'all'
+      ) {
+        handleNext();
+        return;
+      }
+
+      setCurrentTime(duration);
+
+      if (
+        supportsMediaSession
+      ) {
+        try {
+          navigator.mediaSession.playbackState =
+            'none';
+        } catch {
+          // Ignore.
+        }
+      }
+    };
+
+  /*
+   * ============================================================
+   * SEEK
+   * ============================================================
+   */
 
   const handleSeek = (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
-    const value = Number(
-      e.target.value
-    );
+    const value =
+      Number(e.target.value);
 
-    const audio = audioRef.current;
+    const audio =
+      audioRef.current;
 
     if (!audio) {
       return;
@@ -452,82 +939,141 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
     setCurrentTime(value);
   };
 
-  const handleVolumeChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const value = Number(
-      e.target.value
-    );
+  /*
+   * ============================================================
+   * VOLUME
+   * ============================================================
+   */
 
-    setVolume(value);
+  const handleVolumeChange =
+    (
+      e: React.ChangeEvent<HTMLInputElement>
+    ) => {
+      const value =
+        Number(e.target.value);
 
-    if (value > 0) {
-      setIsMuted(false);
-    }
-  };
+      setVolume(value);
 
-  const handleToggleMute = () => {
-    setIsMuted(previous => !previous);
-  };
+      if (value > 0) {
+        setIsMuted(false);
+      }
+    };
 
-  const handleSpeedChange = (
-    newSpeed: number
-  ) => {
-    setSpeed(newSpeed);
+  const handleToggleMute =
+    () => {
+      setIsMuted(
+        previous => !previous
+      );
+    };
 
-    const audio = audioRef.current;
+  /*
+   * ============================================================
+   * SPEED
+   * ============================================================
+   */
 
-    if (audio) {
-      audio.playbackRate = newSpeed;
-    }
-  };
+  const handleSpeedChange =
+    (newSpeed: number) => {
+      setSpeed(newSpeed);
 
-  const handleRepeat = () => {
-    setRepeatMode(previous => {
-      if (previous === 'off') {
-        return 'one';
+      const audio =
+        audioRef.current;
+
+      if (audio) {
+        audio.playbackRate =
+          newSpeed;
+      }
+    };
+
+  /*
+   * ============================================================
+   * REPEAT
+   * ============================================================
+   */
+
+  const handleRepeat =
+    () => {
+      setRepeatMode(previous => {
+        if (
+          previous === 'off'
+        ) {
+          return 'one';
+        }
+
+        if (
+          previous === 'one'
+        ) {
+          return 'all';
+        }
+
+        return 'off';
+      });
+    };
+
+  /*
+   * ============================================================
+   * SHUFFLE
+   * ============================================================
+   */
+
+  const handleShuffle =
+    () => {
+      setShuffle(
+        previous => !previous
+      );
+    };
+
+  /*
+   * ============================================================
+   * CLOSE
+   * ============================================================
+   */
+
+  const handleClose =
+    () => {
+      const audio =
+        audioRef.current;
+
+      if (audio) {
+        audio.pause();
+        setIsPlaying(false);
       }
 
-      if (previous === 'one') {
-        return 'all';
+      clearMediaSession();
+
+      onClose();
+    };
+
+  /*
+   * ============================================================
+   * FORMAT TIME
+   * ============================================================
+   */
+
+  const formatTime =
+    (time: number) => {
+      if (
+        !Number.isFinite(time)
+      ) {
+        return '0:00';
       }
 
-      return 'off';
-    });
-  };
+      const minutes =
+        Math.floor(time / 60);
 
-  const handleShuffle = () => {
-    setShuffle(previous => !previous);
-  };
+      const seconds =
+        Math.floor(time % 60);
 
-  const handleClose = () => {
-    const audio = audioRef.current;
+      return `${minutes}:${seconds
+        .toString()
+        .padStart(2, '0')}`;
+    };
 
-    if (audio) {
-      audio.pause();
-      setIsPlaying(false);
-    }
-
-    onClose();
-  };
-
-  const formatTime = (
-    time: number
-  ) => {
-    if (!Number.isFinite(time)) {
-      return '0:00';
-    }
-
-    const minutes =
-      Math.floor(time / 60);
-
-    const seconds =
-      Math.floor(time % 60);
-
-    return `${minutes}:${seconds
-      .toString()
-      .padStart(2, '0')}`;
-  };
+  /*
+   * ============================================================
+   * RENDER GUARD
+   * ============================================================
+   */
 
   if (
     !isOpen ||
@@ -539,7 +1085,8 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
 
   const progressPercent =
     duration > 0
-      ? (currentTime / duration) * 100
+      ? (currentTime / duration) *
+        100
       : 0;
 
   const repeatLabel =
@@ -562,12 +1109,18 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
         shadow-black/40
       "
     >
+      {/* ========================================================
+          AUDIO ENGINE
+      ======================================================== */}
+
       <audio
         ref={audioRef}
         preload="metadata"
+        playsInline
         onLoadedMetadata={e => {
           const nextDuration =
-            e.currentTarget.duration;
+            e.currentTarget
+              .duration;
 
           setDuration(
             Number.isFinite(
@@ -579,22 +1132,59 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
         }}
         onTimeUpdate={e => {
           setCurrentTime(
-            e.currentTarget.currentTime
+            e.currentTarget
+              .currentTime
           );
         }}
         onPlay={() => {
           setIsPlaying(true);
+
+          if (
+            supportsMediaSession
+          ) {
+            try {
+              navigator.mediaSession.playbackState =
+                'playing';
+            } catch {
+              // Ignore.
+            }
+          }
         }}
         onPause={() => {
           setIsPlaying(false);
+
+          if (
+            supportsMediaSession
+          ) {
+            try {
+              navigator.mediaSession.playbackState =
+                'paused';
+            } catch {
+              // Ignore.
+            }
+          }
         }}
         onEnded={handleEnded}
         onError={() => {
           setIsPlaying(false);
+
+          if (
+            supportsMediaSession
+          ) {
+            try {
+              navigator.mediaSession.playbackState =
+                'none';
+            } catch {
+              // Ignore.
+            }
+          }
         }}
       />
 
-      {/* HEADER */}
+      {/* ========================================================
+          HEADER
+      ======================================================== */}
+
       <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] px-4 py-3.5 sm:px-5">
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#007aff]/20 bg-[#007aff]/[0.08]">
@@ -610,6 +1200,12 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
               {currentSong.title ||
                 'Untitled Song'}
             </p>
+
+            {currentSong.artist && (
+              <p className="truncate text-[9px] font-medium text-white/25">
+                {currentSong.artist}
+              </p>
+            )}
           </div>
         </div>
 
@@ -645,7 +1241,10 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
         </div>
       </div>
 
-      {/* PROGRESS */}
+      {/* ========================================================
+          PROGRESS
+      ======================================================== */}
+
       <div className="px-4 pt-4 sm:px-5">
         <input
           type="range"
@@ -678,7 +1277,9 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
 
         <div className="mt-1.5 flex items-center justify-between text-[9px] font-bold text-white/20">
           <span>
-            {formatTime(currentTime)}
+            {formatTime(
+              currentTime
+            )}
           </span>
 
           <span>
@@ -687,12 +1288,19 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
         </div>
       </div>
 
-      {/* MAIN CONTROLS */}
+      {/* ========================================================
+          MAIN CONTROLS
+      ======================================================== */}
+
       <div className="flex items-center justify-center gap-2 px-4 py-4 sm:gap-3 sm:px-5">
+
+        {/* SHUFFLE */}
 
         <button
           type="button"
-          onClick={handleShuffle}
+          onClick={
+            handleShuffle
+          }
           title={
             shuffle
               ? 'Shuffle On'
@@ -717,9 +1325,13 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
           <Shuffle className="h-3.5 w-3.5" />
         </button>
 
+        {/* PREVIOUS */}
+
         <button
           type="button"
-          onClick={handlePrevious}
+          onClick={
+            handlePrevious
+          }
           title="Previous Song"
           className="
             flex
@@ -741,9 +1353,13 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
           <SkipBack className="h-4 w-4 fill-current" />
         </button>
 
+        {/* RESTART */}
+
         <button
           type="button"
-          onClick={handleRestart}
+          onClick={
+            handleRestart
+          }
           title="Restart Song"
           className="
             hidden
@@ -766,9 +1382,13 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
           <RotateCcw className="h-3.5 w-3.5" />
         </button>
 
+        {/* PLAY / PAUSE */}
+
         <button
           type="button"
-          onClick={handlePlayPause}
+          onClick={
+            handlePlayPause
+          }
           title={
             isPlaying
               ? 'Pause'
@@ -798,9 +1418,13 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
           )}
         </button>
 
+        {/* NEXT */}
+
         <button
           type="button"
-          onClick={handleNext}
+          onClick={
+            handleNext
+          }
           title="Next Song"
           className="
             flex
@@ -822,9 +1446,13 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
           <SkipForward className="h-4 w-4 fill-current" />
         </button>
 
+        {/* REPEAT */}
+
         <button
           type="button"
-          onClick={handleRepeat}
+          onClick={
+            handleRepeat
+          }
           title={repeatLabel}
           className={`
             relative
@@ -837,7 +1465,8 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
             border
             transition-all
             ${
-              repeatMode !== 'off'
+              repeatMode !==
+              'off'
                 ? 'border-[#007aff]/30 bg-[#007aff]/10 text-[#4da3ff]'
                 : 'border-white/[0.06] bg-white/[0.025] text-white/25 hover:text-white'
             }
@@ -845,7 +1474,8 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
         >
           <Repeat className="h-3.5 w-3.5" />
 
-          {repeatMode === 'one' && (
+          {repeatMode ===
+            'one' && (
             <span className="absolute right-1 top-0.5 text-[7px] font-black">
               1
             </span>
@@ -853,13 +1483,20 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
         </button>
       </div>
 
-      {/* SECONDARY CONTROLS */}
+      {/* ========================================================
+          SECONDARY CONTROLS
+      ======================================================== */}
+
       <div className="flex flex-col gap-3 border-t border-white/[0.05] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+
+        {/* VOLUME */}
 
         <div className="flex items-center gap-2.5">
           <button
             type="button"
-            onClick={handleToggleMute}
+            onClick={
+              handleToggleMute
+            }
             title={
               isMuted
                 ? 'Unmute'
@@ -923,6 +1560,8 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
           </span>
         </div>
 
+        {/* SPEED */}
+
         <div className="flex items-center gap-2">
           <Gauge className="h-3.5 w-3.5 text-white/20" />
 
@@ -969,7 +1608,10 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
         </div>
       </div>
 
-      {/* STATUS */}
+      {/* ========================================================
+          STATUS
+      ======================================================== */}
+
       <div className="flex items-center justify-between border-t border-white/[0.04] bg-white/[0.015] px-4 py-2.5 sm:px-5">
         <div className="flex min-w-0 items-center gap-2">
           <div
@@ -1005,5 +1647,9 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
   );
 };
 
-export { SongAudioPlayer };
+export {
+  SongAudioPlayer,
+};
+
 export default SongAudioPlayer;
+
