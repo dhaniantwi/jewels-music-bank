@@ -25,6 +25,7 @@ interface SongAudioPlayerProps {
   initialSongIndex: number;
   isOpen: boolean;
   onClose: () => void;
+  onSongChange?: (song: Song) => void;
 }
 
 type RepeatMode = 'off' | 'one' | 'all';
@@ -43,11 +44,15 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
   initialSongIndex,
   isOpen,
   onClose,
+  onSongChange,
 }) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const validSongs = useMemo(
-    () => songs.filter(song => Boolean(song.audioUrl)),
+    () =>
+      songs.filter(song =>
+        Boolean(song.audioUrl)
+      ),
     [songs]
   );
 
@@ -88,7 +93,7 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
     validSongs[currentIndex];
 
   /*
-   * Keep the index valid if the filtered
+   * Keep current index valid if the
    * playlist changes.
    */
   useEffect(() => {
@@ -110,11 +115,14 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
   }, [validSongs.length]);
 
   /*
-   * When the player opens, start from
-   * the selected song.
+   * Set the song selected from Song Bank
+   * when the player opens.
    */
   useEffect(() => {
-    if (!isOpen || !validSongs.length) {
+    if (
+      !isOpen ||
+      !validSongs.length
+    ) {
       return;
     }
 
@@ -134,6 +142,24 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
   ]);
 
   /*
+   * Whenever the internal player changes
+   * songs, tell Song Bank.
+   *
+   * This is what makes the physical player
+   * move underneath the new song card.
+   */
+  useEffect(() => {
+    if (!currentSong) {
+      return;
+    }
+
+    onSongChange?.(currentSong);
+  }, [
+    currentSong?.id,
+    onSongChange,
+  ]);
+
+  /*
    * Volume.
    */
   useEffect(() => {
@@ -145,7 +171,10 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
 
     audio.volume = volume;
     audio.muted = isMuted;
-  }, [volume, isMuted]);
+  }, [
+    volume,
+    isMuted,
+  ]);
 
   /*
    * Playback speed.
@@ -158,7 +187,10 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
     }
 
     audio.playbackRate = speed;
-  }, [speed, currentIndex]);
+  }, [
+    speed,
+    currentIndex,
+  ]);
 
   /*
    * Load and automatically play the
@@ -232,7 +264,10 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
   const handlePlayPause = async () => {
     const audio = audioRef.current;
 
-    if (!audio || !currentSong?.audioUrl) {
+    if (
+      !audio ||
+      !currentSong?.audioUrl
+    ) {
       return;
     }
 
@@ -260,12 +295,16 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
     setCurrentTime(0);
 
     if (audio.paused) {
-      void audio.play()
+      void audio
+        .play()
         .then(() => setIsPlaying(true))
         .catch(() => {});
     }
   };
 
+  /*
+   * Previous song.
+   */
   const handlePrevious = () => {
     if (!validSongs.length) {
       return;
@@ -274,8 +313,8 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
     const audio = audioRef.current;
 
     /*
-     * If the song has already played for
-     * more than 3 seconds, restart it.
+     * If we're more than 3 seconds into
+     * the current song, restart it first.
      */
     if (
       audio &&
@@ -287,12 +326,18 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
     }
 
     setCurrentIndex(previous => {
-      if (shuffle && validSongs.length > 1) {
+      if (
+        shuffle &&
+        validSongs.length > 1
+      ) {
         let nextIndex = previous;
 
-        while (nextIndex === previous) {
+        while (
+          nextIndex === previous
+        ) {
           nextIndex = Math.floor(
-            Math.random() * validSongs.length
+            Math.random() *
+              validSongs.length
           );
         }
 
@@ -309,6 +354,9 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
     });
   };
 
+  /*
+   * Next song.
+   */
   const handleNext = () => {
     if (!validSongs.length) {
       return;
@@ -321,9 +369,12 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
       ) {
         let nextIndex = previous;
 
-        while (nextIndex === previous) {
+        while (
+          nextIndex === previous
+        ) {
           nextIndex = Math.floor(
-            Math.random() * validSongs.length
+            Math.random() *
+              validSongs.length
           );
         }
 
@@ -343,6 +394,10 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
     });
   };
 
+  /*
+   * Automatic playback after a song
+   * finishes.
+   */
   const handleEnded = () => {
     setIsPlaying(false);
 
@@ -356,7 +411,8 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
       audio.currentTime = 0;
       setCurrentTime(0);
 
-      void audio.play()
+      void audio
+        .play()
         .then(() => setIsPlaying(true))
         .catch(() => {});
 
@@ -382,7 +438,10 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
   const handleSeek = (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
-    const value = Number(e.target.value);
+    const value = Number(
+      e.target.value
+    );
+
     const audio = audioRef.current;
 
     if (!audio) {
@@ -396,7 +455,9 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
   const handleVolumeChange = (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
-    const value = Number(e.target.value);
+    const value = Number(
+      e.target.value
+    );
 
     setVolume(value);
 
@@ -450,18 +511,18 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
     onClose();
   };
 
-  const formatTime = (time: number) => {
+  const formatTime = (
+    time: number
+  ) => {
     if (!Number.isFinite(time)) {
       return '0:00';
     }
 
-    const minutes = Math.floor(
-      time / 60
-    );
+    const minutes =
+      Math.floor(time / 60);
 
-    const seconds = Math.floor(
-      time % 60
-    );
+    const seconds =
+      Math.floor(time % 60);
 
     return `${minutes}:${seconds
       .toString()
@@ -509,7 +570,9 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
             e.currentTarget.duration;
 
           setDuration(
-            Number.isFinite(nextDuration)
+            Number.isFinite(
+              nextDuration
+            )
               ? nextDuration
               : 0
           );
@@ -531,7 +594,7 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
         }}
       />
 
-      {/* PLAYER HEADER */}
+      {/* HEADER */}
       <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] px-4 py-3.5 sm:px-5">
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#007aff]/20 bg-[#007aff]/[0.08]">
@@ -544,14 +607,16 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
             </p>
 
             <p className="truncate text-xs font-bold text-white sm:text-sm">
-              {currentSong.title || 'Untitled Song'}
+              {currentSong.title ||
+                'Untitled Song'}
             </p>
           </div>
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
           <span className="hidden rounded-lg border border-white/[0.06] bg-white/[0.025] px-2.5 py-1.5 text-[9px] font-bold text-white/25 sm:block">
-            {currentIndex + 1} / {validSongs.length}
+            {currentIndex + 1} /{' '}
+            {validSongs.length}
           </span>
 
           <button
@@ -625,7 +690,6 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
       {/* MAIN CONTROLS */}
       <div className="flex items-center justify-center gap-2 px-4 py-4 sm:gap-3 sm:px-5">
 
-        {/* SHUFFLE */}
         <button
           type="button"
           onClick={handleShuffle}
@@ -653,7 +717,6 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
           <Shuffle className="h-3.5 w-3.5" />
         </button>
 
-        {/* PREVIOUS */}
         <button
           type="button"
           onClick={handlePrevious}
@@ -678,7 +741,6 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
           <SkipBack className="h-4 w-4 fill-current" />
         </button>
 
-        {/* RESTART */}
         <button
           type="button"
           onClick={handleRestart}
@@ -704,7 +766,6 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
           <RotateCcw className="h-3.5 w-3.5" />
         </button>
 
-        {/* PLAY / PAUSE */}
         <button
           type="button"
           onClick={handlePlayPause}
@@ -737,7 +798,6 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
           )}
         </button>
 
-        {/* NEXT */}
         <button
           type="button"
           onClick={handleNext}
@@ -762,7 +822,6 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
           <SkipForward className="h-4 w-4 fill-current" />
         </button>
 
-        {/* REPEAT */}
         <button
           type="button"
           onClick={handleRepeat}
@@ -797,7 +856,6 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
       {/* SECONDARY CONTROLS */}
       <div className="flex flex-col gap-3 border-t border-white/[0.05] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-5">
 
-        {/* VOLUME */}
         <div className="flex items-center gap-2.5">
           <button
             type="button"
@@ -823,7 +881,8 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
               hover:text-white
             "
           >
-            {isMuted || volume === 0 ? (
+            {isMuted ||
+            volume === 0 ? (
               <VolumeX className="h-3.5 w-3.5" />
             ) : (
               <Volume2 className="h-3.5 w-3.5" />
@@ -840,7 +899,9 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
                 ? 0
                 : volume
             }
-            onChange={handleVolumeChange}
+            onChange={
+              handleVolumeChange
+            }
             className="
               h-1
               w-24
@@ -855,12 +916,13 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
 
           <span className="w-8 text-right text-[9px] font-bold text-white/20">
             {Math.round(
-              (isMuted ? 0 : volume) * 100
+              (isMuted
+                ? 0
+                : volume) * 100
             )}
           </span>
         </div>
 
-        {/* SPEED */}
         <div className="flex items-center gap-2">
           <Gauge className="h-3.5 w-3.5 text-white/20" />
 
@@ -869,41 +931,45 @@ const SongAudioPlayer: React.FC<SongAudioPlayerProps> = ({
           </span>
 
           <div className="flex items-center gap-1">
-            {SPEED_OPTIONS.map(option => {
-              const active =
-                speed === option;
+            {SPEED_OPTIONS.map(
+              option => {
+                const active =
+                  speed === option;
 
-              return (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() =>
-                    handleSpeedChange(option)
-                  }
-                  className={`
-                    rounded-lg
-                    border
-                    px-2
-                    py-1.5
-                    text-[9px]
-                    font-bold
-                    transition-all
-                    ${
-                      active
-                        ? 'border-[#007aff]/30 bg-[#007aff]/10 text-[#4da3ff]'
-                        : 'border-white/[0.05] bg-white/[0.02] text-white/25 hover:text-white/60'
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() =>
+                      handleSpeedChange(
+                        option
+                      )
                     }
-                  `}
-                >
-                  {option}x
-                </button>
-              );
-            })}
+                    className={`
+                      rounded-lg
+                      border
+                      px-2
+                      py-1.5
+                      text-[9px]
+                      font-bold
+                      transition-all
+                      ${
+                        active
+                          ? 'border-[#007aff]/30 bg-[#007aff]/10 text-[#4da3ff]'
+                          : 'border-white/[0.05] bg-white/[0.02] text-white/25 hover:text-white/60'
+                      }
+                    `}
+                  >
+                    {option}x
+                  </button>
+                );
+              }
+            )}
           </div>
         </div>
       </div>
 
-      {/* PLAYLIST STATUS */}
+      {/* STATUS */}
       <div className="flex items-center justify-between border-t border-white/[0.04] bg-white/[0.015] px-4 py-2.5 sm:px-5">
         <div className="flex min-w-0 items-center gap-2">
           <div
