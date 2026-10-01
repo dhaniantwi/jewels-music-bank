@@ -14,11 +14,7 @@ import {
   Piano,
   Music2,
   Lock,
-  ChevronRight,
-  Sparkles,
-  Crown,
-  CheckCircle2,
-  MoreHorizontal,
+  ChevronRight
 } from 'lucide-react';
 
 interface MusicTeamViewProps {
@@ -31,12 +27,6 @@ interface MusicTeamViewProps {
   onPhotoSelected?: (member: TeamMember, file: File) => void;
 }
 
-type TeamFilter =
-  | 'all'
-  | 'vocal'
-  | 'instrument'
-  | 'director';
-
 export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
   team,
   activeRole,
@@ -44,49 +34,82 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
   onEditMember,
   onDeleteMember,
   onTogglePermission,
-  onPhotoSelected,
+  onPhotoSelected
 }) => {
   const [activeFilter, setActiveFilter] =
-    useState<TeamFilter>('all');
+    useState<'all' | 'vocal' | 'instrument' | 'director'>('all');
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [photoTarget, setPhotoTarget] =
     useState<TeamMember | null>(null);
 
-  const fileInputRef =
-    useRef<HTMLInputElement | null>(null);
-
   /*
-   * IMPORTANT:
-   * Management access is determined ONLY by the active role.
+   * ============================================================
+   * MD SECURITY GATE
+   * ============================================================
    *
-   * Regular members can still view everything,
-   * but they receive NO management controls.
+   * Only admin_md is allowed to perform ANY modification.
+   *
+   * Regular members can still view the complete team roster,
+   * contact information, roles, photos and permissions.
    */
   const isMD = activeRole === 'admin_md';
 
-  const directors = team.filter(
-    member => member.type === 'director'
-  );
+  /*
+   * ------------------------------------------------------------
+   * PROTECTED ACTIONS
+   * ------------------------------------------------------------
+   *
+   * Every mutation goes through an MD check.
+   * This means the protection is not dependent only on
+   * buttons being hidden.
+   */
 
-  const vocalists = team.filter(
-    member => member.type === 'vocal'
-  );
+  const handleAddMember = () => {
+    if (!isMD) return;
 
-  const instrumentalists = team.filter(
-    member => member.type === 'instrument'
-  );
+    onAddNewMember();
+  };
 
-  const visibleMembers =
-    activeFilter === 'all'
-      ? team
-      : activeFilter === 'vocal'
-      ? vocalists
-      : activeFilter === 'instrument'
-      ? instrumentalists
-      : directors;
+  const handleEditMember = (member: TeamMember) => {
+    if (!isMD) return;
+
+    onEditMember(member);
+  };
+
+  const handleDeleteMember = (member: TeamMember) => {
+    if (!isMD) return;
+
+    const memberType =
+      member.type === 'vocal'
+        ? 'vocal'
+        : member.type === 'instrument'
+          ? 'band'
+          : 'leadership';
+
+    const confirmed = window.confirm(
+      `Remove ${member.name} from the ${memberType} roster?`
+    );
+
+    if (!confirmed) return;
+
+    onDeleteMember(member.id);
+  };
+
+  const handleTogglePermission = (member: TeamMember) => {
+    if (!isMD) return;
+
+    onTogglePermission(member.id);
+  };
+
+  /*
+   * ------------------------------------------------------------
+   * PHOTO UPLOAD
+   * ------------------------------------------------------------
+   */
 
   const handlePhotoClick = (member: TeamMember) => {
-    // HARD MD CHECK
     if (!isMD) return;
 
     setPhotoTarget(member);
@@ -96,9 +119,14 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
   const handlePhotoChange = (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
-    // HARD MD CHECK
+    /*
+     * Security check again.
+     * Even if the input somehow gets triggered,
+     * regular members cannot upload a photo.
+     */
     if (!isMD) {
       event.target.value = '';
+      setPhotoTarget(null);
       return;
     }
 
@@ -124,47 +152,35 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
     setPhotoTarget(null);
   };
 
-  const handleAddMember = () => {
-    if (!isMD) return;
-    onAddNewMember();
-  };
+  /*
+   * ------------------------------------------------------------
+   * MEMBER FILTERING
+   * ------------------------------------------------------------
+   */
 
-  const handleEditMember = (member: TeamMember) => {
-    if (!isMD) return;
-    onEditMember(member);
-  };
+  const directors = team.filter(
+    member => member.type === 'director'
+  );
 
-  const handleDeleteMember = (member: TeamMember) => {
-    if (!isMD) return;
+  const vocalists = team.filter(
+    member => member.type === 'vocal'
+  );
 
-    const label =
-      member.type === 'vocal'
-        ? 'vocal'
-        : member.type === 'instrument'
-        ? 'band'
-        : 'leadership';
+  const instrumentalists = team.filter(
+    member => member.type === 'instrument'
+  );
 
-    if (
-      confirm(
-        `Remove ${member.name} from the ${label} roster?`
-      )
-    ) {
-      onDeleteMember(member.id);
-    }
-  };
+  /*
+   * ------------------------------------------------------------
+   * MEMBER PHOTO
+   * ------------------------------------------------------------
+   */
 
-  const handleTogglePermission = (
-    member: TeamMember
-  ) => {
-    if (!isMD) return;
-    onTogglePermission(member.id);
-  };
-
-  const renderAvatar = (
+  const renderMemberPhoto = (
     member: TeamMember,
-    type: 'director' | 'vocal' | 'instrument'
+    variant: 'director' | 'vocal' | 'instrument'
   ) => {
-    const isDirector = type === 'director';
+    const isDirector = variant === 'director';
 
     return (
       <div className="relative flex-shrink-0">
@@ -175,48 +191,46 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
           title={
             isMD
               ? `Change photo for ${member.name}`
-              : member.name
+              : `${member.name}'s profile photo`
           }
-          className={`
-            group relative flex h-[68px] w-[68px]
-            items-center justify-center overflow-hidden
-            rounded-[22px] border
-            ${
-              isDirector
-                ? 'border-amber-400/20 bg-amber-400/10'
-                : 'border-white/10 bg-white/[0.045]'
-            }
-            ${
-              isMD
-                ? 'cursor-pointer hover:border-[#4da3ff]/50 hover:bg-white/[0.08]'
-                : 'cursor-default'
-            }
-            transition-all duration-300
-          `}
+          aria-label={
+            isMD
+              ? `Change photo for ${member.name}`
+              : `${member.name}'s profile photo`
+          }
+          className={`group relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-[20px] border ${
+            isDirector
+              ? 'border-amber-500/20 bg-amber-500/10'
+              : 'border-white/10 bg-white/[0.035]'
+          } ${
+            isMD
+              ? 'cursor-pointer hover:border-[#007aff]/40 hover:bg-white/[0.07]'
+              : 'cursor-default'
+          }`}
         >
           {member.photoUrl ? (
             <img
               src={member.photoUrl}
               alt={member.name}
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
           ) : member.icon ? (
             <span className="text-2xl">
               {member.icon}
             </span>
           ) : (
-            <Users className="h-7 w-7 text-white/20" />
+            <Users className="h-6 w-6 text-white/25" />
           )}
 
           {isMD && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all group-hover:bg-black/35">
+            <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/30">
               <Camera className="h-4 w-4 text-white opacity-0 transition-opacity group-hover:opacity-100" />
             </div>
           )}
         </button>
 
         {isMD && (
-          <div className="pointer-events-none absolute -bottom-1.5 -right-1.5 flex h-6 w-6 items-center justify-center rounded-full border border-[#111113] bg-[#17191d] shadow-xl">
+          <div className="pointer-events-none absolute -bottom-1.5 -right-1.5 flex h-6 w-6 items-center justify-center rounded-full border border-white/10 bg-[#19191c] shadow-lg">
             <Camera className="h-3 w-3 text-[#4da3ff]" />
           </div>
         )}
@@ -224,37 +238,42 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
     );
   };
 
-  const renderContact = (member: TeamMember) => {
+  /*
+   * ------------------------------------------------------------
+   * CONTACT INFORMATION
+   * ------------------------------------------------------------
+   */
+
+  const renderContactInfo = (member: TeamMember) => {
     if (!member.phone && !member.email) {
       return (
-        <div className="mt-4 flex items-center gap-2 text-[11px] font-medium text-white/20">
-          <div className="h-px w-4 bg-white/10" />
-          No contact information
+        <div className="pt-2 text-[11px] font-medium text-white/20">
+          No contact information added
         </div>
       );
     }
 
     return (
-      <div className="mt-4 space-y-2">
+      <div className="space-y-2 pt-2 text-xs text-white/40">
         {member.phone && (
-          <div className="flex min-w-0 items-center gap-2.5">
-            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-xl border border-[#4da3ff]/10 bg-[#4da3ff]/[0.08]">
+          <div className="flex min-w-0 items-center gap-2">
+            <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg bg-[#007aff]/10">
               <Phone className="h-3 w-3 text-[#4da3ff]" />
             </div>
 
-            <span className="truncate text-[11px] font-medium text-white/40">
+            <span className="truncate">
               {member.phone}
             </span>
           </div>
         )}
 
         {member.email && (
-          <div className="flex min-w-0 items-center gap-2.5">
-            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.035]">
+          <div className="flex min-w-0 items-center gap-2">
+            <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg bg-white/[0.04]">
               <Mail className="h-3 w-3 text-white/40" />
             </div>
 
-            <span className="truncate text-[11px] font-medium text-white/40">
+            <span className="truncate">
               {member.email}
             </span>
           </div>
@@ -263,20 +282,29 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
     );
   };
 
-  const renderActions = (
+  /*
+   * ------------------------------------------------------------
+   * EDIT / DELETE ACTIONS
+   * ------------------------------------------------------------
+   */
+
+  const renderMemberActions = (
     member: TeamMember,
-    allowDelete = true
+    allowDelete: boolean
   ) => {
-    // NEVER expose management actions to regular members.
+    /*
+     * Regular members get absolutely no editing controls.
+     */
     if (!isMD) return null;
 
     return (
-      <div className="flex items-center gap-1.5">
+      <div className="flex flex-shrink-0 items-center gap-1.5">
         <button
           type="button"
           onClick={() => handleEditMember(member)}
           title="Edit member"
-          className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.035] text-white/35 transition-all hover:border-[#4da3ff]/25 hover:bg-[#4da3ff]/10 hover:text-[#4da3ff] active:scale-95"
+          aria-label={`Edit ${member.name}`}
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.035] text-white/40 transition-all hover:border-[#007aff]/25 hover:bg-[#007aff]/10 hover:text-[#4da3ff] active:scale-95"
         >
           <Edit className="h-3.5 w-3.5" />
         </button>
@@ -285,8 +313,9 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
           <button
             type="button"
             onClick={() => handleDeleteMember(member)}
-            title="Remove member"
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.035] text-white/35 transition-all hover:border-rose-400/20 hover:bg-rose-400/10 hover:text-rose-300 active:scale-95"
+            title="Delete member"
+            aria-label={`Delete ${member.name}`}
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.035] text-white/40 transition-all hover:border-rose-500/20 hover:bg-rose-500/10 hover:text-rose-300 active:scale-95"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </button>
@@ -295,27 +324,43 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
     );
   };
 
-  const renderPermission = (member: TeamMember) => {
-    // Permission management is MD-only.
+  /*
+   * ------------------------------------------------------------
+   * FILTER STYLE
+   * ------------------------------------------------------------
+   */
+
+  const filterClass = (
+    active: boolean,
+    amber = false
+  ) =>
+    active
+      ? amber
+        ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/10'
+        : 'bg-[#007aff] text-white shadow-lg shadow-blue-500/20'
+      : 'bg-transparent text-white/40 hover:bg-white/[0.07] hover:text-white';
+
+  /*
+   * ------------------------------------------------------------
+   * PERMISSION BUTTON
+   * ------------------------------------------------------------
+   */
+
+  const renderPermissionButton = (member: TeamMember) => {
+    /*
+     * Permission management is strictly MD-only.
+     */
     if (!isMD) return null;
 
     return (
       <button
         type="button"
-        onClick={() =>
-          handleTogglePermission(member)
-        }
-        className={`
-          inline-flex items-center gap-1.5
-          rounded-xl border px-3 py-1.5
-          text-[9px] font-extrabold uppercase
-          tracking-[0.1em] transition-all
-          ${
-            member.canEdit
-              ? 'border-emerald-400/15 bg-emerald-400/10 text-emerald-300'
-              : 'border-white/10 bg-white/[0.035] text-white/35 hover:bg-white/[0.07] hover:text-white/60'
-          }
-        `}
+        onClick={() => handleTogglePermission(member)}
+        className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.08em] transition-all ${
+          member.canEdit
+            ? 'border-emerald-500/15 bg-emerald-500/10 text-emerald-300'
+            : 'border-white/10 bg-white/[0.035] text-white/40 hover:bg-white/[0.07] hover:text-white/70'
+        }`}
       >
         <ShieldCheck className="h-3 w-3" />
 
@@ -326,532 +371,509 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
     );
   };
 
-  const filterButton = (
-    filter: TeamFilter,
-    label: string,
-    count: number,
-    icon: React.ReactNode,
-    accent = false
-  ) => {
-    const active = activeFilter === filter;
-
-    return (
-      <button
-        type="button"
-        onClick={() => setActiveFilter(filter)}
-        className={`
-          flex items-center gap-2
-          whitespace-nowrap rounded-xl
-          px-3.5 py-2.5 text-[11px]
-          font-bold transition-all
-          ${
-            active
-              ? accent
-                ? 'bg-amber-400 text-black shadow-lg shadow-amber-500/10'
-                : 'bg-[#007aff] text-white shadow-lg shadow-blue-500/20'
-              : 'text-white/35 hover:bg-white/[0.06] hover:text-white'
-          }
-        `}
-      >
-        {icon}
-        {label}
-        <span
-          className={
-            active
-              ? 'opacity-70'
-              : 'text-white/20'
-          }
-        >
-          {count}
-        </span>
-      </button>
-    );
-  };
-
-  const renderMemberCard = (
-    member: TeamMember,
-    type: 'director' | 'vocal' | 'instrument'
-  ) => {
-    const isDirector = type === 'director';
-
-    return (
-      <div
-        key={member.id}
-        className={`
-          group relative overflow-hidden
-          rounded-[26px] border p-5
-          transition-all duration-300
-          ${
-            isDirector
-              ? 'border-amber-400/10 bg-amber-400/[0.025] hover:border-amber-400/25 hover:bg-amber-400/[0.04]'
-              : 'border-white/[0.08] bg-white/[0.025] hover:border-[#4da3ff]/20 hover:bg-white/[0.045]'
-          }
-        `}
-      >
-        {/* CARD GLOW */}
-        <div
-          className={`
-            pointer-events-none absolute
-            -right-20 -top-20 h-40 w-40
-            rounded-full blur-3xl
-            ${
-              isDirector
-                ? 'bg-amber-400/[0.07]'
-                : 'bg-[#007aff]/[0.05]'
-            }
-          `}
-        />
-
-        <div className="relative">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-3.5">
-              {renderAvatar(member, type)}
-
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <h3 className="truncate text-[15px] font-extrabold tracking-tight text-white">
-                    {member.name}
-                  </h3>
-
-                  {isDirector && (
-                    <span className="rounded-full bg-amber-400 px-1.5 py-0.5 text-[7px] font-black uppercase tracking-wider text-black">
-                      MD
-                    </span>
-                  )}
-                </div>
-
-                <p
-                  className={`
-                    mt-1 truncate text-[11px]
-                    font-bold
-                    ${
-                      isDirector
-                        ? 'text-amber-300'
-                        : 'text-[#4da3ff]'
-                    }
-                  `}
-                >
-                  {isDirector
-                    ? member.role
-                    : member.type === 'vocal'
-                    ? member.voicePart ||
-                      member.role
-                    : member.instrumentType ||
-                      member.role}
-                </p>
-              </div>
-            </div>
-
-            {renderActions(
-              member,
-              !isDirector
-            )}
-          </div>
-
-          {renderContact(member)}
-
-          <div className="mt-5 flex min-h-[31px] items-center justify-between gap-2 border-t border-white/[0.06] pt-3">
-            <span
-              className={`
-                rounded-full border px-2.5 py-1
-                text-[8px] font-extrabold
-                uppercase tracking-[0.1em]
-                ${
-                  isDirector
-                    ? 'border-amber-400/15 bg-amber-400/10 text-amber-300'
-                    : 'border-[#4da3ff]/15 bg-[#4da3ff]/[0.08] text-[#4da3ff]'
-                }
-              `}
-            >
-              {isDirector
-                ? 'Music Leadership'
-                : member.type === 'vocal'
-                ? member.voicePart ||
-                  'Vocal Section'
-                : member.instrumentType ||
-                  'Band'}
-            </span>
-
-            {isDirector ? (
-              <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-emerald-300">
-                <CheckCircle2 className="h-3 w-3" />
-                Active
-              </span>
-            ) : (
-              renderPermission(member)
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   return (
-    <div className="w-full min-w-0 max-w-full animate-in fade-in duration-300">
-      {/* Hidden photo uploader */}
+    <div className="w-full min-w-0 max-w-full overflow-hidden rounded-[30px] border border-white/10 bg-[#0f0f11] text-white shadow-2xl shadow-black/20 animate-in fade-in duration-200">
+
+      {/* Hidden photo input — functionally accessible only to MD */}
       <input
         ref={fileInputRef}
         type="file"
         accept="image/png,image/jpeg,image/webp,image/gif"
         className="hidden"
         onChange={handlePhotoChange}
+        disabled={!isMD}
       />
 
       <div className="space-y-6">
-        {/* ========================================================= */}
-        {/* PREMIUM HERO */}
-        {/* ========================================================= */}
 
-        <section className="relative overflow-hidden rounded-[30px] border border-white/[0.08] bg-[#101114] shadow-2xl shadow-black/30">
-          {/* Ambient lighting */}
-          <div className="pointer-events-none absolute -right-32 -top-32 h-80 w-80 rounded-full bg-[#007aff]/[0.08] blur-[90px]" />
+        {/* =====================================================
+            HERO
+        ====================================================== */}
 
-          <div className="pointer-events-none absolute -bottom-32 -left-20 h-64 w-64 rounded-full bg-amber-400/[0.035] blur-[80px]" />
+        <section className="relative overflow-hidden rounded-[30px] border border-white/10 bg-[#111113]/90 p-5 shadow-2xl shadow-black/20 backdrop-blur-2xl sm:p-7">
 
-          <div className="relative p-5 sm:p-7 lg:p-8">
-            <div className="flex flex-col gap-7 xl:flex-row xl:items-end xl:justify-between">
-              <div className="min-w-0">
-                <div className="mb-4 flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-[#4da3ff]/15 bg-[#4da3ff]/[0.08] px-3 py-1.5 text-[8px] font-black uppercase tracking-[0.18em] text-[#4da3ff]">
-                    <Users className="h-3 w-3" />
-                    Music Team
-                  </span>
+          <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-[#007aff]/[0.07] blur-3xl" />
 
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.07] bg-white/[0.025] px-3 py-1.5 text-[8px] font-bold uppercase tracking-[0.16em] text-white/25">
-                    <Sparkles className="h-3 w-3" />
-                    Jewels Music Hub
-                  </span>
-                </div>
+          <div className="relative flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
 
-                <h1 className="text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl lg:text-[42px]">
+            <div className="min-w-0">
+
+              <div className="mb-4 flex flex-wrap items-center gap-2">
+
+                <span className="flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-[9px] font-extrabold uppercase tracking-[0.18em] text-amber-300">
+                  <Users className="h-3 w-3" />
                   Music Team
-                </h1>
+                </span>
 
-                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/35">
-                  Meet the people serving through
-                  vocals, instrumentation and music
-                  leadership across the ministry.
-                </p>
+                <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-white/25">
+                  {isMD ? 'Team Control' : 'Team Directory'}
+                </span>
 
-                <div className="mt-5 flex flex-wrap items-center gap-2.5">
-                  <div className="flex items-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.025] px-3 py-2">
-                    <Users className="h-3.5 w-3.5 text-[#4da3ff]" />
-                    <span className="text-[10px] font-bold text-white/45">
-                      {team.length}{' '}
-                      {team.length === 1
-                        ? 'Member'
-                        : 'Members'}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.025] px-3 py-2">
-                    <Mic2 className="h-3.5 w-3.5 text-[#4da3ff]" />
-                    <span className="text-[10px] font-bold text-white/45">
-                      {vocalists.length} Vocal
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.025] px-3 py-2">
-                    <Piano className="h-3.5 w-3.5 text-[#4da3ff]" />
-                    <span className="text-[10px] font-bold text-white/45">
-                      {instrumentalists.length} Band
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2 rounded-xl border border-amber-400/10 bg-amber-400/[0.05] px-3 py-2">
-                    <Crown className="h-3.5 w-3.5 text-amber-300" />
-                    <span className="text-[10px] font-bold text-amber-300/70">
-                      {directors.length} Leader
-                    </span>
-                  </div>
-                </div>
               </div>
 
-              {/* MD CONTROL */}
+              <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+                Jewels Music Team
+              </h1>
+
+              <p className="mt-2 max-w-2xl text-sm font-medium leading-relaxed text-white/40">
+                {team.length} dedicated{' '}
+                {team.length === 1
+                  ? 'member'
+                  : 'members'} serving across vocals,
+                instrumentation and music leadership.
+              </p>
+
+            </div>
+
+            <div className="flex flex-shrink-0">
+
               {isMD ? (
                 <button
                   type="button"
                   onClick={handleAddMember}
-                  className="group flex flex-shrink-0 items-center justify-center gap-2.5 rounded-2xl bg-[#007aff] px-5 py-3.5 text-xs font-extrabold text-white shadow-xl shadow-blue-500/20 transition-all hover:bg-[#0877e8] hover:shadow-blue-500/30 active:scale-[0.98]"
+                  className="group flex items-center gap-2.5 rounded-2xl bg-[#007aff] px-5 py-3 text-xs font-extrabold text-white shadow-xl shadow-blue-500/20 transition-all hover:bg-[#006fe6] active:scale-95 sm:text-sm"
                 >
                   <UserPlus className="h-4 w-4" />
                   Add Team Member
-                  <ChevronRight className="h-3.5 w-3.5 opacity-50 transition-transform group-hover:translate-x-0.5" />
+                  <ChevronRight className="h-3.5 w-3.5 opacity-60 transition-transform group-hover:translate-x-0.5" />
                 </button>
               ) : (
-                <div className="flex flex-shrink-0 items-center gap-2.5 rounded-2xl border border-white/[0.07] bg-white/[0.025] px-4 py-3.5">
-                  <Lock className="h-3.5 w-3.5 text-white/25" />
-
-                  <div>
-                    <p className="text-[10px] font-bold text-white/45">
-                      View Only
-                    </p>
-
-                    <p className="mt-0.5 text-[8px] font-medium text-white/20">
-                      Team management is restricted
-                    </p>
-                  </div>
+                <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3 text-xs font-semibold text-white/35">
+                  <Lock className="h-3.5 w-3.5" />
+                  MD-only management
                 </div>
               )}
+
             </div>
 
-            {/* FILTER BAR */}
-            <div className="mt-7 overflow-x-auto">
-              <div className="inline-flex min-w-max items-center gap-1 rounded-2xl border border-white/[0.07] bg-black/25 p-1.5">
-                {filterButton(
-                  'all',
-                  'All Members',
-                  team.length,
-                  <Users className="h-3.5 w-3.5" />
-                )}
-
-                {filterButton(
-                  'vocal',
-                  'Vocalists',
-                  vocalists.length,
-                  <Mic2 className="h-3.5 w-3.5" />
-                )}
-
-                {filterButton(
-                  'instrument',
-                  'Musicians',
-                  instrumentalists.length,
-                  <Piano className="h-3.5 w-3.5" />
-                )}
-
-                {filterButton(
-                  'director',
-                  'Leadership',
-                  directors.length,
-                  <Crown className="h-3.5 w-3.5" />,
-                  true
-                )}
-              </div>
-            </div>
           </div>
+
+          {/* ===================================================
+              FILTERS
+          ==================================================== */}
+
+          <div className="relative mt-7 overflow-x-auto">
+
+            <div className="flex min-w-max items-center gap-1.5 rounded-2xl border border-white/10 bg-black/30 p-1">
+
+              <button
+                type="button"
+                onClick={() => setActiveFilter('all')}
+                className={`rounded-xl px-3.5 py-2 text-xs font-bold whitespace-nowrap transition-all ${filterClass(
+                  activeFilter === 'all'
+                )}`}
+              >
+                All Members ({team.length})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveFilter('vocal')}
+                className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold whitespace-nowrap transition-all ${filterClass(
+                  activeFilter === 'vocal'
+                )}`}
+              >
+                <Mic2 className="h-3.5 w-3.5" />
+                Vocalists ({vocalists.length})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveFilter('instrument')}
+                className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold whitespace-nowrap transition-all ${filterClass(
+                  activeFilter === 'instrument'
+                )}`}
+              >
+                <Piano className="h-3.5 w-3.5" />
+                Musicians ({instrumentalists.length})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveFilter('director')}
+                className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold whitespace-nowrap transition-all ${filterClass(
+                  activeFilter === 'director',
+                  true
+                )}`}
+              >
+                <Music2 className="h-3.5 w-3.5" />
+                Leadership ({directors.length})
+              </button>
+
+            </div>
+
+          </div>
+
         </section>
 
-        {/* ========================================================= */}
-        {/* TEAM CONTENT */}
-        {/* ========================================================= */}
+        {/* =====================================================
+            LEADERSHIP
+        ====================================================== */}
 
-        {visibleMembers.length > 0 ? (
-          <div className="space-y-6">
-            {/* LEADERSHIP */}
-            {(activeFilter === 'all' ||
-              activeFilter === 'director') &&
-              directors.length > 0 && (
-                <section className="overflow-hidden rounded-[30px] border border-white/[0.08] bg-[#101114] shadow-xl shadow-black/10">
-                  <div className="relative p-5 sm:p-6">
-                    <div className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-amber-400/[0.04] blur-3xl" />
+        {(activeFilter === 'all' ||
+          activeFilter === 'director') &&
+          directors.length > 0 && (
 
-                    <div className="relative mb-5 flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-amber-400/15 bg-amber-400/[0.08]">
-                          <Crown className="h-4 w-4 text-amber-300" />
+            <section className="rounded-[30px] border border-white/10 bg-[#111113]/90 p-5 shadow-2xl shadow-black/10 backdrop-blur-2xl sm:p-6">
+
+              <div className="mb-5 flex items-center justify-between gap-3">
+
+                <div className="flex items-center gap-2.5">
+
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/10">
+                    <ShieldCheck className="h-4 w-4 text-amber-300" />
+                  </div>
+
+                  <div>
+                    <h2 className="text-lg font-bold tracking-tight text-white sm:text-xl">
+                      Music Leadership
+                    </h2>
+
+                    <p className="mt-0.5 text-[11px] text-white/25">
+                      Ministry direction and administration
+                    </p>
+                  </div>
+
+                </div>
+
+                <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.12em] text-amber-300">
+                  {directors.length} Leader
+                  {directors.length !== 1 ? 's' : ''}
+                </span>
+
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+
+                {directors.map(member => (
+
+                  <div
+                    key={member.id}
+                    className="group relative overflow-hidden rounded-[26px] border border-amber-500/10 bg-white/[0.035] p-5 backdrop-blur-xl transition-all duration-300 hover:border-amber-500/20 hover:bg-white/[0.05]"
+                  >
+
+                    <div className="pointer-events-none absolute -right-16 -top-16 h-32 w-32 rounded-full bg-amber-500/[0.06] blur-3xl" />
+
+                    <div className="relative">
+
+                      <div className="mb-4 flex items-start justify-between gap-3">
+
+                        <div className="flex min-w-0 items-center gap-3">
+
+                          {renderMemberPhoto(member, 'director')}
+
+                          <div className="min-w-0">
+
+                            <div className="flex items-center gap-1.5">
+
+                              <h3 className="truncate text-base font-extrabold text-white">
+                                {member.name}
+                              </h3>
+
+                              <span className="rounded-full bg-amber-500 px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-wider text-black">
+                                MD
+                              </span>
+
+                            </div>
+
+                            <p className="mt-1 truncate text-xs font-semibold text-amber-300">
+                              {member.role}
+                            </p>
+
+                          </div>
+
                         </div>
 
-                        <div>
-                          <h2 className="text-base font-extrabold tracking-tight text-white sm:text-lg">
-                            Music Leadership
-                          </h2>
+                        {renderMemberActions(member, false)}
 
-                          <p className="mt-0.5 text-[10px] text-white/25">
-                            Ministry direction and administration
-                          </p>
-                        </div>
                       </div>
 
-                      <span className="rounded-full border border-amber-400/15 bg-amber-400/[0.07] px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.12em] text-amber-300">
-                        {directors.length}{' '}
-                        {directors.length === 1
-                          ? 'Leader'
-                          : 'Leaders'}
-                      </span>
-                    </div>
+                      {renderContactInfo(member)}
 
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                      {directors.map(member =>
-                        renderMemberCard(
-                          member,
-                          'director'
-                        )
-                      )}
-                    </div>
-                  </div>
-                </section>
-              )}
+                      <div className="mt-5 flex items-center justify-between gap-2 border-t border-white/[0.07] pt-3">
 
-            {/* VOCAL TEAM */}
-            {(activeFilter === 'all' ||
-              activeFilter === 'vocal') &&
-              vocalists.length > 0 && (
-                <section className="overflow-hidden rounded-[30px] border border-white/[0.08] bg-[#101114] shadow-xl shadow-black/10">
-                  <div className="p-5 sm:p-6">
-                    <div className="mb-5 flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#4da3ff]/15 bg-[#4da3ff]/[0.08]">
-                          <Mic2 className="h-4 w-4 text-[#4da3ff]" />
-                        </div>
+                        <span className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.08em] text-amber-300">
+                          <ShieldCheck className="h-3.5 w-3.5" />
+                          Full Admin Rights
+                        </span>
 
-                        <div>
-                          <h2 className="text-base font-extrabold tracking-tight text-white sm:text-lg">
-                            Vocal Team
-                          </h2>
+                        <span className="rounded-full border border-emerald-500/10 bg-emerald-500/10 px-2 py-1 text-[9px] font-bold text-emerald-300">
+                          Active
+                        </span>
 
-                          <p className="mt-0.5 text-[10px] text-white/25">
-                            Leads, harmonies and vocal sections
-                          </p>
-                        </div>
                       </div>
 
-                      <span className="rounded-full border border-white/[0.07] bg-white/[0.025] px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.12em] text-white/30">
-                        {vocalists.length}{' '}
-                        {vocalists.length === 1
-                          ? 'Vocalist'
-                          : 'Vocalists'}
-                      </span>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                      {vocalists.map(member =>
-                        renderMemberCard(
-                          member,
-                          'vocal'
-                        )
-                      )}
-                    </div>
                   </div>
-                </section>
-              )}
 
-            {/* INSTRUMENTALISTS */}
-            {(activeFilter === 'all' ||
-              activeFilter === 'instrument') &&
-              instrumentalists.length > 0 && (
-                <section className="overflow-hidden rounded-[30px] border border-white/[0.08] bg-[#101114] shadow-xl shadow-black/10">
-                  <div className="p-5 sm:p-6">
-                    <div className="mb-5 flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#4da3ff]/15 bg-[#4da3ff]/[0.08]">
-                          <Piano className="h-4 w-4 text-[#4da3ff]" />
+                ))}
+
+              </div>
+
+            </section>
+          )}
+
+        {/* =====================================================
+            VOCAL TEAM
+        ====================================================== */}
+
+        {(activeFilter === 'all' ||
+          activeFilter === 'vocal') &&
+          vocalists.length > 0 && (
+
+            <section className="rounded-[30px] border border-white/10 bg-[#111113]/90 p-5 shadow-2xl shadow-black/10 backdrop-blur-2xl sm:p-6">
+
+              <div className="mb-5 flex items-center justify-between gap-3">
+
+                <div className="flex items-center gap-2.5">
+
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#007aff]/20 bg-[#007aff]/10">
+                    <Mic2 className="h-4 w-4 text-[#4da3ff]" />
+                  </div>
+
+                  <div>
+                    <h2 className="text-lg font-bold tracking-tight text-white sm:text-xl">
+                      Vocal Team
+                    </h2>
+
+                    <p className="mt-0.5 text-[11px] text-white/25">
+                      Harmonies, solos and lead vocal assignments
+                    </p>
+                  </div>
+
+                </div>
+
+                <span className="rounded-full border border-white/10 bg-white/[0.035] px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.12em] text-white/35">
+                  {vocalists.length} Vocalist
+                  {vocalists.length !== 1 ? 's' : ''}
+                </span>
+
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+
+                {vocalists.map(member => (
+
+                  <div
+                    key={member.id}
+                    className="group rounded-[26px] border border-white/10 bg-white/[0.035] p-5 backdrop-blur-xl transition-all duration-300 hover:border-[#007aff]/20 hover:bg-white/[0.05]"
+                  >
+
+                    <div className="flex min-w-0 flex-col">
+
+                      <div className="mb-4 flex items-start justify-between gap-3">
+
+                        <div className="flex min-w-0 items-center gap-3">
+
+                          {renderMemberPhoto(member, 'vocal')}
+
+                          <div className="min-w-0">
+
+                            <h3 className="truncate text-base font-bold text-white">
+                              {member.name}
+                            </h3>
+
+                            <p className="mt-1 truncate text-xs font-semibold text-[#4da3ff]">
+                              {member.voicePart || member.role}
+                            </p>
+
+                          </div>
+
                         </div>
 
-                        <div>
-                          <h2 className="text-base font-extrabold tracking-tight text-white sm:text-lg">
-                            Band & Instrumentalists
-                          </h2>
+                        {renderMemberActions(member, true)}
 
-                          <p className="mt-0.5 text-[10px] text-white/25">
-                            Musicians and instrumental sections
-                          </p>
-                        </div>
                       </div>
 
-                      <span className="rounded-full border border-white/[0.07] bg-white/[0.025] px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.12em] text-white/30">
-                        {instrumentalists.length}{' '}
-                        {instrumentalists.length === 1
-                          ? 'Musician'
-                          : 'Musicians'}
-                      </span>
+                      {renderContactInfo(member)}
+
+                      <div className="mt-5 flex min-h-[30px] items-center justify-between gap-2 border-t border-white/[0.07] pt-3">
+
+                        <span className="rounded-full border border-[#007aff]/20 bg-[#007aff]/10 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.08em] text-[#4da3ff]">
+                          {member.voicePart || 'Vocal Section'}
+                        </span>
+
+                        {renderPermissionButton(member)}
+
+                      </div>
+
                     </div>
 
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                      {instrumentalists.map(member =>
-                        renderMemberCard(
-                          member,
-                          'instrument'
-                        )
-                      )}
-                    </div>
                   </div>
-                </section>
-              )}
-          </div>
-        ) : (
-          /* ======================================================= */
-          /* EMPTY / FILTER STATE */
-          /* ======================================================= */
 
-          <section className="rounded-[30px] border border-white/[0.08] bg-[#101114] p-10 text-center shadow-xl shadow-black/10">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[22px] border border-[#4da3ff]/15 bg-[#4da3ff]/[0.08]">
+                ))}
+
+              </div>
+
+            </section>
+          )}
+
+        {/* =====================================================
+            INSTRUMENTALISTS
+        ====================================================== */}
+
+        {(activeFilter === 'all' ||
+          activeFilter === 'instrument') &&
+          instrumentalists.length > 0 && (
+
+            <section className="rounded-[30px] border border-white/10 bg-[#111113]/90 p-5 shadow-2xl shadow-black/10 backdrop-blur-2xl sm:p-6">
+
+              <div className="mb-5 flex items-center justify-between gap-3">
+
+                <div className="flex items-center gap-2.5">
+
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#007aff]/20 bg-[#007aff]/10">
+                    <Piano className="h-4 w-4 text-[#4da3ff]" />
+                  </div>
+
+                  <div>
+                    <h2 className="text-lg font-bold tracking-tight text-white sm:text-xl">
+                      Band & Instrumentalists
+                    </h2>
+
+                    <p className="mt-0.5 text-[11px] text-white/25">
+                      Musicians and instrumental sections
+                    </p>
+                  </div>
+
+                </div>
+
+                <span className="rounded-full border border-white/10 bg-white/[0.035] px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.12em] text-white/35">
+                  {instrumentalists.length} Musician
+                  {instrumentalists.length !== 1 ? 's' : ''}
+                </span>
+
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+
+                {instrumentalists.map(member => (
+
+                  <div
+                    key={member.id}
+                    className="group rounded-[26px] border border-white/10 bg-white/[0.035] p-5 backdrop-blur-xl transition-all duration-300 hover:border-[#007aff]/20 hover:bg-white/[0.05]"
+                  >
+
+                    <div className="flex min-w-0 flex-col">
+
+                      <div className="mb-4 flex items-start justify-between gap-3">
+
+                        <div className="flex min-w-0 items-center gap-3">
+
+                          {renderMemberPhoto(member, 'instrument')}
+
+                          <div className="min-w-0">
+
+                            <h3 className="truncate text-base font-bold text-white">
+                              {member.name}
+                            </h3>
+
+                            <p className="mt-1 truncate text-xs font-semibold text-[#4da3ff]">
+                              {member.instrumentType || member.role}
+                            </p>
+
+                          </div>
+
+                        </div>
+
+                        {renderMemberActions(member, true)}
+
+                      </div>
+
+                      {renderContactInfo(member)}
+
+                      <div className="mt-5 flex min-h-[30px] items-center justify-between gap-2 border-t border-white/[0.07] pt-3">
+
+                        <span className="rounded-full border border-[#007aff]/20 bg-[#007aff]/10 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.08em] text-[#4da3ff]">
+                          {member.instrumentType || 'Band'}
+                        </span>
+
+                        {renderPermissionButton(member)}
+
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                ))}
+
+              </div>
+
+            </section>
+          )}
+
+        {/* =====================================================
+            EMPTY STATE
+        ====================================================== */}
+
+        {team.length === 0 && (
+
+          <section className="rounded-[30px] border border-white/10 bg-[#111113]/90 p-10 text-center shadow-2xl shadow-black/10 backdrop-blur-2xl">
+
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[22px] border border-[#007aff]/20 bg-[#007aff]/10">
               <Users className="h-7 w-7 text-[#4da3ff]" />
             </div>
 
-            <h2 className="mt-5 text-xl font-extrabold tracking-tight text-white">
-              {team.length === 0
-                ? 'No team members yet'
-                : 'No members in this section'}
+            <h2 className="mt-5 text-xl font-bold text-white">
+              No team members yet
             </h2>
 
-            <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-white/30">
-              {team.length === 0
-                ? 'Build the Jewels music roster by adding your first vocalist, instrumentalist or music leader.'
-                : 'There are currently no team members assigned to this section.'}
+            <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-white/35">
+              Add your first vocalist, instrumentalist
+              or music leader to begin building the
+              ministry roster.
             </p>
 
-            {team.length === 0 && isMD && (
+            {isMD && (
               <button
                 type="button"
                 onClick={handleAddMember}
-                className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[#007aff] px-5 py-3 text-xs font-extrabold text-white shadow-xl shadow-blue-500/20 transition-all hover:bg-[#0877e8] active:scale-95"
+                className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[#007aff] px-5 py-3 text-xs font-extrabold text-white shadow-xl shadow-blue-500/20 hover:bg-[#006fe6]"
               >
                 <UserPlus className="h-4 w-4" />
                 Add First Member
               </button>
             )}
+
           </section>
         )}
 
-        {/* ========================================================= */}
-        {/* MD INFORMATION PANEL */}
-        {/* ========================================================= */}
+        {/* =====================================================
+            PHOTO INFORMATION
+        ====================================================== */}
 
         {isMD && team.length > 0 && (
-          <section className="relative overflow-hidden rounded-[26px] border border-white/[0.07] bg-[#101114] p-4 shadow-lg shadow-black/10 sm:p-5">
-            <div className="pointer-events-none absolute -right-16 -top-16 h-32 w-32 rounded-full bg-[#007aff]/[0.04] blur-3xl" />
 
-            <div className="relative flex items-start gap-3">
-              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-[#4da3ff]/15 bg-[#4da3ff]/[0.08]">
+          <section className="rounded-[24px] border border-white/10 bg-white/[0.025] p-4 backdrop-blur-xl sm:p-5">
+
+            <div className="flex items-start gap-3">
+
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-[#007aff]/20 bg-[#007aff]/10">
                 <ImageIcon className="h-4 w-4 text-[#4da3ff]" />
               </div>
 
               <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-xs font-extrabold text-white">
-                    Team photo management
-                  </p>
 
-                  <span className="rounded-full border border-emerald-400/10 bg-emerald-400/[0.07] px-2 py-0.5 text-[7px] font-black uppercase tracking-wider text-emerald-300">
-                    MD Only
-                  </span>
-                </div>
-
-                <p className="mt-1 max-w-2xl text-[10px] leading-relaxed text-white/25">
-                  Click a team member's profile image
-                  to replace their photo. JPG, PNG, WebP
-                  and GIF images up to 5 MB are supported.
+                <p className="text-xs font-bold text-white">
+                  Team photos
                 </p>
+
+                <p className="mt-1 max-w-2xl text-[11px] leading-relaxed text-white/30">
+                  Click a member's photo to change their
+                  profile image. Supported formats are JPG,
+                  PNG, WebP and GIF, with a maximum file size
+                  of 5 MB.
+                </p>
+
               </div>
+
             </div>
+
           </section>
         )}
 
-        {/* ========================================================= */}
-        {/* VIEW-ONLY NOTICE FOR REGULAR MEMBERS */}
-        {/* ========================================================= */}
-
-        {!isMD && team.length > 0 && (
-          <section className="rounded-[24px] border border-white/[0.06] bg-white/[0.015] px-4 py-3.5">
-            <div className="flex items-center justify-center gap-2 text-center">
-              <Lock className="h-3.5 w-3.5 text-white/20" />
-
-              <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-white/20">
-                Team management is available to the Music Director only
-              </p>
-            </div>
-          </section>
-        )}
       </div>
     </div>
   );
