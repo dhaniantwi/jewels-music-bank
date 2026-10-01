@@ -14,7 +14,13 @@ import {
   Piano,
   Music2,
   Lock,
-  ChevronRight
+  ChevronRight,
+  Crown,
+  CheckCircle2,
+  UserRound,
+  Upload,
+  X,
+  Sparkles,
 } from 'lucide-react';
 
 interface MusicTeamViewProps {
@@ -27,6 +33,12 @@ interface MusicTeamViewProps {
   onPhotoSelected?: (member: TeamMember, file: File) => void;
 }
 
+type TeamFilter =
+  | 'all'
+  | 'vocal'
+  | 'instrument'
+  | 'director';
+
 export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
   team,
   activeRole,
@@ -34,95 +46,93 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
   onEditMember,
   onDeleteMember,
   onTogglePermission,
-  onPhotoSelected
+  onPhotoSelected,
 }) => {
   const [activeFilter, setActiveFilter] =
-    useState<'all' | 'vocal' | 'instrument' | 'director'>('all');
-
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+    useState<TeamFilter>('all');
 
   const [photoTarget, setPhotoTarget] =
     useState<TeamMember | null>(null);
 
+  const [selectedMember, setSelectedMember] =
+    useState<TeamMember | null>(null);
+
+  const fileInputRef =
+    useRef<HTMLInputElement | null>(null);
+
   /*
    * ============================================================
-   * MD SECURITY GATE
+   * ACCESS CONTROL
    * ============================================================
    *
-   * Only admin_md is allowed to perform ANY modification.
+   * IMPORTANT:
+   * Only the Music Director / MD account can modify this page.
    *
-   * Regular members can still view the complete team roster,
-   * contact information, roles, photos and permissions.
+   * Every other role is completely read-only.
+   *
+   * Do NOT change this to simply:
+   *
+   *   activeRole !== 'viewer'
+   *
+   * or:
+   *
+   *   !!activeRole
+   *
+   * because that would accidentally give regular members
+   * management privileges.
    */
   const isMD = activeRole === 'admin_md';
 
   /*
-   * ------------------------------------------------------------
-   * PROTECTED ACTIONS
-   * ------------------------------------------------------------
-   *
-   * Every mutation goes through an MD check.
-   * This means the protection is not dependent only on
-   * buttons being hidden.
+   * ============================================================
+   * TEAM GROUPS
+   * ============================================================
    */
 
-  const handleAddMember = () => {
-    if (!isMD) return;
+  const directors = team.filter(
+    member => member.type === 'director'
+  );
 
-    onAddNewMember();
-  };
+  const vocalists = team.filter(
+    member => member.type === 'vocal'
+  );
 
-  const handleEditMember = (member: TeamMember) => {
-    if (!isMD) return;
-
-    onEditMember(member);
-  };
-
-  const handleDeleteMember = (member: TeamMember) => {
-    if (!isMD) return;
-
-    const memberType =
-      member.type === 'vocal'
-        ? 'vocal'
-        : member.type === 'instrument'
-          ? 'band'
-          : 'leadership';
-
-    const confirmed = window.confirm(
-      `Remove ${member.name} from the ${memberType} roster?`
-    );
-
-    if (!confirmed) return;
-
-    onDeleteMember(member.id);
-  };
-
-  const handleTogglePermission = (member: TeamMember) => {
-    if (!isMD) return;
-
-    onTogglePermission(member.id);
-  };
+  const instrumentalists = team.filter(
+    member => member.type === 'instrument'
+  );
 
   /*
-   * ------------------------------------------------------------
-   * PHOTO UPLOAD
-   * ------------------------------------------------------------
+   * ============================================================
+   * PHOTO MANAGEMENT
+   * ============================================================
    */
 
   const handlePhotoClick = (member: TeamMember) => {
+    /*
+     * HARD BLOCK:
+     * Regular members can never open the upload dialog.
+     */
     if (!isMD) return;
 
     setPhotoTarget(member);
-    fileInputRef.current?.click();
+
+    /*
+     * Small timeout makes the interaction more reliable
+     * after state updates / modal transitions.
+     */
+    setTimeout(() => {
+      fileInputRef.current?.click();
+    }, 0);
   };
 
   const handlePhotoChange = (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     /*
-     * Security check again.
-     * Even if the input somehow gets triggered,
-     * regular members cannot upload a photo.
+     * SECOND HARD BLOCK.
+     *
+     * Even if someone somehow triggers the file input,
+     * regular users cannot submit a photo.
      */
     if (!isMD) {
       event.target.value = '';
@@ -153,32 +163,77 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
   };
 
   /*
-   * ------------------------------------------------------------
-   * MEMBER FILTERING
-   * ------------------------------------------------------------
+   * ============================================================
+   * EDIT / DELETE SECURITY WRAPPERS
+   * ============================================================
+   *
+   * These wrappers provide another layer of protection.
    */
 
-  const directors = team.filter(
-    member => member.type === 'director'
-  );
+  const handleEditMember = (member: TeamMember) => {
+    if (!isMD) return;
 
-  const vocalists = team.filter(
-    member => member.type === 'vocal'
-  );
+    onEditMember(member);
+  };
 
-  const instrumentalists = team.filter(
-    member => member.type === 'instrument'
-  );
+  const handleDeleteMember = (member: TeamMember) => {
+    if (!isMD) return;
+
+    const section =
+      member.type === 'vocal'
+        ? 'vocal'
+        : member.type === 'director'
+          ? 'leadership'
+          : 'band';
+
+    const confirmed = window.confirm(
+      `Remove ${member.name} from the ${section} roster?`
+    );
+
+    if (!confirmed) return;
+
+    onDeleteMember(member.id);
+  };
+
+  const handleTogglePermission = (
+    member: TeamMember
+  ) => {
+    if (!isMD) return;
+
+    onTogglePermission(member.id);
+  };
 
   /*
-   * ------------------------------------------------------------
-   * MEMBER PHOTO
-   * ------------------------------------------------------------
+   * ============================================================
+   * FILTER
+   * ============================================================
+   */
+
+  const filterClass = (
+    active: boolean,
+    amber = false
+  ) => {
+    if (active) {
+      return amber
+        ? 'bg-amber-400 text-black shadow-lg shadow-amber-500/20'
+        : 'bg-[#007aff] text-white shadow-lg shadow-blue-500/20';
+    }
+
+    return 'bg-transparent text-white/40 hover:bg-white/[0.06] hover:text-white';
+  };
+
+  /*
+   * ============================================================
+   * PHOTO COMPONENT
+   * ============================================================
    */
 
   const renderMemberPhoto = (
     member: TeamMember,
-    variant: 'director' | 'vocal' | 'instrument'
+    variant:
+      | 'director'
+      | 'vocal'
+      | 'instrument'
   ) => {
     const isDirector = variant === 'director';
 
@@ -198,39 +253,39 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
               ? `Change photo for ${member.name}`
               : `${member.name}'s profile photo`
           }
-          className={`group relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-[20px] border ${
+          className={`group relative flex h-[68px] w-[68px] items-center justify-center overflow-hidden rounded-[22px] border ${
             isDirector
-              ? 'border-amber-500/20 bg-amber-500/10'
+              ? 'border-amber-400/20 bg-amber-400/10'
               : 'border-white/10 bg-white/[0.035]'
           } ${
             isMD
-              ? 'cursor-pointer hover:border-[#007aff]/40 hover:bg-white/[0.07]'
+              ? 'cursor-pointer hover:border-[#007aff]/50 hover:bg-white/[0.07]'
               : 'cursor-default'
-          }`}
+          } transition-all duration-300`}
         >
           {member.photoUrl ? (
             <img
               src={member.photoUrl}
               alt={member.name}
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
             />
           ) : member.icon ? (
             <span className="text-2xl">
               {member.icon}
             </span>
           ) : (
-            <Users className="h-6 w-6 text-white/25" />
+            <UserRound className="h-7 w-7 text-white/20" />
           )}
 
           {isMD && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/30">
-              <Camera className="h-4 w-4 text-white opacity-0 transition-opacity group-hover:opacity-100" />
+            <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all duration-300 group-hover:bg-black/40">
+              <Camera className="h-5 w-5 text-white opacity-0 transition-opacity group-hover:opacity-100" />
             </div>
           )}
         </button>
 
         {isMD && (
-          <div className="pointer-events-none absolute -bottom-1.5 -right-1.5 flex h-6 w-6 items-center justify-center rounded-full border border-white/10 bg-[#19191c] shadow-lg">
+          <div className="pointer-events-none absolute -bottom-1.5 -right-1.5 flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-[#151518] shadow-xl">
             <Camera className="h-3 w-3 text-[#4da3ff]" />
           </div>
         )}
@@ -239,25 +294,27 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
   };
 
   /*
-   * ------------------------------------------------------------
+   * ============================================================
    * CONTACT INFORMATION
-   * ------------------------------------------------------------
+   * ============================================================
    */
 
-  const renderContactInfo = (member: TeamMember) => {
+  const renderContactInfo = (
+    member: TeamMember
+  ) => {
     if (!member.phone && !member.email) {
       return (
-        <div className="pt-2 text-[11px] font-medium text-white/20">
+        <div className="pt-3 text-[11px] font-medium text-white/20">
           No contact information added
         </div>
       );
     }
 
     return (
-      <div className="space-y-2 pt-2 text-xs text-white/40">
+      <div className="space-y-2.5 pt-3 text-xs text-white/45">
         {member.phone && (
-          <div className="flex min-w-0 items-center gap-2">
-            <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg bg-[#007aff]/10">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-xl border border-[#007aff]/10 bg-[#007aff]/10">
               <Phone className="h-3 w-3 text-[#4da3ff]" />
             </div>
 
@@ -268,8 +325,8 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
         )}
 
         {member.email && (
-          <div className="flex min-w-0 items-center gap-2">
-            <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg bg-white/[0.04]">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.035]">
               <Mail className="h-3 w-3 text-white/40" />
             </div>
 
@@ -283,9 +340,9 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
   };
 
   /*
-   * ------------------------------------------------------------
-   * EDIT / DELETE ACTIONS
-   * ------------------------------------------------------------
+   * ============================================================
+   * MEMBER ACTIONS
+   * ============================================================
    */
 
   const renderMemberActions = (
@@ -293,7 +350,9 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
     allowDelete: boolean
   ) => {
     /*
-     * Regular members get absolutely no editing controls.
+     * ABSOLUTE READ-ONLY CHECK.
+     *
+     * If this is not the MD, this entire section disappears.
      */
     if (!isMD) return null;
 
@@ -301,10 +360,12 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
       <div className="flex flex-shrink-0 items-center gap-1.5">
         <button
           type="button"
-          onClick={() => handleEditMember(member)}
+          onClick={() =>
+            handleEditMember(member)
+          }
           title="Edit member"
           aria-label={`Edit ${member.name}`}
-          className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.035] text-white/40 transition-all hover:border-[#007aff]/25 hover:bg-[#007aff]/10 hover:text-[#4da3ff] active:scale-95"
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.035] text-white/40 transition-all hover:border-[#007aff]/30 hover:bg-[#007aff]/10 hover:text-[#4da3ff] active:scale-95"
         >
           <Edit className="h-3.5 w-3.5" />
         </button>
@@ -312,10 +373,12 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
         {allowDelete && (
           <button
             type="button"
-            onClick={() => handleDeleteMember(member)}
+            onClick={() =>
+              handleDeleteMember(member)
+            }
             title="Delete member"
             aria-label={`Delete ${member.name}`}
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.035] text-white/40 transition-all hover:border-rose-500/20 hover:bg-rose-500/10 hover:text-rose-300 active:scale-95"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.035] text-white/40 transition-all hover:border-rose-500/25 hover:bg-rose-500/10 hover:text-rose-300 active:scale-95"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </button>
@@ -325,40 +388,25 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
   };
 
   /*
-   * ------------------------------------------------------------
-   * FILTER STYLE
-   * ------------------------------------------------------------
-   */
-
-  const filterClass = (
-    active: boolean,
-    amber = false
-  ) =>
-    active
-      ? amber
-        ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/10'
-        : 'bg-[#007aff] text-white shadow-lg shadow-blue-500/20'
-      : 'bg-transparent text-white/40 hover:bg-white/[0.07] hover:text-white';
-
-  /*
-   * ------------------------------------------------------------
+   * ============================================================
    * PERMISSION BUTTON
-   * ------------------------------------------------------------
+   * ============================================================
    */
 
-  const renderPermissionButton = (member: TeamMember) => {
-    /*
-     * Permission management is strictly MD-only.
-     */
+  const renderPermissionButton = (
+    member: TeamMember
+  ) => {
     if (!isMD) return null;
 
     return (
       <button
         type="button"
-        onClick={() => handleTogglePermission(member)}
+        onClick={() =>
+          handleTogglePermission(member)
+        }
         className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.08em] transition-all ${
           member.canEdit
-            ? 'border-emerald-500/15 bg-emerald-500/10 text-emerald-300'
+            ? 'border-emerald-500/15 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/15'
             : 'border-white/10 bg-white/[0.035] text-white/40 hover:bg-white/[0.07] hover:text-white/70'
         }`}
       >
@@ -371,10 +419,68 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
     );
   };
 
-  return (
-    <div className="w-full min-w-0 max-w-full overflow-hidden rounded-[30px] border border-white/10 bg-[#0f0f11] text-white shadow-2xl shadow-black/20 animate-in fade-in duration-200">
+  /*
+   * ============================================================
+   * SECTION HEADER
+   * ============================================================
+   */
 
-      {/* Hidden photo input — functionally accessible only to MD */}
+  const renderSectionHeader = (
+    icon: React.ReactNode,
+    title: string,
+    subtitle: string,
+    count: number,
+    accent: 'blue' | 'amber' = 'blue'
+  ) => {
+    const amber = accent === 'amber';
+
+    return (
+      <div className="mb-6 flex items-center justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <div
+            className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border ${
+              amber
+                ? 'border-amber-400/20 bg-amber-400/10'
+                : 'border-[#007aff]/20 bg-[#007aff]/10'
+            }`}
+          >
+            {icon}
+          </div>
+
+          <div className="min-w-0">
+            <h2 className="truncate text-lg font-bold tracking-tight text-white sm:text-xl">
+              {title}
+            </h2>
+
+            <p className="mt-0.5 truncate text-[11px] text-white/25">
+              {subtitle}
+            </p>
+          </div>
+        </div>
+
+        <span
+          className={`flex-shrink-0 rounded-full border px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.12em] ${
+            amber
+              ? 'border-amber-400/20 bg-amber-400/10 text-amber-300'
+              : 'border-white/10 bg-white/[0.035] text-white/35'
+          }`}
+        >
+          {count}
+        </span>
+      </div>
+    );
+  };
+
+  /*
+   * ============================================================
+   * MAIN UI
+   * ============================================================
+   */
+
+  return (
+    <div className="w-full min-w-0 max-w-full overflow-hidden rounded-[32px] border border-white/10 bg-[#09090b] text-white shadow-2xl shadow-black/30 animate-in fade-in duration-300">
+
+      {/* Hidden photo input */}
       <input
         ref={fileInputRef}
         type="file"
@@ -384,126 +490,187 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
         disabled={!isMD}
       />
 
-      <div className="space-y-6">
+      <div className="space-y-6 p-1">
 
         {/* =====================================================
-            HERO
+            PREMIUM HERO
         ====================================================== */}
 
-        <section className="relative overflow-hidden rounded-[30px] border border-white/10 bg-[#111113]/90 p-5 shadow-2xl shadow-black/20 backdrop-blur-2xl sm:p-7">
+        <section className="relative overflow-hidden rounded-[30px] border border-white/10 bg-gradient-to-br from-[#151518] via-[#111113] to-[#0c0c0f] p-6 shadow-2xl shadow-black/20 sm:p-8">
 
-          <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-[#007aff]/[0.07] blur-3xl" />
+          <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[#007aff]/10 blur-3xl" />
 
-          <div className="relative flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
+          <div className="pointer-events-none absolute -bottom-32 -left-24 h-64 w-64 rounded-full bg-amber-400/[0.035] blur-3xl" />
 
-            <div className="min-w-0">
+          <div className="relative">
 
-              <div className="mb-4 flex flex-wrap items-center gap-2">
-
-                <span className="flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-[9px] font-extrabold uppercase tracking-[0.18em] text-amber-300">
-                  <Users className="h-3 w-3" />
-                  Music Team
-                </span>
-
-                <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-white/25">
-                  {isMD ? 'Team Control' : 'Team Directory'}
-                </span>
-
-              </div>
-
-              <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-                Jewels Music Team
-              </h1>
-
-              <p className="mt-2 max-w-2xl text-sm font-medium leading-relaxed text-white/40">
-                {team.length} dedicated{' '}
-                {team.length === 1
-                  ? 'member'
-                  : 'members'} serving across vocals,
-                instrumentation and music leadership.
-              </p>
-
-            </div>
-
-            <div className="flex flex-shrink-0">
+            <div className="mb-6 flex flex-wrap items-center gap-2">
+              <span className="flex items-center gap-1.5 rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1.5 text-[9px] font-extrabold uppercase tracking-[0.18em] text-amber-300">
+                <Music2 className="h-3 w-3" />
+                Music Team
+              </span>
 
               {isMD ? (
+                <span className="flex items-center gap-1.5 rounded-full border border-emerald-500/15 bg-emerald-500/10 px-3 py-1.5 text-[9px] font-extrabold uppercase tracking-[0.16em] text-emerald-300">
+                  <Crown className="h-3 w-3" />
+                  MD Control
+                </span>
+              ) : (
+                <span className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.035] px-3 py-1.5 text-[9px] font-extrabold uppercase tracking-[0.16em] text-white/35">
+                  <Lock className="h-3 w-3" />
+                  View Only
+                </span>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-7 xl:flex-row xl:items-end xl:justify-between">
+
+              <div className="min-w-0">
+
+                <div className="flex items-center gap-3">
+                  <div className="hidden h-14 w-14 items-center justify-center rounded-[20px] border border-[#007aff]/20 bg-[#007aff]/10 sm:flex">
+                    <Users className="h-6 w-6 text-[#4da3ff]" />
+                  </div>
+
+                  <div>
+                    <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+                      Jewels Music Team
+                    </h1>
+
+                    <p className="mt-2 max-w-2xl text-sm font-medium leading-relaxed text-white/40">
+                      {team.length}{' '}
+                      {team.length === 1
+                        ? 'member'
+                        : 'members'}{' '}
+                      serving across vocals,
+                      instrumentation and music
+                      leadership.
+                    </p>
+                  </div>
+                </div>
+
+                {/* STATS */}
+                <div className="mt-6 flex flex-wrap gap-2">
+
+                  <div className="flex items-center gap-2 rounded-2xl border border-white/[0.07] bg-white/[0.025] px-3 py-2">
+                    <Users className="h-3.5 w-3.5 text-white/30" />
+                    <span className="text-[11px] font-bold text-white/60">
+                      {team.length} Total
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2 rounded-2xl border border-[#007aff]/10 bg-[#007aff]/[0.05] px-3 py-2">
+                    <Mic2 className="h-3.5 w-3.5 text-[#4da3ff]" />
+                    <span className="text-[11px] font-bold text-white/60">
+                      {vocalists.length} Vocal
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2 rounded-2xl border border-[#007aff]/10 bg-[#007aff]/[0.05] px-3 py-2">
+                    <Piano className="h-3.5 w-3.5 text-[#4da3ff]" />
+                    <span className="text-[11px] font-bold text-white/60">
+                      {instrumentalists.length}{' '}
+                      Musicians
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2 rounded-2xl border border-amber-400/10 bg-amber-400/[0.05] px-3 py-2">
+                    <Crown className="h-3.5 w-3.5 text-amber-300" />
+                    <span className="text-[11px] font-bold text-white/60">
+                      {directors.length} Leadership
+                    </span>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* MD CONTROL */}
+              <div className="flex flex-shrink-0">
+
+                {isMD ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onAddNewMember()
+                    }
+                    className="group flex items-center gap-2.5 rounded-2xl bg-[#007aff] px-5 py-3.5 text-xs font-extrabold text-white shadow-xl shadow-blue-500/20 transition-all hover:bg-[#006fe6] hover:shadow-blue-500/30 active:scale-95 sm:text-sm"
+                  >
+                    <UserPlus className="h-4 w-4" />
+
+                    Add Team Member
+
+                    <ChevronRight className="h-3.5 w-3.5 opacity-60 transition-transform group-hover:translate-x-0.5" />
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3.5 text-xs font-semibold text-white/35">
+                    <Lock className="h-3.5 w-3.5" />
+                    MD-only management
+                  </div>
+                )}
+
+              </div>
+            </div>
+
+            {/* FILTERS */}
+
+            <div className="relative mt-8 overflow-x-auto">
+              <div className="flex min-w-max items-center gap-1.5 rounded-2xl border border-white/10 bg-black/30 p-1">
+
                 <button
                   type="button"
-                  onClick={handleAddMember}
-                  className="group flex items-center gap-2.5 rounded-2xl bg-[#007aff] px-5 py-3 text-xs font-extrabold text-white shadow-xl shadow-blue-500/20 transition-all hover:bg-[#006fe6] active:scale-95 sm:text-sm"
+                  onClick={() =>
+                    setActiveFilter('all')
+                  }
+                  className={`rounded-xl px-3.5 py-2.5 text-xs font-bold whitespace-nowrap transition-all ${filterClass(
+                    activeFilter === 'all'
+                  )}`}
                 >
-                  <UserPlus className="h-4 w-4" />
-                  Add Team Member
-                  <ChevronRight className="h-3.5 w-3.5 opacity-60 transition-transform group-hover:translate-x-0.5" />
+                  All Members ({team.length})
                 </button>
-              ) : (
-                <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3 text-xs font-semibold text-white/35">
-                  <Lock className="h-3.5 w-3.5" />
-                  MD-only management
-                </div>
-              )}
 
+                <button
+                  type="button"
+                  onClick={() =>
+                    setActiveFilter('vocal')
+                  }
+                  className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2.5 text-xs font-bold whitespace-nowrap transition-all ${filterClass(
+                    activeFilter === 'vocal'
+                  )}`}
+                >
+                  <Mic2 className="h-3.5 w-3.5" />
+                  Vocalists ({vocalists.length})
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setActiveFilter('instrument')
+                  }
+                  className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2.5 text-xs font-bold whitespace-nowrap transition-all ${filterClass(
+                    activeFilter === 'instrument'
+                  )}`}
+                >
+                  <Piano className="h-3.5 w-3.5" />
+                  Musicians ({instrumentalists.length})
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setActiveFilter('director')
+                  }
+                  className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2.5 text-xs font-bold whitespace-nowrap transition-all ${filterClass(
+                    activeFilter === 'director',
+                    true
+                  )}`}
+                >
+                  <Music2 className="h-3.5 w-3.5" />
+                  Leadership ({directors.length})
+                </button>
+
+              </div>
             </div>
-
           </div>
-
-          {/* ===================================================
-              FILTERS
-          ==================================================== */}
-
-          <div className="relative mt-7 overflow-x-auto">
-
-            <div className="flex min-w-max items-center gap-1.5 rounded-2xl border border-white/10 bg-black/30 p-1">
-
-              <button
-                type="button"
-                onClick={() => setActiveFilter('all')}
-                className={`rounded-xl px-3.5 py-2 text-xs font-bold whitespace-nowrap transition-all ${filterClass(
-                  activeFilter === 'all'
-                )}`}
-              >
-                All Members ({team.length})
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveFilter('vocal')}
-                className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold whitespace-nowrap transition-all ${filterClass(
-                  activeFilter === 'vocal'
-                )}`}
-              >
-                <Mic2 className="h-3.5 w-3.5" />
-                Vocalists ({vocalists.length})
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveFilter('instrument')}
-                className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold whitespace-nowrap transition-all ${filterClass(
-                  activeFilter === 'instrument'
-                )}`}
-              >
-                <Piano className="h-3.5 w-3.5" />
-                Musicians ({instrumentalists.length})
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveFilter('director')}
-                className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold whitespace-nowrap transition-all ${filterClass(
-                  activeFilter === 'director',
-                  true
-                )}`}
-              >
-                <Music2 className="h-3.5 w-3.5" />
-                Leadership ({directors.length})
-              </button>
-
-            </div>
-
-          </div>
-
         </section>
 
         {/* =====================================================
@@ -514,34 +681,15 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
           activeFilter === 'director') &&
           directors.length > 0 && (
 
-            <section className="rounded-[30px] border border-white/10 bg-[#111113]/90 p-5 shadow-2xl shadow-black/10 backdrop-blur-2xl sm:p-6">
+            <section className="rounded-[30px] border border-white/10 bg-[#111113] p-5 shadow-2xl shadow-black/10 backdrop-blur-2xl sm:p-6">
 
-              <div className="mb-5 flex items-center justify-between gap-3">
-
-                <div className="flex items-center gap-2.5">
-
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/10">
-                    <ShieldCheck className="h-4 w-4 text-amber-300" />
-                  </div>
-
-                  <div>
-                    <h2 className="text-lg font-bold tracking-tight text-white sm:text-xl">
-                      Music Leadership
-                    </h2>
-
-                    <p className="mt-0.5 text-[11px] text-white/25">
-                      Ministry direction and administration
-                    </p>
-                  </div>
-
-                </div>
-
-                <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.12em] text-amber-300">
-                  {directors.length} Leader
-                  {directors.length !== 1 ? 's' : ''}
-                </span>
-
-              </div>
+              {renderSectionHeader(
+                <ShieldCheck className="h-5 w-5 text-amber-300" />,
+                'Music Leadership',
+                'Ministry direction and administration',
+                directors.length,
+                'amber'
+              )}
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
 
@@ -549,10 +697,10 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
 
                   <div
                     key={member.id}
-                    className="group relative overflow-hidden rounded-[26px] border border-amber-500/10 bg-white/[0.035] p-5 backdrop-blur-xl transition-all duration-300 hover:border-amber-500/20 hover:bg-white/[0.05]"
+                    className="group relative overflow-hidden rounded-[26px] border border-amber-400/10 bg-gradient-to-br from-amber-400/[0.045] to-white/[0.025] p-5 backdrop-blur-xl transition-all duration-300 hover:border-amber-400/20 hover:bg-amber-400/[0.06]"
                   >
 
-                    <div className="pointer-events-none absolute -right-16 -top-16 h-32 w-32 rounded-full bg-amber-500/[0.06] blur-3xl" />
+                    <div className="pointer-events-none absolute -right-16 -top-16 h-36 w-36 rounded-full bg-amber-400/[0.06] blur-3xl" />
 
                     <div className="relative">
 
@@ -560,7 +708,10 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
 
                         <div className="flex min-w-0 items-center gap-3">
 
-                          {renderMemberPhoto(member, 'director')}
+                          {renderMemberPhoto(
+                            member,
+                            'director'
+                          )}
 
                           <div className="min-w-0">
 
@@ -570,7 +721,7 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
                                 {member.name}
                               </h3>
 
-                              <span className="rounded-full bg-amber-500 px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-wider text-black">
+                              <span className="rounded-full bg-amber-400 px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-wider text-black">
                                 MD
                               </span>
 
@@ -581,10 +732,12 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
                             </p>
 
                           </div>
-
                         </div>
 
-                        {renderMemberActions(member, false)}
+                        {renderMemberActions(
+                          member,
+                          false
+                        )}
 
                       </div>
 
@@ -597,20 +750,16 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
                           Full Admin Rights
                         </span>
 
-                        <span className="rounded-full border border-emerald-500/10 bg-emerald-500/10 px-2 py-1 text-[9px] font-bold text-emerald-300">
+                        <span className="flex items-center gap-1 rounded-full border border-emerald-500/10 bg-emerald-500/10 px-2 py-1 text-[9px] font-bold text-emerald-300">
+                          <CheckCircle2 className="h-3 w-3" />
                           Active
                         </span>
 
                       </div>
-
                     </div>
-
                   </div>
-
                 ))}
-
               </div>
-
             </section>
           )}
 
@@ -622,34 +771,14 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
           activeFilter === 'vocal') &&
           vocalists.length > 0 && (
 
-            <section className="rounded-[30px] border border-white/10 bg-[#111113]/90 p-5 shadow-2xl shadow-black/10 backdrop-blur-2xl sm:p-6">
+            <section className="rounded-[30px] border border-white/10 bg-[#111113] p-5 shadow-2xl shadow-black/10 backdrop-blur-2xl sm:p-6">
 
-              <div className="mb-5 flex items-center justify-between gap-3">
-
-                <div className="flex items-center gap-2.5">
-
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#007aff]/20 bg-[#007aff]/10">
-                    <Mic2 className="h-4 w-4 text-[#4da3ff]" />
-                  </div>
-
-                  <div>
-                    <h2 className="text-lg font-bold tracking-tight text-white sm:text-xl">
-                      Vocal Team
-                    </h2>
-
-                    <p className="mt-0.5 text-[11px] text-white/25">
-                      Harmonies, solos and lead vocal assignments
-                    </p>
-                  </div>
-
-                </div>
-
-                <span className="rounded-full border border-white/10 bg-white/[0.035] px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.12em] text-white/35">
-                  {vocalists.length} Vocalist
-                  {vocalists.length !== 1 ? 's' : ''}
-                </span>
-
-              </div>
+              {renderSectionHeader(
+                <Mic2 className="h-5 w-5 text-[#4da3ff]" />,
+                'Vocal Team',
+                'Harmonies, solos and lead vocal assignments',
+                vocalists.length
+              )}
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
 
@@ -657,7 +786,7 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
 
                   <div
                     key={member.id}
-                    className="group rounded-[26px] border border-white/10 bg-white/[0.035] p-5 backdrop-blur-xl transition-all duration-300 hover:border-[#007aff]/20 hover:bg-white/[0.05]"
+                    className="group rounded-[26px] border border-white/10 bg-white/[0.025] p-5 backdrop-blur-xl transition-all duration-300 hover:border-[#007aff]/20 hover:bg-white/[0.045]"
                   >
 
                     <div className="flex min-w-0 flex-col">
@@ -666,7 +795,10 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
 
                         <div className="flex min-w-0 items-center gap-3">
 
-                          {renderMemberPhoto(member, 'vocal')}
+                          {renderMemberPhoto(
+                            member,
+                            'vocal'
+                          )}
 
                           <div className="min-w-0">
 
@@ -675,14 +807,17 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
                             </h3>
 
                             <p className="mt-1 truncate text-xs font-semibold text-[#4da3ff]">
-                              {member.voicePart || member.role}
+                              {member.voicePart ||
+                                member.role}
                             </p>
 
                           </div>
-
                         </div>
 
-                        {renderMemberActions(member, true)}
+                        {renderMemberActions(
+                          member,
+                          true
+                        )}
 
                       </div>
 
@@ -691,21 +826,20 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
                       <div className="mt-5 flex min-h-[30px] items-center justify-between gap-2 border-t border-white/[0.07] pt-3">
 
                         <span className="rounded-full border border-[#007aff]/20 bg-[#007aff]/10 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.08em] text-[#4da3ff]">
-                          {member.voicePart || 'Vocal Section'}
+                          {member.voicePart ||
+                            'Vocal Section'}
                         </span>
 
-                        {renderPermissionButton(member)}
+                        {renderPermissionButton(
+                          member
+                        )}
 
                       </div>
 
                     </div>
-
                   </div>
-
                 ))}
-
               </div>
-
             </section>
           )}
 
@@ -717,34 +851,14 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
           activeFilter === 'instrument') &&
           instrumentalists.length > 0 && (
 
-            <section className="rounded-[30px] border border-white/10 bg-[#111113]/90 p-5 shadow-2xl shadow-black/10 backdrop-blur-2xl sm:p-6">
+            <section className="rounded-[30px] border border-white/10 bg-[#111113] p-5 shadow-2xl shadow-black/10 backdrop-blur-2xl sm:p-6">
 
-              <div className="mb-5 flex items-center justify-between gap-3">
-
-                <div className="flex items-center gap-2.5">
-
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#007aff]/20 bg-[#007aff]/10">
-                    <Piano className="h-4 w-4 text-[#4da3ff]" />
-                  </div>
-
-                  <div>
-                    <h2 className="text-lg font-bold tracking-tight text-white sm:text-xl">
-                      Band & Instrumentalists
-                    </h2>
-
-                    <p className="mt-0.5 text-[11px] text-white/25">
-                      Musicians and instrumental sections
-                    </p>
-                  </div>
-
-                </div>
-
-                <span className="rounded-full border border-white/10 bg-white/[0.035] px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.12em] text-white/35">
-                  {instrumentalists.length} Musician
-                  {instrumentalists.length !== 1 ? 's' : ''}
-                </span>
-
-              </div>
+              {renderSectionHeader(
+                <Piano className="h-5 w-5 text-[#4da3ff]" />,
+                'Band & Instrumentalists',
+                'Musicians and instrumental sections',
+                instrumentalists.length
+              )}
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
 
@@ -752,7 +866,7 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
 
                   <div
                     key={member.id}
-                    className="group rounded-[26px] border border-white/10 bg-white/[0.035] p-5 backdrop-blur-xl transition-all duration-300 hover:border-[#007aff]/20 hover:bg-white/[0.05]"
+                    className="group rounded-[26px] border border-white/10 bg-white/[0.025] p-5 backdrop-blur-xl transition-all duration-300 hover:border-[#007aff]/20 hover:bg-white/[0.045]"
                   >
 
                     <div className="flex min-w-0 flex-col">
@@ -761,7 +875,10 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
 
                         <div className="flex min-w-0 items-center gap-3">
 
-                          {renderMemberPhoto(member, 'instrument')}
+                          {renderMemberPhoto(
+                            member,
+                            'instrument'
+                          )}
 
                           <div className="min-w-0">
 
@@ -770,14 +887,17 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
                             </h3>
 
                             <p className="mt-1 truncate text-xs font-semibold text-[#4da3ff]">
-                              {member.instrumentType || member.role}
+                              {member.instrumentType ||
+                                member.role}
                             </p>
 
                           </div>
-
                         </div>
 
-                        {renderMemberActions(member, true)}
+                        {renderMemberActions(
+                          member,
+                          true
+                        )}
 
                       </div>
 
@@ -786,21 +906,20 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
                       <div className="mt-5 flex min-h-[30px] items-center justify-between gap-2 border-t border-white/[0.07] pt-3">
 
                         <span className="rounded-full border border-[#007aff]/20 bg-[#007aff]/10 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.08em] text-[#4da3ff]">
-                          {member.instrumentType || 'Band'}
+                          {member.instrumentType ||
+                            'Band'}
                         </span>
 
-                        {renderPermissionButton(member)}
+                        {renderPermissionButton(
+                          member
+                        )}
 
                       </div>
 
                     </div>
-
                   </div>
-
                 ))}
-
               </div>
-
             </section>
           )}
 
@@ -810,7 +929,7 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
 
         {team.length === 0 && (
 
-          <section className="rounded-[30px] border border-white/10 bg-[#111113]/90 p-10 text-center shadow-2xl shadow-black/10 backdrop-blur-2xl">
+          <section className="rounded-[30px] border border-white/10 bg-[#111113] p-10 text-center shadow-2xl shadow-black/10">
 
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[22px] border border-[#007aff]/20 bg-[#007aff]/10">
               <Users className="h-7 w-7 text-[#4da3ff]" />
@@ -821,16 +940,18 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
             </h2>
 
             <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-white/35">
-              Add your first vocalist, instrumentalist
-              or music leader to begin building the
-              ministry roster.
+              Add your first vocalist,
+              instrumentalist or music leader to
+              begin building the ministry roster.
             </p>
 
             {isMD && (
               <button
                 type="button"
-                onClick={handleAddMember}
-                className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[#007aff] px-5 py-3 text-xs font-extrabold text-white shadow-xl shadow-blue-500/20 hover:bg-[#006fe6]"
+                onClick={() =>
+                  onAddNewMember()
+                }
+                className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[#007aff] px-5 py-3 text-xs font-extrabold text-white shadow-xl shadow-blue-500/20 transition-all hover:bg-[#006fe6] active:scale-95"
               >
                 <UserPlus className="h-4 w-4" />
                 Add First Member
@@ -841,12 +962,51 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
         )}
 
         {/* =====================================================
-            PHOTO INFORMATION
+            MD INFORMATION PANEL
+        ====================================================== */}
+
+        {team.length > 0 && (
+
+          <section className="rounded-[26px] border border-white/10 bg-gradient-to-r from-white/[0.025] to-transparent p-5">
+
+            <div className="flex items-start gap-3">
+
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-[#007aff]/20 bg-[#007aff]/10">
+                {isMD ? (
+                  <Sparkles className="h-4 w-4 text-[#4da3ff]" />
+                ) : (
+                  <Lock className="h-4 w-4 text-white/30" />
+                )}
+              </div>
+
+              <div className="min-w-0">
+
+                <p className="text-xs font-bold text-white">
+                  {isMD
+                    ? 'Team management enabled'
+                    : 'Team directory — view only'}
+                </p>
+
+                <p className="mt-1 max-w-2xl text-[11px] leading-relaxed text-white/30">
+
+                  {isMD
+                    ? 'You are signed in as the Music Director. You can add, edit and remove team members, update photos and manage upload permissions.'
+                    : 'Team management is restricted to the Music Director. Regular members can view the team directory but cannot modify member information, photos or permissions.'}
+
+                </p>
+
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* =====================================================
+            PHOTO INFORMATION — MD ONLY
         ====================================================== */}
 
         {isMD && team.length > 0 && (
 
-          <section className="rounded-[24px] border border-white/10 bg-white/[0.025] p-4 backdrop-blur-xl sm:p-5">
+          <section className="rounded-[24px] border border-white/10 bg-white/[0.02] p-4 backdrop-blur-xl sm:p-5">
 
             <div className="flex items-start gap-3">
 
@@ -861,16 +1021,14 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
                 </p>
 
                 <p className="mt-1 max-w-2xl text-[11px] leading-relaxed text-white/30">
-                  Click a member's photo to change their
-                  profile image. Supported formats are JPG,
-                  PNG, WebP and GIF, with a maximum file size
-                  of 5 MB.
+                  Click a member's photo to change
+                  their profile image. Supported
+                  formats are JPG, PNG, WebP and GIF,
+                  with a maximum file size of 5 MB.
                 </p>
 
               </div>
-
             </div>
-
           </section>
         )}
 
