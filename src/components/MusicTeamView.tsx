@@ -1,5 +1,4 @@
 import React, {
-  useCallback,
   useEffect,
   useMemo,
   useState,
@@ -7,14 +6,31 @@ import React, {
 
 /* ============================================================
    JEWELS MUSIC HUB
-   MUSIC TEAM VIEW — PREMIUM EDITION
-   SAFE STORAGE EDITION
+   MUSIC TEAM VIEW — PREMIUM / SAFE STORAGE EDITION
 
-   IMPORTANT:
-   - Existing team data is loaded before anything is saved.
-   - Multiple historical storage keys are supported.
-   - Empty state NEVER overwrites existing saved data.
-   - Only the MD can modify team members.
+   FEATURES
+   ------------------------------------------------------------
+   • Premium dark UI
+   • All Members / Vocalists / Instrumentalists
+   • Search
+   • Sort
+   • Grid / List view
+   • Member profiles
+   • Add / Edit / Delete
+   • Featured members
+   • Export
+   • MD-only editing
+   • Regular members = view only
+
+   STORAGE FIX
+   ------------------------------------------------------------
+   • team_v2 is the canonical key
+   • Supports historical Jewels keys
+   • Searches localStorage and sessionStorage
+   • Supports arrays and { members: [] } structures
+   • Migrates recovered data back to team_v2
+   • Empty parent props NEVER erase recovered data
+   • Empty initial state NEVER destroys existing storage
    ============================================================ */
 
 /* ============================================================
@@ -123,6 +139,8 @@ export interface TeamMember {
     facebook?: string;
     youtube?: string;
   };
+
+  [key: string]: any;
 }
 
 interface MusicTeamViewProps {
@@ -137,28 +155,31 @@ interface MusicTeamViewProps {
   ) => void;
 
   readOnly?: boolean;
+
+  [key: string]: any;
 }
 
 /* ============================================================
    STORAGE
    ============================================================ */
 
-/*
- * team_v2 is the primary key used by the Music Team page.
- *
- * The other keys are deliberately retained because older
- * versions of the Jewels Music Hub may have stored the
- * members under different names.
- */
-
-const STORAGE_KEY =
-  "team_v2";
+const STORAGE_KEY = "team_v2";
 
 const COMPATIBILITY_STORAGE_KEYS = [
   "jewels_music_hub_team_v2",
   "jewels_music_hub_team",
   "jewels_team_members",
   "team_members",
+  "music_team",
+  "music_team_members",
+  "jewels_team_v2",
+];
+
+const STORAGE_HINTS = [
+  "team",
+  "member",
+  "music",
+  "jewel",
 ];
 
 /* ============================================================
@@ -170,6 +191,7 @@ const MD_ROLES = [
   "md",
   "music_director",
   "music-director",
+  "musicdirector",
 ];
 
 /* ============================================================
@@ -274,10 +296,19 @@ const EMPTY_MEMBER: TeamMember = {
 };
 
 /* ============================================================
-   HELPERS
+   BASIC HELPERS
    ============================================================ */
 
 const createId = (): string => {
+  try {
+    if (
+      typeof crypto !== "undefined" &&
+      "randomUUID" in crypto
+    ) {
+      return `team_${crypto.randomUUID()}`;
+    }
+  } catch {}
+
   return (
     "team_" +
     Date.now() +
@@ -291,9 +322,7 @@ const createId = (): string => {
 const isMD = (
   role?: string
 ): boolean => {
-  if (!role) {
-    return false;
-  }
+  if (!role) return false;
 
   return MD_ROLES.includes(
     role.trim().toLowerCase()
@@ -303,27 +332,53 @@ const isMD = (
 const safeArray = (
   value: unknown
 ): string[] => {
-  return Array.isArray(value)
-    ? value.filter(
-        (item): item is string =>
-          typeof item === "string"
-      )
-    : [];
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter(
+      (item): item is string =>
+        typeof item === "string"
+    )
+    .map((item) => item.trim())
+    .filter(Boolean);
 };
+
+const asRecord = (
+  value: unknown
+): Record<string, any> | null => {
+  if (
+    value &&
+    typeof value === "object" &&
+    !Array.isArray(value)
+  ) {
+    return value as Record<
+      string,
+      any
+    >;
+  }
+
+  return null;
+};
+
+/* ============================================================
+   NORMALIZERS
+   ============================================================ */
 
 const normalizeRole = (
   value: unknown
 ): TeamRole => {
-  const role =
-    String(value || "")
-      .trim()
-      .toLowerCase();
+  const role = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/-/g, "_");
 
   if (
     role === "admin_md" ||
     role === "md" ||
     role === "music_director" ||
-    role === "music-director"
+    role === "musicdirector"
   ) {
     return "admin_md";
   }
@@ -331,7 +386,8 @@ const normalizeRole = (
   if (
     role === "lead_vocalist" ||
     role === "lead vocalist" ||
-    role === "lead"
+    role === "lead" ||
+    role === "lead_vocal"
   ) {
     return "lead_vocalist";
   }
@@ -340,7 +396,10 @@ const normalizeRole = (
     role === "backing_vocalist" ||
     role === "backing vocalist" ||
     role === "backing" ||
-    role === "backup vocalist"
+    role === "backup vocalist" ||
+    role === "backup_vocalist" ||
+    role === "vocalist" ||
+    role === "vocal"
   ) {
     return "backing_vocalist";
   }
@@ -367,21 +426,20 @@ const normalizeRole = (
 const normalizeStatus = (
   value: unknown
 ): MemberStatus => {
-  const status =
-    String(value || "")
-      .trim()
-      .toLowerCase();
+  const status = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/-/g, "_");
 
   if (
     status === "inactive" ||
-    status === "in-active"
+    status === "in_active"
   ) {
     return "inactive";
   }
 
   if (
     status === "on_leave" ||
-    status === "on leave" ||
     status === "leave"
   ) {
     return "on_leave";
@@ -390,11 +448,48 @@ const normalizeStatus = (
   return "active";
 };
 
+const normalizeCategory = (
+  value: unknown
+): InstrumentCategory => {
+  const category = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/-/g, "_");
+
+  const allowed: InstrumentCategory[] = [
+    "vocals",
+    "keyboard",
+    "guitar",
+    "bass",
+    "drums",
+    "percussion",
+    "brass",
+    "strings",
+    "media",
+    "sound",
+    "other",
+  ];
+
+  return allowed.includes(
+    category as InstrumentCategory
+  )
+    ? (category as InstrumentCategory)
+    : "other";
+};
+
 const normalizeMember = (
-  member: Partial<TeamMember> & Record<string, any>
+  member: Partial<TeamMember> &
+    Record<string, any>
 ): TeamMember => {
   const now =
     new Date().toISOString();
+
+  const rawName =
+    member.name ??
+    member.fullName ??
+    member.memberName ??
+    member.displayName ??
+    "Unnamed Member";
 
   const rawRole =
     member.role ??
@@ -402,128 +497,130 @@ const normalizeMember = (
     member.memberRole ??
     member.type;
 
-  const rawName =
-    member.name ??
-    member.fullName ??
-    member.memberName ??
-    member.displayName;
-
   const rawAvatar =
     member.avatar ??
     member.image ??
     member.photo ??
     member.profileImage ??
-    member.photoUrl;
+    member.photoUrl ??
+    "";
 
   const rawInstrument =
     member.instrument ??
-    member.instrumentName;
+    member.instrumentName ??
+    "";
 
   const rawVoicePart =
     member.voicePart ??
     member.voice ??
-    member.vocalPart;
+    member.vocalPart ??
+    "";
 
   return {
     ...EMPTY_MEMBER,
     ...member,
 
-    id:
-      String(
-        member.id ||
-          member.memberId ||
-          createId()
-      ),
+    id: String(
+      member.id ??
+        member.memberId ??
+        createId()
+    ),
 
-    name:
-      String(
-        rawName ||
-          "Unnamed Member"
-      ),
+    name: String(rawName),
 
-    nickname:
+    nickname: String(
       member.nickname ??
-      member.nickName ??
-      "",
+        member.nickName ??
+        ""
+    ),
 
-    role:
-      normalizeRole(
-        rawRole
-      ),
+    role: normalizeRole(
+      rawRole
+    ),
 
-    status:
-      normalizeStatus(
-        member.status
-      ),
+    status: normalizeStatus(
+      member.status
+    ),
 
     gender:
-      member.gender ||
-      "other",
+      member.gender ===
+        "male" ||
+      member.gender ===
+        "female"
+        ? member.gender
+        : "other",
 
-    phone:
+    phone: String(
       member.phone ??
-      member.mobile ??
-      "",
+        member.mobile ??
+        ""
+    ),
 
-    email:
-      member.email ??
-      "",
+    email: String(
+      member.email ?? ""
+    ),
 
-    avatar:
-      rawAvatar ??
-      "",
+    avatar: String(
+      rawAvatar
+    ),
 
-    instrument:
-      rawInstrument ??
-      "",
+    instrument: String(
+      rawInstrument
+    ),
 
     instrumentCategory:
-      member.instrumentCategory ||
-      "other",
+      normalizeCategory(
+        member.instrumentCategory ??
+          member.category
+      ),
 
-    voicePart:
-      rawVoicePart ??
-      "",
+    voicePart: String(
+      rawVoicePart
+    ),
 
-    joinedAt:
-      member.joinedAt ||
-      member.createdAt ||
-      now,
+    joinedAt: String(
+      member.joinedAt ??
+        member.createdAt ??
+        now
+    ),
 
-    updatedAt:
-      member.updatedAt ||
-      member.modifiedAt ||
-      now,
+    updatedAt: String(
+      member.updatedAt ??
+        member.modifiedAt ??
+        now
+    ),
 
-    notes:
-      member.notes ??
-      "",
+    notes: String(
+      member.notes ?? ""
+    ),
 
-    ministry:
-      member.ministry ??
-      "",
+    ministry: String(
+      member.ministry ?? ""
+    ),
 
-    section:
-      member.section ??
-      "",
+    section: String(
+      member.section ?? ""
+    ),
 
     emergencyContact:
-      member.emergencyContact ??
-      "",
+      String(
+        member.emergencyContact ??
+          ""
+      ),
 
     emergencyPhone:
-      member.emergencyPhone ??
-      "",
-
-    isLeader:
-      Boolean(
-        member.isLeader
+      String(
+        member.emergencyPhone ??
+          ""
       ),
 
-    isFeatured:
-      Boolean(
-        member.isFeatured
-      ),
+    isLeader: Boolean(
+      member.isLeader
+    ),
+
+    isFeatured: Boolean(
+      member.isFeatured
+    ),
 
     isAvailable:
       member.isAvailable !==
@@ -534,10 +631,9 @@ const normalizeMember = (
         member.availability
       ),
 
-    skills:
-      safeArray(
-        member.skills
-      ),
+    skills: safeArray(
+      member.skills
+    ),
 
     assignedSongs:
       safeArray(
@@ -557,204 +653,538 @@ const normalizeMember = (
 };
 
 /* ============================================================
-   PARSING
+   MEMBER DETECTION
    ============================================================ */
 
-const parseMembers = (
-  value: string | null
-): TeamMember[] => {
-  if (!value) {
-    return [];
+const looksLikeMember = (
+  value: unknown
+): boolean => {
+  const obj =
+    asRecord(value);
+
+  if (!obj) {
+    return false;
   }
 
-  try {
-    const parsed =
-      JSON.parse(value);
+  const hasName =
+    typeof obj.name ===
+      "string" ||
+    typeof obj.fullName ===
+      "string" ||
+    typeof obj.memberName ===
+      "string" ||
+    typeof obj.displayName ===
+      "string";
 
-    /*
-     * Some older versions may have stored:
-     *
-     * { members: [...] }
-     *
-     * instead of:
-     *
-     * [...]
-     */
-
-    let rawMembers: unknown =
-      parsed;
-
-    if (
-      parsed &&
-      typeof parsed === "object" &&
-      !Array.isArray(parsed)
-    ) {
-      const possible =
-        parsed as Record<
-          string,
-          unknown
-        >;
-
-      rawMembers =
-        possible.members ??
-        possible.team ??
-        possible.teamMembers ??
-        possible.data ??
-        [];
-    }
-
-    if (
-      !Array.isArray(
-        rawMembers
-      )
-    ) {
-      return [];
-    }
-
-    return rawMembers
-      .filter(
-        (
-          item
-        ): item is Record<
-          string,
-          any
-        > =>
-          !!item &&
-          typeof item ===
-            "object"
-      )
-      .map(
-        normalizeMember
-      );
-  } catch {
-    return [];
+  if (!hasName) {
+    return false;
   }
+
+  const markers = [
+    "role",
+    "teamRole",
+    "memberRole",
+    "instrument",
+    "voicePart",
+    "phone",
+    "email",
+    "status",
+    "section",
+    "ministry",
+    "nickname",
+    "gender",
+    "skills",
+    "availability",
+    "joinedAt",
+  ];
+
+  return markers.some(
+    (key) =>
+      key in obj
+  );
 };
 
 /* ============================================================
-   SAFE STORAGE LOADER
+   DEEP EXTRACTION
    ============================================================ */
 
-const loadMembers =
-  (): TeamMember[] => {
+const extractMembers = (
+  value: unknown,
+  depth = 0
+): TeamMember[] => {
+  if (depth > 6) {
+    return [];
+  }
+
+  if (Array.isArray(value)) {
+    return value
+      .filter(
+        looksLikeMember
+      )
+      .map((item) =>
+        normalizeMember(
+          item as Record<
+            string,
+            any
+          >
+        )
+      );
+  }
+
+  if (!value || typeof value !== "object") {
+    return [];
+  }
+
+  if (looksLikeMember(value)) {
+    return [
+      normalizeMember(
+        value as Record<
+          string,
+          any
+        >
+      ),
+    ];
+  }
+
+  const obj =
+    asRecord(value);
+
+  if (!obj) {
+    return [];
+  }
+
+  const wrapperKeys = [
+    "members",
+    "teamMembers",
+    "team",
+    "data",
+    "items",
+    "value",
+    "people",
+    "users",
+  ];
+
+  for (const key of wrapperKeys) {
+    if (key in obj) {
+      const result =
+        extractMembers(
+          obj[key],
+          depth + 1
+        );
+
+      if (result.length > 0) {
+        return result;
+      }
+    }
+  }
+
+  /*
+   * Some old implementations may have used:
+   *
+   * {
+   *   "id123": {...member},
+   *   "id456": {...member}
+   * }
+   */
+
+  const values =
+    Object.values(obj);
+
+  const possible =
+    values.filter(
+      looksLikeMember
+    );
+
+  if (possible.length > 0) {
+    return possible.map(
+      (item) =>
+        normalizeMember(
+          item as Record<
+            string,
+            any
+          >
+        )
+    );
+  }
+
+  return [];
+};
+
+/* ============================================================
+   DEDUPLICATION
+   ============================================================ */
+
+const dedupeMembers = (
+  members: TeamMember[]
+): TeamMember[] => {
+  const map =
+    new Map<
+      string,
+      TeamMember
+    >();
+
+  for (const member of members) {
+    const id =
+      member.id ||
+      `${member.name
+        .trim()
+        .toLowerCase()}_${(
+        member.phone || ""
+      ).trim()}`;
+
+    if (!map.has(id)) {
+      map.set(
+        id,
+        normalizeMember(
+          member
+        )
+      );
+    }
+  }
+
+  return Array.from(
+    map.values()
+  );
+};
+
+/* ============================================================
+   STORAGE READ
+   ============================================================ */
+
+const readStorage =
+  (
+    storage: Storage,
+    key: string
+  ): TeamMember[] => {
+    try {
+      const raw =
+        storage.getItem(key);
+
+      if (!raw) {
+        return [];
+      }
+
+      return dedupeMembers(
+        extractMembers(
+          JSON.parse(raw)
+        )
+      );
+    } catch {
+      return [];
+    }
+  };
+
+/* ============================================================
+   FULL RECOVERY
+   ============================================================ */
+
+const recoverTeamMembers =
+  (): {
+    members: TeamMember[];
+    source: string;
+  } => {
     if (
       typeof window ===
       "undefined"
     ) {
-      return [];
+      return {
+        members: [],
+        source: "",
+      };
     }
 
-    const keys = [
+    const knownKeys = [
       STORAGE_KEY,
       ...COMPATIBILITY_STORAGE_KEYS,
     ];
 
+    /* --------------------------------------------
+       1. Known localStorage keys
+       -------------------------------------------- */
+
     try {
-      for (const key of keys) {
-        const value =
-          localStorage.getItem(
+      for (const key of knownKeys) {
+        const members =
+          readStorage(
+            localStorage,
             key
           );
 
-        if (!value) {
+        if (
+          members.length > 0
+        ) {
+          return {
+            members,
+            source: `localStorage:${key}`,
+          };
+        }
+      }
+    } catch {}
+
+    /* --------------------------------------------
+       2. Known sessionStorage keys
+       -------------------------------------------- */
+
+    try {
+      for (const key of knownKeys) {
+        const members =
+          readStorage(
+            sessionStorage,
+            key
+          );
+
+        if (
+          members.length > 0
+        ) {
+          return {
+            members,
+            source: `sessionStorage:${key}`,
+          };
+        }
+      }
+    } catch {}
+
+    /* --------------------------------------------
+       3. Deep scan localStorage
+       -------------------------------------------- */
+
+    try {
+      for (
+        let i = 0;
+        i <
+        localStorage.length;
+        i++
+      ) {
+        const key =
+          localStorage.key(i);
+
+        if (!key) {
           continue;
         }
 
-        const parsed =
-          parseMembers(value);
-
         if (
-          parsed.length >
-          0
+          knownKeys.includes(
+            key
+          )
         ) {
-          console.log(
-            `[MusicTeamView] Loaded ${parsed.length} members from "${key}".`
+          continue;
+        }
+
+        const looksRelevant =
+          STORAGE_HINTS.some(
+            (hint) =>
+              key
+                .toLowerCase()
+                .includes(hint)
           );
 
-          return parsed;
+        if (!looksRelevant) {
+          continue;
+        }
+
+        const members =
+          readStorage(
+            localStorage,
+            key
+          );
+
+        if (
+          members.length > 0
+        ) {
+          return {
+            members,
+            source: `localStorage:${key}`,
+          };
         }
       }
-    } catch (error) {
-      console.error(
-        "[MusicTeamView] Storage loading error:",
-        error
-      );
-    }
+    } catch {}
 
-    return [];
+    /* --------------------------------------------
+       4. Deep scan sessionStorage
+       -------------------------------------------- */
+
+    try {
+      for (
+        let i = 0;
+        i <
+        sessionStorage.length;
+        i++
+      ) {
+        const key =
+          sessionStorage.key(i);
+
+        if (!key) {
+          continue;
+        }
+
+        const looksRelevant =
+          STORAGE_HINTS.some(
+            (hint) =>
+              key
+                .toLowerCase()
+                .includes(hint)
+          );
+
+        if (!looksRelevant) {
+          continue;
+        }
+
+        const members =
+          readStorage(
+            sessionStorage,
+            key
+          );
+
+        if (
+          members.length > 0
+        ) {
+          return {
+            members,
+            source: `sessionStorage:${key}`,
+          };
+        }
+      }
+    } catch {}
+
+    return {
+      members: [],
+      source: "",
+    };
   };
 
 /* ============================================================
-   SAVE STORAGE
+   SAFE SAVE
    ============================================================ */
 
-const saveMembersSafely = (
-  members: TeamMember[]
-): boolean => {
-  if (
-    typeof window ===
-    "undefined"
-  ) {
-    return false;
-  }
+const saveMembers =
+  (
+    members: TeamMember[],
+    forceEmpty = false
+  ): boolean => {
+    if (
+      typeof window ===
+      "undefined"
+    ) {
+      return false;
+    }
 
-  /*
-   * NEVER write an empty array here.
-   *
-   * This is a protection against accidentally destroying
-   * an existing team directory.
-   */
-
-  if (
-    members.length ===
-    0
-  ) {
-    const existing =
-      loadMembers();
+    /*
+     * Never accidentally destroy existing data.
+     *
+     * forceEmpty is ONLY used after the user has explicitly
+     * deleted the final member.
+     */
 
     if (
-      existing.length >
-      0
+      members.length === 0 &&
+      !forceEmpty
     ) {
-      console.warn(
-        "[MusicTeamView] Refused to overwrite existing team data with an empty array."
+      const recovered =
+        recoverTeamMembers();
+
+      if (
+        recovered.members
+          .length > 0
+      ) {
+        console.warn(
+          "[MusicTeamView] Empty save blocked; existing members were found."
+        );
+
+        return false;
+      }
+    }
+
+    const normalized =
+      dedupeMembers(
+        members
+      );
+
+    const serialized =
+      JSON.stringify(
+        normalized
+      );
+
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        serialized
+      );
+
+      /*
+       * Keep the newer compatibility key synchronized.
+       */
+
+      localStorage.setItem(
+        "jewels_music_hub_team_v2",
+        serialized
+      );
+
+      return true;
+    } catch (
+      error
+    ) {
+      console.error(
+        "[MusicTeamView] Failed to save members:",
+        error
       );
 
       return false;
     }
-  }
+  };
 
-  try {
-    const serialized =
-      JSON.stringify(
-        members
-      );
+/* ============================================================
+   ROLE RECOVERY
+   ============================================================ */
 
-    localStorage.setItem(
-      STORAGE_KEY,
-      serialized
-    );
+const getStoredRole =
+  (): string => {
+    if (
+      typeof window ===
+      "undefined"
+    ) {
+      return "";
+    }
 
-    /*
-     * Keep the old key synchronized for compatibility
-     * with older parts of the application.
-     */
+    try {
+      const raw =
+        localStorage.getItem(
+          "current_role_v2"
+        );
 
-    localStorage.setItem(
-      "jewels_music_hub_team_v2",
-      serialized
-    );
+      if (!raw) {
+        return "";
+      }
 
-    return true;
-  } catch (error) {
-    console.error(
-      "[MusicTeamView] Storage saving error:",
-      error
-    );
+      try {
+        const parsed =
+          JSON.parse(raw);
 
-    return false;
-  }
-};
+        if (
+          typeof parsed ===
+          "string"
+        ) {
+          return parsed;
+        }
+
+        if (
+          parsed &&
+          typeof parsed ===
+            "object"
+        ) {
+          return String(
+            parsed.role ??
+              parsed.currentRole ??
+              parsed.activeRole ??
+              ""
+          );
+        }
+      } catch {
+        return raw;
+      }
+    } catch {}
+
+    return "";
+  };
 
 /* ============================================================
    GENERAL HELPERS
@@ -768,14 +1198,12 @@ const initials = (
       .trim()
       .split(/\s+/)
       .slice(0, 2)
-      .map(
-        (part) =>
-          part
-            .charAt(0)
-            .toUpperCase()
+      .map((part) =>
+        part
+          .charAt(0)
+          .toUpperCase()
       )
-      .join("") ||
-    "?"
+      .join("") || "?"
   );
 };
 
@@ -1137,11 +1565,9 @@ const RoleBadge = ({
     role === "lead_vocalist" ||
     role === "backing_vocalist"
       ? "mic"
-      : role ===
-        "instrumentalist"
+      : role === "instrumentalist"
       ? "music"
-      : role ===
-        "admin_md"
+      : role === "admin_md"
       ? "shield"
       : "users";
 
@@ -1237,55 +1663,53 @@ const ToastItem = ({
 }: {
   toast: Toast;
   onClose: () => void;
-}) => {
-  return (
-    <div className="pointer-events-auto flex w-[360px] max-w-[calc(100vw-30px)] items-start gap-3 rounded-2xl border border-white/10 bg-[#111214]/95 p-4 shadow-2xl backdrop-blur-xl">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/[0.05] text-white/60">
-        <Icon
-          name={
-            toast.type ===
-            "success"
-              ? "check"
-              : toast.type ===
-                "error"
-              ? "alert"
-              : toast.type ===
-                "warning"
-              ? "alert"
-              : "info"
-          }
-          size={15}
-        />
-      </div>
-
-      <div className="min-w-0 flex-1">
-        <div className="text-xs font-semibold text-white">
-          {toast.title}
-        </div>
-
-        {toast.message && (
-          <div className="mt-1 text-[10px] leading-5 text-white/35">
-            {toast.message}
-          </div>
-        )}
-      </div>
-
-      <button
-        type="button"
-        onClick={onClose}
-        className="text-white/25 hover:text-white"
-      >
-        <Icon
-          name="close"
-          size={14}
-        />
-      </button>
+}) => (
+  <div className="pointer-events-auto flex w-[360px] max-w-[calc(100vw-30px)] items-start gap-3 rounded-2xl border border-white/10 bg-[#111214]/95 p-4 shadow-2xl backdrop-blur-xl">
+    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/[0.05] text-white/60">
+      <Icon
+        name={
+          toast.type ===
+          "success"
+            ? "check"
+            : toast.type ===
+              "error"
+            ? "alert"
+            : toast.type ===
+              "warning"
+            ? "alert"
+            : "info"
+        }
+        size={15}
+      />
     </div>
-  );
-};
+
+    <div className="min-w-0 flex-1">
+      <div className="text-xs font-semibold text-white">
+        {toast.title}
+      </div>
+
+      {toast.message && (
+        <div className="mt-1 text-[10px] leading-5 text-white/35">
+          {toast.message}
+        </div>
+      )}
+    </div>
+
+    <button
+      type="button"
+      onClick={onClose}
+      className="text-white/25 hover:text-white"
+    >
+      <Icon
+        name="close"
+        size={14}
+      />
+    </button>
+  </div>
+);
 
 /* ============================================================
-   TEAM SECTION SELECTOR
+   CATEGORY SELECTOR
    ============================================================ */
 
 const CategorySelector = ({
@@ -1297,28 +1721,23 @@ const CategorySelector = ({
     value: TeamSection
   ) => void;
 }) => {
-  const items: Array<{
-    id: TeamSection;
-    title: string;
-    description: string;
-    icon: string;
-  }> = [
+  const items = [
     {
-      id: "all",
+      id: "all" as TeamSection,
       title: "All Members",
       description:
         "View the complete music team",
       icon: "users",
     },
     {
-      id: "vocalists",
+      id: "vocalists" as TeamSection,
       title: "Vocalists",
       description:
         "Lead and backing vocal team",
       icon: "mic",
     },
     {
-      id: "instrumentalists",
+      id: "instrumentalists" as TeamSection,
       title: "Instrumentalists",
       description:
         "Band and instrumental team",
@@ -1343,21 +1762,19 @@ const CategorySelector = ({
                   item.id
                 )
               }
-              className={[
-                "group relative overflow-hidden rounded-2xl border p-5 text-left transition-all duration-300",
+              className={`group relative overflow-hidden rounded-2xl border p-5 text-left transition-all duration-300 ${
                 active
                   ? "border-white/15 bg-white/[0.075] shadow-xl"
-                  : "border-white/[0.07] bg-white/[0.025] hover:-translate-y-0.5 hover:border-white/[0.12] hover:bg-white/[0.05]",
-              ].join(" ")}
+                  : "border-white/[0.07] bg-white/[0.025] hover:-translate-y-0.5 hover:border-white/[0.12] hover:bg-white/[0.05]"
+              }`}
             >
               <div className="flex items-center justify-between">
                 <div
-                  className={[
-                    "flex h-11 w-11 items-center justify-center rounded-xl transition",
+                  className={`flex h-11 w-11 items-center justify-center rounded-xl ${
                     active
                       ? "bg-white text-black"
-                      : "bg-white/[0.05] text-white/50 group-hover:text-white",
-                  ].join(" ")}
+                      : "bg-white/[0.05] text-white/50 group-hover:text-white"
+                  }`}
                 >
                   <Icon
                     name={item.icon}
@@ -1404,214 +1821,191 @@ const MemberCard = ({
   onEdit: () => void;
   onDelete: () => void;
   onFeature: () => void;
-}) => {
-  return (
-    <div className="group relative overflow-hidden rounded-[24px] border border-white/[0.07] bg-[#111214] transition-all duration-300 hover:-translate-y-0.5 hover:border-white/[0.14] hover:bg-[#141518]">
-      {member.isFeatured && (
-        <div className="absolute left-0 right-0 top-0 h-0.5 bg-white/50" />
-      )}
+}) => (
+  <div className="group relative overflow-hidden rounded-[24px] border border-white/[0.07] bg-[#111214] transition-all duration-300 hover:-translate-y-0.5 hover:border-white/[0.14] hover:bg-[#141518]">
+    {member.isFeatured && (
+      <div className="absolute left-0 right-0 top-0 h-0.5 bg-white/50" />
+    )}
 
-      <div className="p-5">
-        <div className="flex items-start justify-between">
-          <button
-            type="button"
-            onClick={onView}
-            className="rounded-2xl outline-none focus:ring-2 focus:ring-white/20"
-          >
-            <Avatar
-              member={member}
-              size="lg"
-            />
-          </button>
+    <div className="p-5">
+      <div className="flex items-start justify-between">
+        <button
+          type="button"
+          onClick={onView}
+          className="rounded-2xl outline-none focus:ring-2 focus:ring-white/20"
+        >
+          <Avatar
+            member={member}
+            size="lg"
+          />
+        </button>
 
-          <div className="flex items-center gap-1">
-            {canEdit && (
-              <button
-                type="button"
-                onClick={onFeature}
-                className={`flex h-8 w-8 items-center justify-center rounded-xl transition ${
-                  member.isFeatured
-                    ? "bg-white/10 text-white"
-                    : "text-white/20 hover:bg-white/5 hover:text-white"
-                }`}
-                title={
-                  member.isFeatured
-                    ? "Remove featured"
-                    : "Feature member"
-                }
-              >
-                <Icon
-                  name="star"
-                  size={14}
-                />
-              </button>
-            )}
-
+        <div className="flex items-center gap-1">
+          {canEdit && (
             <button
               type="button"
-              onClick={onView}
-              className="flex h-8 w-8 items-center justify-center rounded-xl text-white/25 hover:bg-white/5 hover:text-white"
-              title="View profile"
+              onClick={onFeature}
+              className={`flex h-8 w-8 items-center justify-center rounded-xl ${
+                member.isFeatured
+                  ? "bg-white/10 text-white"
+                  : "text-white/20 hover:bg-white/5 hover:text-white"
+              }`}
             >
               <Icon
-                name="eye"
-                size={15}
+                name="star"
+                size={14}
               />
             </button>
-
-            {canEdit && (
-              <button
-                type="button"
-                onClick={onEdit}
-                className="flex h-8 w-8 items-center justify-center rounded-xl text-white/25 hover:bg-white/5 hover:text-white"
-                title="Edit member"
-              >
-                <Icon
-                  name="edit"
-                  size={14}
-                />
-              </button>
-            )}
-          </div>
-        </div>
-
-        <div className="mt-5">
-          <div className="flex items-center gap-2">
-            <h3 className="truncate text-base font-semibold text-white">
-              {member.name}
-            </h3>
-
-            {member.isLeader && (
-              <span className="text-white/50">
-                <Icon
-                  name="shield"
-                  size={12}
-                />
-              </span>
-            )}
-          </div>
-
-          {member.nickname && (
-            <div className="mt-1 truncate text-[10px] text-white/25">
-              {member.nickname}
-            </div>
           )}
 
-          <div className="mt-3 flex flex-wrap gap-2">
-            <RoleBadge
-              role={member.role}
-            />
-
-            <StatusBadge
-              status={member.status}
-            />
-          </div>
-        </div>
-
-        <div className="mt-5 space-y-2">
-          {member.instrument && (
-            <div className="flex items-center gap-2 text-xs text-white/45">
-              <Icon
-                name="music"
-                size={13}
-              />
-              <span className="truncate">
-                {member.instrument}
-              </span>
-            </div>
-          )}
-
-          {member.voicePart && (
-            <div className="flex items-center gap-2 text-xs text-white/45">
-              <Icon
-                name="mic"
-                size={13}
-              />
-              <span className="truncate">
-                {member.voicePart}
-              </span>
-            </div>
-          )}
-
-          {member.section && (
-            <div className="flex items-center gap-2 text-xs text-white/45">
-              <Icon
-                name="users"
-                size={13}
-              />
-              <span className="truncate">
-                {member.section}
-              </span>
-            </div>
-          )}
-        </div>
-
-        {member.skills &&
-          member.skills.length >
-            0 && (
-            <div className="mt-5 flex flex-wrap gap-1.5">
-              {member.skills
-                .slice(0, 3)
-                .map(
-                  (
-                    skill
-                  ) => (
-                    <span
-                      key={
-                        skill
-                      }
-                      className="rounded-lg bg-white/[0.035] px-2 py-1 text-[9px] text-white/35"
-                    >
-                      {skill}
-                    </span>
-                  )
-                )}
-
-              {member.skills.length >
-                3 && (
-                <span className="rounded-lg bg-white/[0.035] px-2 py-1 text-[9px] text-white/25">
-                  +
-                  {member.skills.length -
-                    3}
-                </span>
-              )}
-            </div>
-          )}
-
-        <div className="mt-5 border-t border-white/[0.06] pt-4">
           <button
             type="button"
             onClick={onView}
-            className="flex w-full items-center justify-between text-xs text-white/35 hover:text-white"
+            className="flex h-8 w-8 items-center justify-center rounded-xl text-white/25 hover:bg-white/5 hover:text-white"
           >
-            View profile
             <Icon
-              name="arrow"
-              size={13}
+              name="eye"
+              size={15}
             />
           </button>
+
+          {canEdit && (
+            <button
+              type="button"
+              onClick={onEdit}
+              className="flex h-8 w-8 items-center justify-center rounded-xl text-white/25 hover:bg-white/5 hover:text-white"
+            >
+              <Icon
+                name="edit"
+                size={14}
+              />
+            </button>
+          )}
         </div>
       </div>
 
-      {canEdit && (
+      <div className="mt-5">
+        <div className="flex items-center gap-2">
+          <h3 className="truncate text-base font-semibold text-white">
+            {member.name}
+          </h3>
+
+          {member.isLeader && (
+            <span className="text-white/50">
+              <Icon
+                name="shield"
+                size={12}
+              />
+            </span>
+          )}
+        </div>
+
+        {member.nickname && (
+          <div className="mt-1 truncate text-[10px] text-white/25">
+            {member.nickname}
+          </div>
+        )}
+
+        <div className="mt-3 flex flex-wrap gap-2">
+          <RoleBadge
+            role={member.role}
+          />
+
+          <StatusBadge
+            status={member.status}
+          />
+        </div>
+      </div>
+
+      <div className="mt-5 space-y-2">
+        {member.instrument && (
+          <div className="flex items-center gap-2 text-xs text-white/45">
+            <Icon
+              name="music"
+              size={13}
+            />
+            <span className="truncate">
+              {member.instrument}
+            </span>
+          </div>
+        )}
+
+        {member.voicePart && (
+          <div className="flex items-center gap-2 text-xs text-white/45">
+            <Icon
+              name="mic"
+              size={13}
+            />
+            <span className="truncate">
+              {member.voicePart}
+            </span>
+          </div>
+        )}
+
+        {member.section && (
+          <div className="flex items-center gap-2 text-xs text-white/45">
+            <Icon
+              name="users"
+              size={13}
+            />
+            <span className="truncate">
+              {member.section}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {member.skills &&
+        member.skills.length >
+          0 && (
+          <div className="mt-5 flex flex-wrap gap-1.5">
+            {member.skills
+              .slice(0, 3)
+              .map(
+                (skill) => (
+                  <span
+                    key={skill}
+                    className="rounded-lg bg-white/[0.035] px-2 py-1 text-[9px] text-white/35"
+                  >
+                    {skill}
+                  </span>
+                )
+              )}
+          </div>
+        )}
+
+      <div className="mt-5 border-t border-white/[0.06] pt-4">
         <button
           type="button"
-          onClick={onDelete}
-          className="absolute bottom-4 right-4 hidden text-white/15 hover:text-red-400 group-hover:block"
-          title="Remove member"
+          onClick={onView}
+          className="flex w-full items-center justify-between text-xs text-white/35 hover:text-white"
         >
+          View profile
           <Icon
-            name="trash"
+            name="arrow"
             size={13}
           />
         </button>
-      )}
+      </div>
     </div>
-  );
-};
+
+    {canEdit && (
+      <button
+        type="button"
+        onClick={onDelete}
+        className="absolute bottom-4 right-4 hidden text-white/15 hover:text-red-400 group-hover:block"
+      >
+        <Icon
+          name="trash"
+          size={13}
+        />
+      </button>
+    )}
+  </div>
+);
 
 /* ============================================================
-   FORM COMPONENTS
+   FORM INPUTS
    ============================================================ */
 
 const FieldLabel = ({
@@ -1623,7 +2017,6 @@ const FieldLabel = ({
 }) => (
   <label className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.14em] text-white/30">
     {children}
-
     {required && (
       <span className="ml-1 text-white/50">
         *
@@ -1637,6 +2030,7 @@ const Input = ({
   onChange,
   placeholder,
   type = "text",
+  disabled = false,
 }: {
   value: string;
   onChange: (
@@ -1644,14 +2038,36 @@ const Input = ({
   ) => void;
   placeholder?: string;
   type?: string;
+  disabled?: boolean;
 }) => (
   <input
     type={type}
     value={value}
     onChange={onChange}
     placeholder={placeholder}
-    className="h-11 w-full rounded-xl border border-white/[0.08] bg-white/[0.035] px-3.5 text-sm text-white outline-none placeholder:text-white/20 focus:border-white/20 focus:bg-white/[0.05]"
+    disabled={disabled}
+    className="h-11 w-full rounded-xl border border-white/[0.08] bg-white/[0.035] px-3.5 text-sm text-white outline-none placeholder:text-white/20 focus:border-white/20 focus:bg-white/[0.05] disabled:cursor-default disabled:opacity-70"
   />
+);
+
+const Select = ({
+  value,
+  onChange,
+  children,
+}: {
+  value: string;
+  onChange: (
+    event: React.ChangeEvent<HTMLSelectElement>
+  ) => void;
+  children: React.ReactNode;
+}) => (
+  <select
+    value={value}
+    onChange={onChange}
+    className="h-11 w-full rounded-xl border border-white/[0.08] bg-[#161719] px-3.5 text-sm text-white outline-none focus:border-white/20"
+  >
+    {children}
+  </select>
 );
 
 const Textarea = ({
@@ -1698,7 +2114,7 @@ const MemberModal = ({
     mode !== "view";
 
   const [form, setForm] =
-    useState<TeamMember>(() =>
+    useState<TeamMember>(
       normalizeMember(
         member
       )
@@ -1731,6 +2147,51 @@ const MemberModal = ({
     );
   };
 
+  const addSkill = () => {
+    const clean =
+      skill.trim();
+
+    if (!clean) {
+      return;
+    }
+
+    const exists =
+      (
+        form.skills || []
+      ).some(
+        (item) =>
+          item.toLowerCase() ===
+          clean.toLowerCase()
+      );
+
+    if (!exists) {
+      update(
+        "skills",
+        [
+          ...(form.skills ||
+            []),
+          clean,
+        ]
+      );
+    }
+
+    setSkill("");
+  };
+
+  const removeSkill = (
+    value: string
+  ) => {
+    update(
+      "skills",
+      (
+        form.skills || []
+      ).filter(
+        (item) =>
+          item !== value
+      )
+    );
+  };
+
   const toggleDay = (
     day: string
   ) => {
@@ -1749,58 +2210,6 @@ const MemberModal = ({
             ...current,
             day,
           ]
-    );
-  };
-
-  const addSkill = () => {
-    const clean =
-      skill.trim();
-
-    if (!clean) {
-      return;
-    }
-
-    const exists =
-      (
-        form.skills ||
-        []
-      )
-        .map((item) =>
-          item.toLowerCase()
-        )
-        .includes(
-          clean.toLowerCase()
-        );
-
-    if (exists) {
-      setSkill("");
-      return;
-    }
-
-    update(
-      "skills",
-      [
-        ...(form.skills ||
-          []),
-        clean,
-      ]
-    );
-
-    setSkill("");
-  };
-
-  const removeSkill = (
-    value: string
-  ) => {
-    update(
-      "skills",
-      (
-        form.skills ||
-        []
-      ).filter(
-        (item) =>
-          item !== value
-      )
     );
   };
 
@@ -1838,10 +2247,8 @@ const MemberModal = ({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-4 backdrop-blur-md"
-      onMouseDown={(
-        event
-      ) => {
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 backdrop-blur-md"
+      onMouseDown={(event) => {
         if (
           event.target ===
           event.currentTarget
@@ -1850,7 +2257,7 @@ const MemberModal = ({
         }
       }}
     >
-      <div className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-[28px] border border-white/[0.09] bg-[#101113] shadow-2xl">
+      <div className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-[28px] border border-white/[0.09] bg-[#101113] shadow-2xl">
         <div className="flex items-center justify-between border-b border-white/[0.07] px-6 py-5">
           <div>
             <div className="text-[9px] uppercase tracking-[0.18em] text-white/20">
@@ -1914,14 +2321,10 @@ const MemberModal = ({
                         form.avatar ||
                         ""
                       }
-                      onChange={(
-                        event
-                      ) =>
+                      onChange={(e) =>
                         update(
                           "avatar",
-                          event
-                            .target
-                            .value
+                          e.target.value
                         )
                       }
                       placeholder="https://..."
@@ -1956,13 +2359,11 @@ const MemberModal = ({
             </div>
 
             <div className="space-y-7">
-              {/* BASIC */}
+              {/* BASIC INFORMATION */}
 
               <section>
-                <div className="mb-4">
-                  <div className="text-xs font-semibold text-white">
-                    Basic Information
-                  </div>
+                <div className="mb-4 text-xs font-semibold text-white">
+                  Basic Information
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -1976,14 +2377,10 @@ const MemberModal = ({
                         value={
                           form.name
                         }
-                        onChange={(
-                          event
-                        ) =>
+                        onChange={(e) =>
                           update(
                             "name",
-                            event
-                              .target
-                              .value
+                            e.target.value
                           )
                         }
                         placeholder="Member name"
@@ -2006,16 +2403,13 @@ const MemberModal = ({
                           form.nickname ||
                           ""
                         }
-                        onChange={(
-                          event
-                        ) =>
+                        onChange={(e) =>
                           update(
                             "nickname",
-                            event
-                              .target
-                              .value
+                            e.target.value
                           )
                         }
+                        placeholder="Nickname"
                       />
                     ) : (
                       <div className="text-sm text-white/65">
@@ -2027,25 +2421,21 @@ const MemberModal = ({
 
                   <div>
                     <FieldLabel>
-                      Team Role
+                      Role
                     </FieldLabel>
 
                     {editable ? (
-                      <select
+                      <Select
                         value={
                           form.role
                         }
-                        onChange={(
-                          event
-                        ) =>
+                        onChange={(e) =>
                           update(
                             "role",
-                            event
-                              .target
+                            e.target
                               .value as TeamRole
                           )
                         }
-                        className="h-11 w-full rounded-xl border border-white/[0.08] bg-[#17181b] px-3 text-sm text-white outline-none"
                       >
                         {Object.entries(
                           ROLE_LABELS
@@ -2068,7 +2458,7 @@ const MemberModal = ({
                             </option>
                           )
                         )}
-                      </select>
+                      </Select>
                     ) : (
                       <RoleBadge
                         role={
@@ -2084,50 +2474,71 @@ const MemberModal = ({
                     </FieldLabel>
 
                     {editable ? (
-                      <select
+                      <Select
                         value={
                           form.status
                         }
-                        onChange={(
-                          event
-                        ) =>
+                        onChange={(e) =>
                           update(
                             "status",
-                            event
-                              .target
+                            e.target
                               .value as MemberStatus
                           )
                         }
-                        className="h-11 w-full rounded-xl border border-white/[0.08] bg-[#17181b] px-3 text-sm text-white outline-none"
                       >
-                        {Object.entries(
-                          STATUS_LABELS
-                        ).map(
-                          ([
-                            value,
-                            label,
-                          ]) => (
-                            <option
-                              key={
-                                value
-                              }
-                              value={
-                                value
-                              }
-                            >
-                              {
-                                label
-                              }
-                            </option>
-                          )
-                        )}
-                      </select>
+                        <option value="active">
+                          Active
+                        </option>
+                        <option value="inactive">
+                          Inactive
+                        </option>
+                        <option value="on_leave">
+                          On Leave
+                        </option>
+                      </Select>
                     ) : (
                       <StatusBadge
                         status={
                           form.status
                         }
                       />
+                    )}
+                  </div>
+
+                  <div>
+                    <FieldLabel>
+                      Gender
+                    </FieldLabel>
+
+                    {editable ? (
+                      <Select
+                        value={
+                          form.gender ||
+                          "other"
+                        }
+                        onChange={(e) =>
+                          update(
+                            "gender",
+                            e.target
+                              .value as MemberGender
+                          )
+                        }
+                      >
+                        <option value="male">
+                          Male
+                        </option>
+                        <option value="female">
+                          Female
+                        </option>
+                        <option value="other">
+                          Other
+                        </option>
+                      </Select>
+                    ) : (
+                      <div className="text-sm capitalize text-white/60">
+                        {form.gender ||
+                          "—"}
+                      </div>
                     )}
                   </div>
 
@@ -2142,51 +2553,17 @@ const MemberModal = ({
                           form.section ||
                           ""
                         }
-                        onChange={(
-                          event
-                        ) =>
+                        onChange={(e) =>
                           update(
                             "section",
-                            event
-                              .target
-                              .value
+                            e.target.value
                           )
                         }
-                        placeholder="e.g. Vocals"
+                        placeholder="e.g. Praise Team"
                       />
                     ) : (
-                      <div className="text-sm text-white/55">
+                      <div className="text-sm text-white/60">
                         {form.section ||
-                          "—"}
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <FieldLabel>
-                      Ministry
-                    </FieldLabel>
-
-                    {editable ? (
-                      <Input
-                        value={
-                          form.ministry ||
-                          ""
-                        }
-                        onChange={(
-                          event
-                        ) =>
-                          update(
-                            "ministry",
-                            event
-                              .target
-                              .value
-                          )
-                        }
-                      />
-                    ) : (
-                      <div className="text-sm text-white/55">
-                        {form.ministry ||
                           "—"}
                       </div>
                     )}
@@ -2197,10 +2574,8 @@ const MemberModal = ({
               {/* MUSIC */}
 
               <section>
-                <div className="mb-4">
-                  <div className="text-xs font-semibold text-white">
-                    Musical Assignment
-                  </div>
+                <div className="mb-4 text-xs font-semibold text-white">
+                  Music Assignment
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -2215,20 +2590,16 @@ const MemberModal = ({
                           form.instrument ||
                           ""
                         }
-                        onChange={(
-                          event
-                        ) =>
+                        onChange={(e) =>
                           update(
                             "instrument",
-                            event
-                              .target
-                              .value
+                            e.target.value
                           )
                         }
-                        placeholder="Keyboard, Bass, Guitar..."
+                        placeholder="e.g. Keyboard"
                       />
                     ) : (
-                      <div className="text-sm text-white/55">
+                      <div className="text-sm text-white/60">
                         {form.instrument ||
                           "—"}
                       </div>
@@ -2241,22 +2612,18 @@ const MemberModal = ({
                     </FieldLabel>
 
                     {editable ? (
-                      <select
+                      <Select
                         value={
                           form.instrumentCategory ||
                           "other"
                         }
-                        onChange={(
-                          event
-                        ) =>
+                        onChange={(e) =>
                           update(
                             "instrumentCategory",
-                            event
-                              .target
+                            e.target
                               .value as InstrumentCategory
                           )
                         }
-                        className="h-11 w-full rounded-xl border border-white/[0.08] bg-[#17181b] px-3 text-sm text-white outline-none"
                       >
                         {Object.entries(
                           CATEGORY_LABELS
@@ -2279,9 +2646,9 @@ const MemberModal = ({
                             </option>
                           )
                         )}
-                      </select>
+                      </Select>
                     ) : (
-                      <div className="text-sm text-white/55">
+                      <div className="text-sm text-white/60">
                         {
                           CATEGORY_LABELS[
                             form
@@ -2304,21 +2671,44 @@ const MemberModal = ({
                           form.voicePart ||
                           ""
                         }
-                        onChange={(
-                          event
-                        ) =>
+                        onChange={(e) =>
                           update(
                             "voicePart",
-                            event
-                              .target
-                              .value
+                            e.target.value
                           )
                         }
-                        placeholder="Soprano, Alto, Tenor..."
+                        placeholder="e.g. Soprano, Alto, Tenor"
                       />
                     ) : (
-                      <div className="text-sm text-white/55">
+                      <div className="text-sm text-white/60">
                         {form.voicePart ||
+                          "—"}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <FieldLabel>
+                      Ministry
+                    </FieldLabel>
+
+                    {editable ? (
+                      <Input
+                        value={
+                          form.ministry ||
+                          ""
+                        }
+                        onChange={(e) =>
+                          update(
+                            "ministry",
+                            e.target.value
+                          )
+                        }
+                        placeholder="Ministry / team"
+                      />
+                    ) : (
+                      <div className="text-sm text-white/60">
+                        {form.ministry ||
                           "—"}
                       </div>
                     )}
@@ -2329,10 +2719,8 @@ const MemberModal = ({
               {/* CONTACT */}
 
               <section>
-                <div className="mb-4">
-                  <div className="text-xs font-semibold text-white">
-                    Contact
-                  </div>
+                <div className="mb-4 text-xs font-semibold text-white">
+                  Contact
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -2343,27 +2731,23 @@ const MemberModal = ({
 
                     {editable ? (
                       <Input
-                        type="tel"
                         value={
                           form.phone ||
                           ""
                         }
-                        onChange={(
-                          event
-                        ) =>
+                        onChange={(e) =>
                           update(
                             "phone",
-                            event
-                              .target
-                              .value
+                            e.target.value
                           )
                         }
+                        placeholder="+233..."
                       />
                     ) : (
-                      <div className="flex items-center gap-2 text-sm text-white/50">
+                      <div className="flex items-center gap-2 text-sm text-white/60">
                         <Icon
                           name="phone"
-                          size={13}
+                          size={14}
                         />
                         {form.phone ||
                           "—"}
@@ -2383,24 +2767,83 @@ const MemberModal = ({
                           form.email ||
                           ""
                         }
-                        onChange={(
-                          event
-                        ) =>
+                        onChange={(e) =>
                           update(
                             "email",
-                            event
-                              .target
-                              .value
+                            e.target.value
+                          )
+                        }
+                        placeholder="member@email.com"
+                      />
+                    ) : (
+                      <div className="flex items-center gap-2 text-sm text-white/60">
+                        <Icon
+                          name="mail"
+                          size={14}
+                        />
+                        {form.email ||
+                          "—"}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </section>
+
+              {/* EMERGENCY */}
+
+              <section>
+                <div className="mb-4 text-xs font-semibold text-white">
+                  Emergency Contact
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div>
+                    <FieldLabel>
+                      Contact Name
+                    </FieldLabel>
+
+                    {editable ? (
+                      <Input
+                        value={
+                          form.emergencyContact ||
+                          ""
+                        }
+                        onChange={(e) =>
+                          update(
+                            "emergencyContact",
+                            e.target.value
                           )
                         }
                       />
                     ) : (
-                      <div className="flex items-center gap-2 text-sm text-white/50">
-                        <Icon
-                          name="mail"
-                          size={13}
-                        />
-                        {form.email ||
+                      <div className="text-sm text-white/60">
+                        {form.emergencyContact ||
+                          "—"}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <FieldLabel>
+                      Contact Phone
+                    </FieldLabel>
+
+                    {editable ? (
+                      <Input
+                        value={
+                          form.emergencyPhone ||
+                          ""
+                        }
+                        onChange={(e) =>
+                          update(
+                            "emergencyPhone",
+                            e.target.value
+                          )
+                        }
+                      />
+                    ) : (
+                      <div className="text-sm text-white/60">
+                        {form.emergencyPhone ||
                           "—"}
                       </div>
                     )}
@@ -2411,16 +2854,14 @@ const MemberModal = ({
               {/* AVAILABILITY */}
 
               <section>
-                <div className="mb-4">
-                  <div className="text-xs font-semibold text-white">
-                    Availability
-                  </div>
+                <div className="mb-4 text-xs font-semibold text-white">
+                  Availability
                 </div>
 
                 <div className="flex flex-wrap gap-2">
                   {WEEK_DAYS.map(
                     (day) => {
-                      const selected =
+                      const active =
                         (
                           form.availability ||
                           []
@@ -2428,33 +2869,12 @@ const MemberModal = ({
                           day
                         );
 
-                      if (
-                        !editable
-                      ) {
-                        return (
-                          <span
-                            key={
-                              day
-                            }
-                            className={`rounded-xl border px-3 py-2 text-[10px] ${
-                              selected
-                                ? "border-white/15 bg-white/10 text-white/70"
-                                : "border-white/[0.06] bg-white/[0.02] text-white/20"
-                            }`}
-                          >
-                            {day.slice(
-                              0,
-                              3
-                            )}
-                          </span>
-                        );
-                      }
-
                       return (
                         <button
+                          key={day}
                           type="button"
-                          key={
-                            day
+                          disabled={
+                            !editable
                           }
                           onClick={() =>
                             toggleDay(
@@ -2462,44 +2882,55 @@ const MemberModal = ({
                             )
                           }
                           className={`rounded-xl border px-3 py-2 text-[10px] transition ${
-                            selected
-                              ? "border-white/15 bg-white/10 text-white"
-                              : "border-white/[0.06] bg-white/[0.02] text-white/25 hover:bg-white/[0.05]"
+                            active
+                              ? "border-white/20 bg-white/10 text-white"
+                              : "border-white/[0.07] bg-white/[0.025] text-white/30"
                           }`}
                         >
-                          {day.slice(
-                            0,
-                            3
-                          )}
+                          {day}
                         </button>
                       );
                     }
                   )}
                 </div>
+
+                {editable && (
+                  <label className="mt-4 flex cursor-pointer items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={
+                        form.isAvailable !==
+                        false
+                      }
+                      onChange={(e) =>
+                        update(
+                          "isAvailable",
+                          e.target.checked
+                        )
+                      }
+                    />
+
+                    <span className="text-xs text-white/50">
+                      Currently available
+                    </span>
+                  </label>
+                )}
               </section>
 
               {/* SKILLS */}
 
               <section>
-                <div className="mb-4">
-                  <div className="text-xs font-semibold text-white">
-                    Skills
-                  </div>
+                <div className="mb-4 text-xs font-semibold text-white">
+                  Skills
                 </div>
 
                 {editable && (
                   <div className="flex gap-2">
                     <Input
-                      value={
-                        skill
-                      }
-                      onChange={(
-                        event
-                      ) =>
+                      value={skill}
+                      onChange={(e) =>
                         setSkill(
-                          event
-                            .target
-                            .value
+                          e.target.value
                         )
                       }
                       placeholder="Add skill"
@@ -2510,9 +2941,12 @@ const MemberModal = ({
                       onClick={
                         addSkill
                       }
-                      className="rounded-xl border border-white/10 bg-white/[0.05] px-4 text-xs text-white hover:bg-white/10"
+                      className="flex h-11 shrink-0 items-center justify-center rounded-xl bg-white px-4 text-black"
                     >
-                      Add
+                      <Icon
+                        name="plus"
+                        size={15}
+                      />
                     </button>
                   </div>
                 )}
@@ -2524,10 +2958,8 @@ const MemberModal = ({
                   ).map(
                     (item) => (
                       <span
-                        key={
-                          item
-                        }
-                        className="flex items-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.03] px-3 py-2 text-[10px] text-white/45"
+                        key={item}
+                        className="inline-flex items-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.03] px-3 py-2 text-[10px] text-white/50"
                       >
                         {item}
 
@@ -2539,12 +2971,9 @@ const MemberModal = ({
                                 item
                               )
                             }
-                            className="text-white/20 hover:text-red-400"
+                            className="text-white/20 hover:text-white"
                           >
-                            <Icon
-                              name="close"
-                              size={10}
-                            />
+                            ×
                           </button>
                         )}
                       </span>
@@ -2556,10 +2985,8 @@ const MemberModal = ({
               {/* NOTES */}
 
               <section>
-                <div className="mb-4">
-                  <div className="text-xs font-semibold text-white">
-                    Notes
-                  </div>
+                <div className="mb-4 text-xs font-semibold text-white">
+                  Notes
                 </div>
 
                 {editable ? (
@@ -2568,22 +2995,18 @@ const MemberModal = ({
                       form.notes ||
                       ""
                     }
-                    onChange={(
-                      event
-                    ) =>
+                    onChange={(e) =>
                       update(
                         "notes",
-                        event
-                          .target
-                          .value
+                        e.target.value
                       )
                     }
-                    placeholder="Additional notes..."
+                    placeholder="Additional notes about this member..."
                   />
                 ) : (
-                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-4 text-xs leading-6 text-white/40">
+                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-4 text-sm leading-6 text-white/45">
                     {form.notes ||
-                      "No notes available."}
+                      "No notes added."}
                   </div>
                 )}
               </section>
@@ -2591,97 +3014,50 @@ const MemberModal = ({
               {/* CONTROLS */}
 
               {editable && (
-                <section>
-                  <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                    <label className="flex cursor-pointer items-center justify-between rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
-                      <div>
-                        <div className="text-xs text-white/65">
-                          Team Leader
-                        </div>
-
-                        <div className="mt-1 text-[9px] text-white/25">
-                          Leadership marker
-                        </div>
-                      </div>
-
+                <section className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <label className="flex items-center gap-3">
                       <input
                         type="checkbox"
                         checked={
-                          !!form.isLeader
+                          Boolean(
+                            form.isLeader
+                          )
                         }
-                        onChange={(
-                          event
-                        ) =>
+                        onChange={(e) =>
                           update(
                             "isLeader",
-                            event
-                              .target
+                            e.target
                               .checked
                           )
                         }
-                        className="h-4 w-4 accent-white"
                       />
+
+                      <span className="text-xs text-white/50">
+                        Team leader
+                      </span>
                     </label>
 
-                    <label className="flex cursor-pointer items-center justify-between rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
-                      <div>
-                        <div className="text-xs text-white/65">
-                          Featured
-                        </div>
-
-                        <div className="mt-1 text-[9px] text-white/25">
-                          Highlight member
-                        </div>
-                      </div>
-
+                    <label className="flex items-center gap-3">
                       <input
                         type="checkbox"
                         checked={
-                          !!form.isFeatured
+                          Boolean(
+                            form.isFeatured
+                          )
                         }
-                        onChange={(
-                          event
-                        ) =>
+                        onChange={(e) =>
                           update(
                             "isFeatured",
-                            event
-                              .target
+                            e.target
                               .checked
                           )
                         }
-                        className="h-4 w-4 accent-white"
                       />
-                    </label>
 
-                    <label className="flex cursor-pointer items-center justify-between rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
-                      <div>
-                        <div className="text-xs text-white/65">
-                          Available
-                        </div>
-
-                        <div className="mt-1 text-[9px] text-white/25">
-                          Available for ministry
-                        </div>
-                      </div>
-
-                      <input
-                        type="checkbox"
-                        checked={
-                          form.isAvailable !==
-                          false
-                        }
-                        onChange={(
-                          event
-                        ) =>
-                          update(
-                            "isAvailable",
-                            event
-                              .target
-                              .checked
-                          )
-                        }
-                        className="h-4 w-4 accent-white"
-                      />
+                      <span className="text-xs text-white/50">
+                        Featured member
+                      </span>
                     </label>
                   </div>
                 </section>
@@ -2690,18 +3066,18 @@ const MemberModal = ({
           </div>
 
           {editable && (
-            <div className="flex justify-end gap-3 border-t border-white/[0.07] px-6 py-4">
+            <div className="flex items-center justify-end gap-3 border-t border-white/[0.07] px-6 py-5">
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-xl border border-white/[0.07] bg-white/[0.025] px-4 py-2.5 text-xs text-white/50 hover:text-white"
+                className="rounded-xl px-4 py-2.5 text-xs text-white/40 hover:bg-white/5 hover:text-white"
               >
                 Cancel
               </button>
 
               <button
                 type="submit"
-                className="rounded-xl bg-white px-5 py-2.5 text-xs font-semibold text-black hover:bg-white/90"
+                className="rounded-xl bg-white px-5 py-2.5 text-xs font-semibold text-black transition hover:bg-white/90"
               >
                 {mode ===
                 "create"
@@ -2722,39 +3098,39 @@ const MemberModal = ({
 
 const DeleteModal = ({
   member,
-  onClose,
+  onCancel,
   onConfirm,
 }: {
   member: TeamMember;
-  onClose: () => void;
+  onCancel: () => void;
   onConfirm: () => void;
 }) => (
-  <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/75 p-4 backdrop-blur-md">
-    <div className="w-full max-w-md rounded-[26px] border border-white/[0.09] bg-[#111214] p-6 shadow-2xl">
+  <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
+    <div className="w-full max-w-md rounded-[26px] border border-white/[0.09] bg-[#101113] p-6 shadow-2xl">
       <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-500/10 text-red-400">
         <Icon
           name="trash"
-          size={18}
+          size={19}
         />
       </div>
 
-      <h3 className="mt-5 text-base font-semibold text-white">
+      <h2 className="mt-5 text-lg font-semibold text-white">
         Remove team member?
-      </h3>
+      </h2>
 
       <p className="mt-2 text-xs leading-6 text-white/35">
-        Remove{" "}
+        This will remove{" "}
         <span className="text-white/70">
           {member.name}
         </span>{" "}
-        from the music team?
+        from the Music Team directory.
       </p>
 
       <div className="mt-6 flex justify-end gap-3">
         <button
           type="button"
-          onClick={onClose}
-          className="rounded-xl border border-white/[0.07] px-4 py-2.5 text-xs text-white/50 hover:text-white"
+          onClick={onCancel}
+          className="rounded-xl px-4 py-2.5 text-xs text-white/40 hover:bg-white/5 hover:text-white"
         >
           Cancel
         </button>
@@ -2762,7 +3138,7 @@ const DeleteModal = ({
         <button
           type="button"
           onClick={onConfirm}
-          className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-xs font-semibold text-red-400 hover:bg-red-500/15"
+          className="rounded-xl bg-red-500/10 px-4 py-2.5 text-xs font-semibold text-red-400 hover:bg-red-500/20"
         >
           Remove Member
         </button>
@@ -2772,7 +3148,125 @@ const DeleteModal = ({
 );
 
 /* ============================================================
-   MAIN MUSIC TEAM VIEW
+   LIST ROW
+   ============================================================ */
+
+const MemberListRow = ({
+  member,
+  canEdit,
+  onView,
+  onEdit,
+  onDelete,
+  onFeature,
+}: {
+  member: TeamMember;
+  canEdit: boolean;
+  onView: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  onFeature: () => void;
+}) => (
+  <div className="group flex items-center gap-4 border-b border-white/[0.05] px-5 py-4 transition hover:bg-white/[0.025]">
+    <button
+      type="button"
+      onClick={onView}
+      className="shrink-0"
+    >
+      <Avatar
+        member={member}
+        size="sm"
+      />
+    </button>
+
+    <button
+      type="button"
+      onClick={onView}
+      className="min-w-0 flex-1 text-left"
+    >
+      <div className="truncate text-sm font-medium text-white">
+        {member.name}
+      </div>
+
+      <div className="mt-1 truncate text-[10px] text-white/25">
+        {member.nickname ||
+          member.instrument ||
+          member.voicePart ||
+          "Music Team Member"}
+      </div>
+    </button>
+
+    <div className="hidden md:block">
+      <RoleBadge
+        role={member.role}
+      />
+    </div>
+
+    <div className="hidden sm:block">
+      <StatusBadge
+        status={member.status}
+      />
+    </div>
+
+    <div className="flex items-center gap-1">
+      {canEdit && (
+        <button
+          type="button"
+          onClick={onFeature}
+          className={`flex h-8 w-8 items-center justify-center rounded-xl ${
+            member.isFeatured
+              ? "text-white"
+              : "text-white/20 hover:bg-white/5 hover:text-white"
+          }`}
+        >
+          <Icon
+            name="star"
+            size={14}
+          />
+        </button>
+      )}
+
+      <button
+        type="button"
+        onClick={onView}
+        className="flex h-8 w-8 items-center justify-center rounded-xl text-white/25 hover:bg-white/5 hover:text-white"
+      >
+        <Icon
+          name="eye"
+          size={14}
+        />
+      </button>
+
+      {canEdit && (
+        <>
+          <button
+            type="button"
+            onClick={onEdit}
+            className="flex h-8 w-8 items-center justify-center rounded-xl text-white/25 hover:bg-white/5 hover:text-white"
+          >
+            <Icon
+              name="edit"
+              size={14}
+            />
+          </button>
+
+          <button
+            type="button"
+            onClick={onDelete}
+            className="flex h-8 w-8 items-center justify-center rounded-xl text-white/20 hover:bg-red-500/10 hover:text-red-400"
+          >
+            <Icon
+              name="trash"
+              size={14}
+            />
+          </button>
+        </>
+      )}
+    </div>
+  </div>
+);
+
+/* ============================================================
+   MAIN COMPONENT
    ============================================================ */
 
 export const MusicTeamView: React.FC<
@@ -2786,192 +3280,107 @@ export const MusicTeamView: React.FC<
   onMembersChange,
   readOnly = false,
 }) => {
-  /* ==========================================================
-     ROLE
-     ========================================================== */
-
-  const userRole =
-    activeRole ||
-    currentRole ||
-    role ||
-    "";
-
-  const canEdit =
-    !readOnly &&
-    isMD(userRole);
-
-  /* ==========================================================
-     STORAGE HYDRATION
-     ========================================================== */
-
-  const [
-    storageReady,
-    setStorageReady,
-  ] = useState(false);
+  /*
+   * CRITICAL:
+   *
+   * The state initializer loads storage BEFORE the first
+   * persistence effect runs.
+   *
+   * This is what prevents:
+   *
+   *     [] -> localStorage
+   *
+   * from destroying an existing team.
+   */
 
   const [
     members,
     setMembers,
-  ] = useState<
-    TeamMember[]
-  >([]);
-
-  /*
-   * Load the existing team exactly once.
-   *
-   * This prevents the initial empty state from overwriting
-   * existing localStorage data.
-   */
-
-  useEffect(() => {
-    if (
-      externalMembers &&
-      externalMembers.length >
-        0
-    ) {
-      const normalized =
-        externalMembers.map(
-          normalizeMember
-        );
-
-      setMembers(
-        normalized
-      );
-
-      setStorageReady(
-        true
-      );
-
-      return;
-    }
-
-    const saved =
-      loadMembers();
-
-    setMembers(saved);
-    setStorageReady(true);
-  }, []);
-
-  /* ==========================================================
-     EXTERNAL MEMBER SYNC
-     ========================================================== */
-
-  useEffect(() => {
-    if (
-      !storageReady
-    ) {
-      return;
-    }
-
-    if (
-      externalMembers &&
-      externalMembers.length >
-        0
-    ) {
-      setMembers(
-        externalMembers.map(
-          normalizeMember
-        )
-      );
-    }
-  }, [
-    externalMembers,
-    storageReady,
-  ]);
-
-  /* ==========================================================
-     PERSISTENCE
-     ========================================================== */
-
-  useEffect(() => {
-    if (
-      !storageReady
-    ) {
-      return;
-    }
-
-    /*
-     * Protection:
-     *
-     * If we somehow reach an empty state while saved data
-     * still exists, do NOT destroy that saved data.
-     */
-
-    if (
-      members.length ===
-      0
-    ) {
-      const existing =
-        loadMembers();
+  ] = useState<TeamMember[]>(
+    () => {
+      /*
+       * If App already supplies actual members, respect them.
+       *
+       * An empty prop is deliberately ignored because an empty
+       * prop is very often just the initial App state.
+       */
 
       if (
-        existing.length >
-        0
+        externalMembers &&
+        externalMembers.length >
+          0
       ) {
-        setMembers(
-          existing
+        return dedupeMembers(
+          externalMembers.map(
+            normalizeMember
+          )
+        );
+      }
+
+      const recovered =
+        recoverTeamMembers();
+
+      if (
+        recovered.members
+          .length > 0
+      ) {
+        console.info(
+          `[MusicTeamView] Recovered team from ${recovered.source}`
         );
 
-        return;
+        /*
+         * Immediately migrate recovered data to the
+         * canonical storage key.
+         */
+
+        saveMembers(
+          recovered.members,
+          true
+        );
+
+        return recovered.members;
       }
+
+      return [];
     }
-
-    saveMembersSafely(
-      members
-    );
-
-    onMembersChange?.(
-      members
-    );
-  }, [
-    members,
-    storageReady,
-    onMembersChange,
-  ]);
-
-  /* ==========================================================
-     UI STATE
-     ========================================================== */
-
-  const [search, setSearch] =
-    useState("");
+  );
 
   const [
     section,
     setSection,
-  ] = useState<TeamSection>(
-    "all"
-  );
+  ] =
+    useState<TeamSection>(
+      "all"
+    );
 
   const [
-    roleFilter,
-    setRoleFilter,
-  ] = useState("all");
+    search,
+    setSearch,
+  ] = useState("");
 
   const [
-    statusFilter,
-    setStatusFilter,
-  ] = useState("all");
-
-  const [
-    categoryFilter,
-    setCategoryFilter,
-  ] = useState("all");
-
-  const [sortMode, setSortMode] =
+    sortMode,
+    setSortMode,
+  ] =
     useState<SortMode>(
       "name"
     );
 
-  const [viewMode, setViewMode] =
+  const [
+    viewMode,
+    setViewMode,
+  ] =
     useState<ViewMode>(
       "grid"
     );
 
   const [
-    showFilters,
-    setShowFilters,
-  ] = useState(false);
+    modalMode,
+    setModalMode,
+  ] =
+    useState<ModalMode>(
+      null
+    );
 
   const [
     selectedMember,
@@ -2982,246 +3391,326 @@ export const MusicTeamView: React.FC<
     );
 
   const [
-    modalMode,
-    setModalMode,
-  ] =
-    useState<ModalMode>(null);
-
-  const [
-    memberToDelete,
-    setMemberToDelete,
+    deleteMember,
+    setDeleteMember,
   ] =
     useState<TeamMember | null>(
       null
     );
 
-  const [toasts, setToasts] =
-    useState<Toast[]>([]);
+  const [
+    toasts,
+    setToasts,
+  ] = useState<Toast[]>(
+    []
+  );
 
   const [
-    refreshing,
-    setRefreshing,
+    refreshKey,
+    setRefreshKey,
+  ] = useState(0);
+
+  const [
+    hasInitialized,
+    setHasInitialized,
   ] = useState(false);
+
+  /*
+   * If App supplied actual members at mount, App is considered
+   * the initial source.
+   *
+   * If App supplied [] we use local storage as the source.
+   */
+  const externalSource =
+    React.useRef(
+      Boolean(
+        externalMembers &&
+          externalMembers.length >
+            0
+      )
+    );
+
+  const userRole =
+    activeRole ||
+    currentRole ||
+    role ||
+    getStoredRole();
+
+  const canEdit =
+    !readOnly &&
+    isMD(userRole);
+
+  /* ==========================================================
+     INITIALIZATION
+     ========================================================== */
+
+  useEffect(() => {
+    setHasInitialized(
+      true
+    );
+  }, []);
+
+  /* ==========================================================
+     EXTERNAL MEMBERS
+     ========================================================== */
+
+  useEffect(() => {
+    /*
+     * Only synchronize external members if the parent actually
+     * supplied a real directory.
+     *
+     * Empty [] from App is ignored.
+     */
+
+    if (
+      !externalSource.current
+    ) {
+      return;
+    }
+
+    if (
+      !externalMembers ||
+      externalMembers.length ===
+        0
+    ) {
+      return;
+    }
+
+    const normalized =
+      dedupeMembers(
+        externalMembers.map(
+          normalizeMember
+        )
+      );
+
+    setMembers(
+      normalized
+    );
+  }, [
+    externalMembers,
+  ]);
+
+  /* ==========================================================
+     PERSISTENCE
+     ========================================================== */
+
+  useEffect(() => {
+    if (!hasInitialized) {
+      return;
+    }
+
+    /*
+     * We save after hydration.
+     *
+     * Empty arrays are allowed ONLY after the component has
+     * actually been initialized. This means a real user deletion
+     * can eventually remove all members.
+     */
+
+    saveMembers(
+      members,
+      false
+    );
+
+    onMembersChange?.(
+      members
+    );
+  }, [
+    members,
+    hasInitialized,
+    onMembersChange,
+  ]);
 
   /* ==========================================================
      TOAST
      ========================================================== */
 
-  const addToast = useCallback(
-    (
-      type: ToastType,
-      title: string,
-      message?: string
-    ) => {
-      const id =
-        createId();
-
-      setToasts(
-        (previous) => [
-          ...previous,
-          {
-            id,
-            type,
-            title,
-            message,
-          },
-        ]
-      );
-
-      window.setTimeout(
-        () => {
-          setToasts(
-            (previous) =>
-              previous.filter(
-                (
-                  toast
-                ) =>
-                  toast.id !==
-                  id
-              )
-          );
-        },
-        4000
-      );
-    },
-    []
-  );
-
-  const removeToast = (
-    id: string
+  const showToast = (
+    type: ToastType,
+    title: string,
+    message?: string
   ) => {
+    const id = createId();
+
     setToasts(
-      (previous) =>
-        previous.filter(
-          (toast) =>
-            toast.id !== id
-        )
+      (previous) => [
+        ...previous,
+        {
+          id,
+          type,
+          title,
+          message,
+        },
+      ]
+    );
+
+    window.setTimeout(
+      () => {
+        setToasts(
+          (previous) =>
+            previous.filter(
+              (item) =>
+                item.id !== id
+            )
+        );
+      },
+      3500
     );
   };
 
   /* ==========================================================
-     FILTERED MEMBERS
+     FILTERING
      ========================================================== */
 
   const filteredMembers =
     useMemo(() => {
+      let result =
+        [...members];
+
+      if (
+        section ===
+        "vocalists"
+      ) {
+        result =
+          result.filter(
+            (member) =>
+              member.role ===
+                "lead_vocalist" ||
+              member.role ===
+                "backing_vocalist" ||
+              member.instrumentCategory ===
+                "vocals"
+          );
+      }
+
+      if (
+        section ===
+        "instrumentalists"
+      ) {
+        result =
+          result.filter(
+            (member) =>
+              member.role ===
+                "instrumentalist"
+          );
+      }
+
       const query =
         search
           .trim()
           .toLowerCase();
 
-      let result =
-        members.filter(
-          (member) => {
-            const searchText = [
-              member.name,
-              member.nickname,
-              member.instrument,
-              member.voicePart,
-              member.section,
-              member.ministry,
-              ROLE_LABELS[
-                member.role
-              ],
-              ...(member.skills ||
-                []),
-            ]
-              .filter(Boolean)
-              .join(" ")
-              .toLowerCase();
+      if (query) {
+        result =
+          result.filter(
+            (member) => {
+              const haystack =
+                [
+                  member.name,
+                  member.nickname,
+                  member.role,
+                  member.instrument,
+                  member.voicePart,
+                  member.section,
+                  member.ministry,
+                  member.email,
+                  member.phone,
+                  ...(member.skills ||
+                    []),
+                ]
+                  .filter(Boolean)
+                  .join(" ")
+                  .toLowerCase();
 
-            const matchesSearch =
-              !query ||
-              searchText.includes(
+              return haystack.includes(
                 query
               );
-
-            let matchesSection =
-              true;
-
-            if (
-              section ===
-              "vocalists"
-            ) {
-              matchesSection =
-                member.role ===
-                  "lead_vocalist" ||
-                member.role ===
-                  "backing_vocalist";
             }
-
-            if (
-              section ===
-              "instrumentalists"
-            ) {
-              matchesSection =
-                member.role ===
-                "instrumentalist";
-            }
-
-            const matchesRole =
-              roleFilter ===
-                "all" ||
-              member.role ===
-                roleFilter;
-
-            const matchesStatus =
-              statusFilter ===
-                "all" ||
-              member.status ===
-                statusFilter;
-
-            const matchesCategory =
-              categoryFilter ===
-                "all" ||
-              member.instrumentCategory ===
-                categoryFilter;
-
-            return (
-              matchesSearch &&
-              matchesSection &&
-              matchesRole &&
-              matchesStatus &&
-              matchesCategory
-            );
-          }
-        );
+          );
+      }
 
       result.sort(
         (a, b) => {
-          switch (
-            sortMode
+          if (
+            sortMode ===
+            "name"
           ) {
-            case "role":
-              return ROLE_LABELS[
-                a.role
-              ].localeCompare(
-                ROLE_LABELS[
-                  b.role
-                ]
-              );
-
-            case "status":
-              return STATUS_LABELS[
-                a.status
-              ].localeCompare(
-                STATUS_LABELS[
-                  b.status
-                ]
-              );
-
-            case "joined":
-              return (
-                new Date(
-                  a.joinedAt
-                ).getTime() -
-                new Date(
-                  b.joinedAt
-                ).getTime()
-              );
-
-            case "recent":
-              return (
-                new Date(
-                  b.updatedAt
-                ).getTime() -
-                new Date(
-                  a.updatedAt
-                ).getTime()
-              );
-
-            case "name":
-            default:
-              return a.name.localeCompare(
-                b.name
-              );
+            return a.name.localeCompare(
+              b.name
+            );
           }
+
+          if (
+            sortMode ===
+            "role"
+          ) {
+            return ROLE_LABELS[
+              a.role
+            ].localeCompare(
+              ROLE_LABELS[
+                b.role
+              ]
+            );
+          }
+
+          if (
+            sortMode ===
+            "status"
+          ) {
+            return STATUS_LABELS[
+              a.status
+            ].localeCompare(
+              STATUS_LABELS[
+                b.status
+              ]
+            );
+          }
+
+          if (
+            sortMode ===
+            "joined"
+          ) {
+            return (
+              new Date(
+                a.joinedAt
+              ).getTime() -
+              new Date(
+                b.joinedAt
+              ).getTime()
+            );
+          }
+
+          return (
+            new Date(
+              b.updatedAt
+            ).getTime() -
+            new Date(
+              a.updatedAt
+            ).getTime()
+          );
         }
       );
 
       return result;
     }, [
       members,
-      search,
       section,
-      roleFilter,
-      statusFilter,
-      categoryFilter,
+      search,
       sortMode,
+      refreshKey,
     ]);
 
   /* ==========================================================
-     OPEN CREATE
+     ACTIONS
      ========================================================== */
 
   const openCreate = () => {
     if (!canEdit) {
-      addToast(
+      showToast(
         "warning",
-        "MD access required",
-        "Only the Music Director can add members."
+        "View only",
+        "Only the Music Director can add team members."
       );
-
       return;
     }
 
@@ -3240,43 +3729,32 @@ export const MusicTeamView: React.FC<
     );
   };
 
-  /* ==========================================================
-     VIEW
-     ========================================================== */
-
   const openView = (
     member: TeamMember
   ) => {
     setSelectedMember(
-      normalizeMember(
-        member
-      )
+      member
     );
 
-    setModalMode("view");
+    setModalMode(
+      "view"
+    );
   };
-
-  /* ==========================================================
-     EDIT
-     ========================================================== */
 
   const openEdit = (
     member: TeamMember
   ) => {
     if (!canEdit) {
-      addToast(
+      showToast(
         "warning",
-        "Read-only access",
+        "View only",
         "Only the Music Director can edit team members."
       );
-
       return;
     }
 
     setSelectedMember(
-      normalizeMember(
-        member
-      )
+      member
     );
 
     setModalMode(
@@ -3284,431 +3762,297 @@ export const MusicTeamView: React.FC<
     );
   };
 
-  /* ==========================================================
-     SAVE MEMBER
-     ========================================================== */
-
-  const saveMember = (
-    member: TeamMember
+  const handleSave = (
+    incoming: TeamMember
   ) => {
     if (!canEdit) {
-      addToast(
-        "error",
-        "Permission denied",
-        "Only the Music Director can modify the team."
-      );
-
       return;
     }
 
     const normalized =
       normalizeMember(
-        member
+        incoming
       );
 
-    setMembers(
-      (previous) => {
-        const exists =
-          previous.some(
-            (item) =>
-              item.id ===
-              normalized.id
-          );
-
-        if (exists) {
-          return previous.map(
-            (item) =>
-              item.id ===
-              normalized.id
-                ? normalized
-                : item
-          );
-        }
-
-        return [
+    if (
+      modalMode ===
+      "create"
+    ) {
+      setMembers(
+        (previous) => [
           ...previous,
           normalized,
-        ];
-      }
-    );
+        ]
+      );
 
-    addToast(
-      "success",
-      modalMode ===
-        "create"
-        ? "Member added"
-        : "Changes saved",
-      `${normalized.name} has been updated.`
+      showToast(
+        "success",
+        "Member added",
+        `${normalized.name} has been added to the music team.`
+      );
+    } else {
+      setMembers(
+        (previous) =>
+          previous.map(
+            (member) =>
+              member.id ===
+              normalized.id
+                ? normalized
+                : member
+          )
+      );
+
+      showToast(
+        "success",
+        "Member updated",
+        `${normalized.name}'s profile has been updated.`
+      );
+    }
+
+    setModalMode(
+      null
     );
 
     setSelectedMember(
       null
     );
-
-    setModalMode(
-      null
-    );
   };
 
-  /* ==========================================================
-     DELETE
-     ========================================================== */
-
-  const deleteConfirmed =
+  const handleDelete =
     () => {
       if (
         !canEdit ||
-        !memberToDelete
+        !deleteMember
       ) {
         return;
       }
 
-      const name =
-        memberToDelete.name;
+      const id =
+        deleteMember.id;
 
       setMembers(
         (previous) =>
           previous.filter(
             (member) =>
-              member.id !==
-              memberToDelete.id
+              member.id !== id
           )
       );
 
-      setMemberToDelete(
-        null
-      );
-
-      addToast(
+      showToast(
         "success",
         "Member removed",
-        `${name} was removed from the music team.`
+        `${deleteMember.name} was removed from the team.`
+      );
+
+      setDeleteMember(
+        null
+      );
+    };
+
+  const toggleFeatured =
+    (member: TeamMember) => {
+      if (!canEdit) {
+        return;
+      }
+
+      setMembers(
+        (previous) =>
+          previous.map(
+            (item) =>
+              item.id ===
+              member.id
+                ? {
+                    ...item,
+                    isFeatured:
+                      !item.isFeatured,
+                    updatedAt:
+                      new Date().toISOString(),
+                  }
+                : item
+          )
       );
     };
 
   /* ==========================================================
-     FEATURE
+     REFRESH / RECOVERY
      ========================================================== */
 
-  const toggleFeatured = (
-    member: TeamMember
-  ) => {
-    if (!canEdit) {
-      return;
-    }
-
-    setMembers(
-      (previous) =>
-        previous.map(
-          (item) =>
-            item.id ===
-            member.id
-              ? {
-                  ...item,
-                  isFeatured:
-                    !item.isFeatured,
-                  updatedAt:
-                    new Date().toISOString(),
-                }
-              : item
-        )
-    );
-  };
-
-  /* ==========================================================
-     CLEAR FILTERS
-     ========================================================== */
-
-  const clearFilters =
+  const recoverNow =
     () => {
-      setSearch("");
-      setSection("all");
-      setRoleFilter(
-        "all"
+      const recovered =
+        recoverTeamMembers();
+
+      if (
+        recovered.members
+          .length === 0
+      ) {
+        showToast(
+          "info",
+          "No saved directory found",
+          "No team members were found in the supported storage locations."
+        );
+        return;
+      }
+
+      setMembers(
+        recovered.members
       );
-      setStatusFilter(
-        "all"
+
+      saveMembers(
+        recovered.members,
+        true
       );
-      setCategoryFilter(
-        "all"
+
+      setRefreshKey(
+        (value) =>
+          value + 1
+      );
+
+      showToast(
+        "success",
+        "Team recovered",
+        `${recovered.members.length} member(s) recovered from ${recovered.source}.`
       );
     };
-
-  /* ==========================================================
-     REFRESH
-     ========================================================== */
-
-  const refresh = () => {
-    setRefreshing(true);
-
-    window.setTimeout(
-      () => {
-        const saved =
-          loadMembers();
-
-        if (
-          saved.length >
-          0
-        ) {
-          setMembers(
-            saved
-          );
-
-          addToast(
-            "success",
-            "Team refreshed",
-            "Your saved team information has been loaded."
-          );
-        } else {
-          /*
-           * IMPORTANT:
-           *
-           * Do not replace an existing non-empty team with
-           * an empty refresh result.
-           */
-
-          if (
-            members.length >
-            0
-          ) {
-            addToast(
-              "warning",
-              "No replacement data found",
-              "Your current team was kept safe."
-            );
-          } else {
-            setMembers([]);
-
-            addToast(
-              "info",
-              "No saved members",
-              "No saved team members were found."
-            );
-          }
-        }
-
-        setRefreshing(false);
-      },
-      450
-    );
-  };
 
   /* ==========================================================
      EXPORT
      ========================================================== */
 
-  const exportTeam =
+  const exportMembers =
     () => {
-      try {
-        const blob =
-          new Blob(
-            [
-              JSON.stringify(
-                {
-                  exportedAt:
-                    new Date().toISOString(),
-                  team: members,
-                },
-                null,
-                2
-              ),
-            ],
-            {
-              type: "application/json",
-            }
-          );
-
-        const url =
-          URL.createObjectURL(
-            blob
-          );
-
-        const anchor =
-          document.createElement(
-            "a"
-          );
-
-        anchor.href =
-          url;
-
-        anchor.download =
-          `jewels-music-team-${new Date()
-            .toISOString()
-            .slice(
-              0,
-              10
-            )}.json`;
-
-        document.body.appendChild(
-          anchor
-        );
-
-        anchor.click();
-        anchor.remove();
-
-        URL.revokeObjectURL(
-          url
-        );
-
-        addToast(
-          "success",
-          "Team exported",
-          "The team directory has been exported."
-        );
-      } catch {
-        addToast(
-          "error",
-          "Export failed",
-          "Unable to export the team directory."
-        );
-      }
-    };
-
-  /* ==========================================================
-     KEYBOARD
-     ========================================================== */
-
-  useEffect(() => {
-    const listener = (
-      event: KeyboardEvent
-    ) => {
       if (
-        event.key ===
-        "Escape"
+        members.length ===
+        0
       ) {
-        setSelectedMember(
-          null
+        showToast(
+          "info",
+          "Nothing to export",
+          "There are no team members to export."
         );
-
-        setModalMode(
-          null
-        );
-
-        setMemberToDelete(
-          null
-        );
+        return;
       }
 
-      if (
-        event.key ===
-          "/" &&
-        document.activeElement
-          ?.tagName !==
-          "INPUT" &&
-        document.activeElement
-          ?.tagName !==
-          "TEXTAREA"
-      ) {
-        event.preventDefault();
+      const payload =
+        JSON.stringify(
+          members,
+          null,
+          2
+        );
 
-        document
-          .querySelector<HTMLInputElement>(
-            "[data-team-search]"
-          )
-          ?.focus();
-      }
-    };
+      const blob =
+        new Blob(
+          [payload],
+          {
+            type: "application/json",
+          }
+        );
 
-    window.addEventListener(
-      "keydown",
-      listener
-    );
+      const url =
+        URL.createObjectURL(
+          blob
+        );
 
-    return () =>
-      window.removeEventListener(
-        "keydown",
-        listener
+      const anchor =
+        document.createElement(
+          "a"
+        );
+
+      anchor.href = url;
+      anchor.download =
+        `jewels-music-team-${new Date()
+          .toISOString()
+          .slice(
+            0,
+            10
+          )}.json`;
+
+      document.body.appendChild(
+        anchor
       );
-  }, []);
+
+      anchor.click();
+
+      anchor.remove();
+
+      URL.revokeObjectURL(
+        url
+      );
+
+      showToast(
+        "success",
+        "Team exported",
+        "The Music Team directory has been downloaded."
+      );
+    };
 
   /* ==========================================================
      RENDER
      ========================================================== */
 
   return (
-    <div className="min-h-full bg-[#050506] text-white">
-      <div className="mx-auto max-w-[1600px] px-4 py-5 sm:px-6 lg:px-8">
+    <div className="min-h-full bg-black text-white">
+      {/* ================================================
+          HEADER
+          ================================================ */}
 
-        {/* ====================================================
-            HEADER
-            ==================================================== */}
-
-        <header className="rounded-[28px] border border-white/[0.07] bg-[#0c0d0f]/95 p-5 shadow-xl backdrop-blur-xl sm:p-6">
+      <div className="border-b border-white/[0.06] bg-[#090a0b]">
+        <div className="mx-auto max-w-[1500px] px-4 py-7 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-
             <div>
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.04] text-white/60">
-                  <Icon
-                    name="users"
-                    size={20}
-                  />
-                </div>
+              <div className="flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.2em] text-white/20">
+                <span>
+                  Jewels Music Hub
+                </span>
 
-                <div>
-                  <div className="text-[9px] uppercase tracking-[0.2em] text-white/20">
-                    Jewels Music Hub
-                  </div>
+                <span className="text-white/10">
+                  /
+                </span>
 
-                  <h1 className="mt-1 text-xl font-semibold tracking-tight text-white sm:text-2xl">
-                    Music Team
-                  </h1>
-                </div>
+                <span>
+                  Music Team
+                </span>
               </div>
 
-              <p className="mt-4 max-w-2xl text-xs leading-5 text-white/30">
-                Your music ministry
-                team directory —
-                organized,
-                searchable and
-                controlled by the
-                Music Director.
+              <h1 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+                Music Team
+              </h1>
+
+              <p className="mt-2 max-w-xl text-xs leading-5 text-white/30">
+                Manage the members,
+                vocalists and
+                instrumentalists
+                of the Jewels music
+                team.
               </p>
-
-              <div className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-white/[0.07] bg-white/[0.025] px-3 py-1.5 text-[10px] text-white/40">
-                <Icon
-                  name={
-                    canEdit
-                      ? "shield"
-                      : "lock"
-                  }
-                  size={11}
-                />
-
-                {canEdit
-                  ? "MD Control"
-                  : "View Only"}
-              </div>
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={
-                  refresh
+                  recoverNow
                 }
-                className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.025] px-3.5 text-xs text-white/40 hover:bg-white/[0.05] hover:text-white"
+                className="flex h-10 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.025] px-3.5 text-xs text-white/50 transition hover:bg-white/[0.06] hover:text-white"
               >
                 <Icon
                   name="refresh"
                   size={14}
                 />
-
-                Refresh
+                Recover
               </button>
 
               <button
                 type="button"
                 onClick={
-                  exportTeam
+                  exportMembers
                 }
-                className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.025] px-3.5 text-xs text-white/40 hover:bg-white/[0.05] hover:text-white"
+                className="flex h-10 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.025] px-3.5 text-xs text-white/50 transition hover:bg-white/[0.06] hover:text-white"
               >
                 <Icon
                   name="download"
                   size={14}
                 />
-
                 Export
               </button>
 
@@ -3718,97 +4062,139 @@ export const MusicTeamView: React.FC<
                   onClick={
                     openCreate
                   }
-                  className="inline-flex h-10 items-center gap-2 rounded-xl bg-white px-4 text-xs font-semibold text-black hover:bg-white/90"
+                  className="flex h-10 items-center gap-2 rounded-xl bg-white px-4 text-xs font-semibold text-black transition hover:bg-white/90"
                 >
                   <Icon
                     name="plus"
-                    size={14}
+                    size={15}
                   />
-
                   Add Member
                 </button>
               )}
             </div>
           </div>
-        </header>
 
-        {/* ====================================================
-            THREE MAIN TEAM SECTIONS
-            ==================================================== */}
+          {/* MD ACCESS INDICATOR */}
 
-        <section className="mt-5">
-          <CategorySelector
-            selected={
-              section
-            }
-            onSelect={
-              setSection
-            }
-          />
-        </section>
+          <div className="mt-6 flex items-center gap-2">
+            <div
+              className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-[9px] ${
+                canEdit
+                  ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-400"
+                  : "border-white/[0.07] bg-white/[0.025] text-white/30"
+              }`}
+            >
+              <Icon
+                name={
+                  canEdit
+                    ? "shield"
+                    : "lock"
+                }
+                size={11}
+              />
 
-        {/* ====================================================
-            SEARCH / TOOLBAR
-            ==================================================== */}
+              {canEdit
+                ? "MD editing enabled"
+                : "View only"}
+            </div>
+          </div>
+        </div>
+      </div>
 
-        <section className="mt-5 rounded-[24px] border border-white/[0.07] bg-[#0c0d0f] p-3">
+      {/* ================================================
+          CONTENT
+          ================================================ */}
+
+      <main className="mx-auto max-w-[1500px] px-4 py-7 sm:px-6 lg:px-8">
+        {/* CATEGORY */}
+
+        <CategorySelector
+          selected={section}
+          onSelect={
+            setSection
+          }
+        />
+
+        {/* TOOLBAR */}
+
+        <div className="mt-6 rounded-[22px] border border-white/[0.07] bg-[#101113] p-3">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-
-            <div className="relative flex-1">
-              <div className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-white/25">
-                <Icon
-                  name="search"
-                  size={16}
-                />
-              </div>
+            <div className="relative min-w-0 flex-1">
+              <Icon
+                name="search"
+                size={15}
+              />
 
               <input
-                data-team-search="true"
                 value={search}
-                onChange={(
-                  event
-                ) =>
+                onChange={(e) =>
                   setSearch(
-                    event.target
+                    e.target
                       .value
                   )
                 }
-                placeholder="Search team members..."
-                className="h-11 w-full rounded-xl border border-white/[0.07] bg-white/[0.025] pl-10 pr-10 text-xs text-white outline-none placeholder:text-white/20 focus:border-white/15"
+                placeholder="Search by name, role, instrument, voice, section..."
+                className="h-11 w-full rounded-xl border border-transparent bg-white/[0.025] pl-10 pr-4 text-xs text-white outline-none placeholder:text-white/20 focus:border-white/[0.08]"
               />
-
-              <div className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 rounded-md border border-white/[0.06] px-1.5 py-0.5 text-[9px] text-white/20 sm:block">
-                /
-              </div>
             </div>
 
             <div className="flex flex-wrap gap-2">
-
-              <button
-                type="button"
-                onClick={() =>
-                  setShowFilters(
-                    (
-                      previous
-                    ) =>
-                      !previous
-                  )
-                }
-                className={`inline-flex h-11 items-center gap-2 rounded-xl border px-3.5 text-xs transition ${
-                  showFilters
-                    ? "border-white/15 bg-white/[0.08] text-white"
-                    : "border-white/[0.07] bg-white/[0.025] text-white/40"
-                }`}
-              >
+              <div className="flex h-11 items-center rounded-xl border border-white/[0.07] bg-white/[0.025] px-3">
                 <Icon
                   name="filter"
                   size={14}
                 />
 
-                Filters
-              </button>
+                <select
+                  value={
+                    sortMode
+                  }
+                  onChange={(e) =>
+                    setSortMode(
+                      e.target
+                        .value as SortMode
+                    )
+                  }
+                  className="ml-2 bg-transparent text-xs text-white/50 outline-none"
+                >
+                  <option
+                    value="name"
+                    className="bg-[#111214]"
+                  >
+                    Name
+                  </option>
 
-              <div className="flex h-11 rounded-xl border border-white/[0.07] bg-white/[0.025] p-1">
+                  <option
+                    value="role"
+                    className="bg-[#111214]"
+                  >
+                    Role
+                  </option>
+
+                  <option
+                    value="status"
+                    className="bg-[#111214]"
+                  >
+                    Status
+                  </option>
+
+                  <option
+                    value="joined"
+                    className="bg-[#111214]"
+                  >
+                    Joined
+                  </option>
+
+                  <option
+                    value="recent"
+                    className="bg-[#111214]"
+                  >
+                    Recently Updated
+                  </option>
+                </select>
+              </div>
+
+              <div className="flex h-11 items-center rounded-xl border border-white/[0.07] bg-white/[0.025] p-1">
                 <button
                   type="button"
                   onClick={() =>
@@ -3849,524 +4235,175 @@ export const MusicTeamView: React.FC<
                   />
                 </button>
               </div>
-
-              <select
-                value={
-                  sortMode
-                }
-                onChange={(
-                  event
-                ) =>
-                  setSortMode(
-                    event.target
-                      .value as SortMode
-                  )
-                }
-                className="h-11 rounded-xl border border-white/[0.07] bg-white/[0.025] px-3 text-xs text-white/45 outline-none"
-              >
-                <option value="name">
-                  Sort: Name
-                </option>
-
-                <option value="role">
-                  Sort: Role
-                </option>
-
-                <option value="status">
-                  Sort: Status
-                </option>
-
-                <option value="joined">
-                  Sort: Joined
-                </option>
-
-                <option value="recent">
-                  Sort: Recent
-                </option>
-              </select>
             </div>
           </div>
-
-          {/* FILTERS */}
-
-          {showFilters && (
-            <div className="mt-3 grid grid-cols-1 gap-3 border-t border-white/[0.06] pt-3 md:grid-cols-4">
-
-              <select
-                value={
-                  roleFilter
-                }
-                onChange={(
-                  event
-                ) =>
-                  setRoleFilter(
-                    event.target
-                      .value
-                  )
-                }
-                className="h-10 rounded-xl border border-white/[0.07] bg-white/[0.025] px-3 text-xs text-white/50 outline-none"
-              >
-                <option value="all">
-                  All Roles
-                </option>
-
-                {Object.entries(
-                  ROLE_LABELS
-                ).map(
-                  ([
-                    value,
-                    label,
-                  ]) => (
-                    <option
-                      key={
-                        value
-                      }
-                      value={
-                        value
-                      }
-                    >
-                      {label}
-                    </option>
-                  )
-                )}
-              </select>
-
-              <select
-                value={
-                  statusFilter
-                }
-                onChange={(
-                  event
-                ) =>
-                  setStatusFilter(
-                    event.target
-                      .value
-                  )
-                }
-                className="h-10 rounded-xl border border-white/[0.07] bg-white/[0.025] px-3 text-xs text-white/50 outline-none"
-              >
-                <option value="all">
-                  All Statuses
-                </option>
-
-                {Object.entries(
-                  STATUS_LABELS
-                ).map(
-                  ([
-                    value,
-                    label,
-                  ]) => (
-                    <option
-                      key={
-                        value
-                      }
-                      value={
-                        value
-                      }
-                    >
-                      {label}
-                    </option>
-                  )
-                )}
-              </select>
-
-              <select
-                value={
-                  categoryFilter
-                }
-                onChange={(
-                  event
-                ) =>
-                  setCategoryFilter(
-                    event.target
-                      .value
-                  )
-                }
-                className="h-10 rounded-xl border border-white/[0.07] bg-white/[0.025] px-3 text-xs text-white/50 outline-none"
-              >
-                <option value="all">
-                  All Categories
-                </option>
-
-                {Object.entries(
-                  CATEGORY_LABELS
-                ).map(
-                  ([
-                    value,
-                    label,
-                  ]) => (
-                    <option
-                      key={
-                        value
-                      }
-                      value={
-                        value
-                      }
-                    >
-                      {label}
-                    </option>
-                  )
-                )}
-              </select>
-
-              <button
-                type="button"
-                onClick={
-                  clearFilters
-                }
-                className="h-10 rounded-xl border border-white/[0.07] bg-white/[0.025] text-xs text-white/35 hover:bg-white/[0.05] hover:text-white"
-              >
-                Clear Filters
-              </button>
-            </div>
-          )}
-        </section>
-
-        {/* ====================================================
-            DIRECTORY HEADING
-            ==================================================== */}
-
-        <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="text-sm font-medium text-white/75">
-              {section ===
-              "vocalists"
-                ? "Vocal Team"
-                : section ===
-                  "instrumentalists"
-                ? "Instrumental Team"
-                : "Music Team Directory"}
-            </div>
-
-            <div className="mt-1 text-[10px] text-white/25">
-              {search ||
-              section !==
-                "all" ||
-              roleFilter !==
-                "all" ||
-              statusFilter !==
-                "all" ||
-              categoryFilter !==
-                "all"
-                ? "Filtered team view"
-                : "Team directory"}
-            </div>
-          </div>
-
-          {(search ||
-            section !==
-              "all" ||
-            roleFilter !==
-              "all" ||
-            statusFilter !==
-              "all" ||
-            categoryFilter !==
-              "all") && (
-            <button
-              type="button"
-              onClick={
-                clearFilters
-              }
-              className="text-[10px] text-white/35 hover:text-white"
-            >
-              Clear active filters
-            </button>
-          )}
         </div>
 
-        {/* ====================================================
-            MEMBERS
-            ==================================================== */}
+        {/* DIRECTORY */}
 
-        <section className="mt-4">
-          {filteredMembers.length ===
+        <div className="mt-6">
+          {filteredMembers.length >
           0 ? (
-            <div className="flex min-h-[340px] flex-col items-center justify-center rounded-[26px] border border-dashed border-white/[0.08] bg-white/[0.015] px-6 text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-white/[0.07] bg-white/[0.03] text-white/25">
-                <Icon
-                  name={
-                    section ===
-                    "vocalists"
-                      ? "mic"
-                      : section ===
-                        "instrumentalists"
-                      ? "music"
-                      : "users"
-                  }
-                  size={25}
-                />
-              </div>
-
-              <div className="mt-5 text-sm font-semibold text-white/70">
-                No team members found
-              </div>
-
-              <div className="mt-2 max-w-sm text-xs leading-5 text-white/25">
-                Try changing the
-                search or selected
-                team section.
-              </div>
-
-              {canEdit && (
-                <button
-                  type="button"
-                  onClick={
-                    openCreate
-                  }
-                  className="mt-5 inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-semibold text-black"
-                >
-                  <Icon
-                    name="plus"
-                    size={13}
-                  />
-
-                  Add Member
-                </button>
-              )}
-            </div>
-          ) : viewMode ===
+            viewMode ===
             "grid" ? (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-              {filteredMembers.map(
-                (member) => (
-                  <MemberCard
-                    key={
-                      member.id
-                    }
-                    member={
-                      member
-                    }
-                    canEdit={
-                      canEdit
-                    }
-                    onView={() =>
-                      openView(
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                {filteredMembers.map(
+                  (member) => (
+                    <MemberCard
+                      key={
+                        member.id
+                      }
+                      member={
                         member
-                      )
-                    }
-                    onEdit={() =>
-                      openEdit(
-                        member
-                      )
-                    }
-                    onDelete={() =>
-                      setMemberToDelete(
-                        member
-                      )
-                    }
-                    onFeature={() =>
-                      toggleFeatured(
-                        member
-                      )
-                    }
-                  />
-                )
-              )}
-            </div>
-          ) : (
-            <div className="overflow-hidden rounded-[24px] border border-white/[0.07] bg-[#111214]">
-
-              <div className="hidden grid-cols-[1.8fr_1fr_1fr_1fr_auto] gap-4 border-b border-white/[0.06] bg-white/[0.02] px-5 py-3 text-[9px] uppercase tracking-[0.14em] text-white/20 md:grid">
-                <div>
-                  Member
-                </div>
-
-                <div>
-                  Role
-                </div>
-
-                <div>
-                  Assignment
-                </div>
-
-                <div>
-                  Status
-                </div>
-
-                <div />
-              </div>
-
-              {filteredMembers.map(
-                (member) => (
-                  <div
-                    key={
-                      member.id
-                    }
-                    className="grid grid-cols-1 gap-4 border-b border-white/[0.06] p-5 last:border-b-0 md:grid-cols-[1.8fr_1fr_1fr_1fr_auto] md:items-center"
-                  >
-                    <button
-                      type="button"
-                      onClick={() =>
+                      }
+                      canEdit={
+                        canEdit
+                      }
+                      onView={() =>
                         openView(
                           member
                         )
                       }
-                      className="flex min-w-0 items-center gap-3 text-left"
-                    >
-                      <Avatar
-                        member={
+                      onEdit={() =>
+                        openEdit(
                           member
-                        }
-                        size="md"
-                      />
+                        )
+                      }
+                      onDelete={() =>
+                        setDeleteMember(
+                          member
+                        )
+                      }
+                      onFeature={() =>
+                        toggleFeatured(
+                          member
+                        )
+                      }
+                    />
+                  )
+                )}
+              </div>
+            ) : (
+              <div className="overflow-hidden rounded-[24px] border border-white/[0.07] bg-[#111214]">
+                {filteredMembers.map(
+                  (member) => (
+                    <MemberListRow
+                      key={
+                        member.id
+                      }
+                      member={
+                        member
+                      }
+                      canEdit={
+                        canEdit
+                      }
+                      onView={() =>
+                        openView(
+                          member
+                        )
+                      }
+                      onEdit={() =>
+                        openEdit(
+                          member
+                        )
+                      }
+                      onDelete={() =>
+                        setDeleteMember(
+                          member
+                        )
+                      }
+                      onFeature={() =>
+                        toggleFeatured(
+                          member
+                        )
+                      }
+                    />
+                  )
+                )}
+              </div>
+            )
+          ) : (
+            <div className="rounded-[28px] border border-dashed border-white/[0.08] bg-[#0d0e0f] px-6 py-20 text-center">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white/[0.04] text-white/25">
+                <Icon
+                  name={
+                    members.length >
+                    0
+                      ? "search"
+                      : "users"
+                  }
+                  size={24}
+                />
+              </div>
 
-                      <div className="min-w-0">
-                        <div className="truncate text-sm font-medium text-white">
-                          {
-                            member.name
-                          }
-                        </div>
+              <h2 className="mt-5 text-base font-semibold text-white">
+                {members.length >
+                0
+                  ? "No matching members"
+                  : "No team members found"}
+              </h2>
 
-                        <div className="mt-1 truncate text-[10px] text-white/25">
-                          {member.nickname ||
-                            "Music Team"}
-                        </div>
-                      </div>
+              <p className="mx-auto mt-2 max-w-md text-xs leading-6 text-white/25">
+                {members.length >
+                0
+                  ? "Try changing your search or category filter."
+                  : "The directory is currently empty. If members existed before, use Recover to search the saved Music Team data."}
+              </p>
+
+              <div className="mt-6 flex justify-center gap-2">
+                {members.length >
+                0 ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearch(
+                        ""
+                      );
+                      setSection(
+                        "all"
+                      );
+                    }}
+                    className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-xs text-white/50 hover:bg-white/[0.06] hover:text-white"
+                  >
+                    Clear Filters
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={
+                        recoverNow
+                      }
+                      className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-xs text-white/50 hover:bg-white/[0.06] hover:text-white"
+                    >
+                      Recover Saved Team
                     </button>
 
-                    <div>
-                      <RoleBadge
-                        role={
-                          member.role
-                        }
-                      />
-                    </div>
-
-                    <div className="text-xs text-white/40">
-                      {member.instrument ||
-                        member.voicePart ||
-                        "—"}
-                    </div>
-
-                    <div>
-                      <StatusBadge
-                        status={
-                          member.status
-                        }
-                      />
-                    </div>
-
-                    <div className="flex gap-1">
+                    {canEdit && (
                       <button
                         type="button"
-                        onClick={() =>
-                          openView(
-                            member
-                          )
+                        onClick={
+                          openCreate
                         }
-                        className="flex h-8 w-8 items-center justify-center rounded-lg text-white/25 hover:bg-white/5 hover:text-white"
+                        className="rounded-xl bg-white px-4 py-2.5 text-xs font-semibold text-black"
                       >
-                        <Icon
-                          name="eye"
-                          size={14}
-                        />
+                        Add Member
                       </button>
-
-                      {canEdit && (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              openEdit(
-                                member
-                              )
-                            }
-                            className="flex h-8 w-8 items-center justify-center rounded-lg text-white/25 hover:bg-white/5 hover:text-white"
-                          >
-                            <Icon
-                              name="edit"
-                              size={14}
-                            />
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setMemberToDelete(
-                                member
-                              )
-                            }
-                            className="flex h-8 w-8 items-center justify-center rounded-lg text-white/20 hover:bg-red-500/10 hover:text-red-400"
-                          >
-                            <Icon
-                              name="trash"
-                              size={13}
-                            />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                )
-              )}
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           )}
-        </section>
+        </div>
+      </main>
 
-        {/* ====================================================
-            ACCESS NOTICE
-            ==================================================== */}
+      {/* ================================================
+          MODALS
+          ================================================ */}
 
-        <section className="mt-6 rounded-[24px] border border-white/[0.07] bg-[#0c0d0f] p-5">
-          <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.04] text-white/40">
-              <Icon
-                name={
-                  canEdit
-                    ? "shield"
-                    : "lock"
-                }
-                size={17}
-              />
-            </div>
-
-            <div>
-              <div className="text-xs font-medium text-white/60">
-                {canEdit
-                  ? "Music Director access"
-                  : "View-only access"}
-              </div>
-
-              <div className="mt-1 text-[10px] leading-5 text-white/25">
-                {canEdit
-                  ? "You can add, edit, feature and remove music team members."
-                  : "Team information is read-only. Only the Music Director can make changes."}
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
-
-      {/* ======================================================
-          TOASTS
-          ====================================================== */}
-
-      <div className="pointer-events-none fixed bottom-5 right-5 z-[200] flex flex-col gap-2">
-        {toasts.map(
-          (toast) => (
-            <ToastItem
-              key={
-                toast.id
-              }
-              toast={
-                toast
-              }
-              onClose={() =>
-                removeToast(
-                  toast.id
-                )
-              }
-            />
-          )
-        )}
-      </div>
-
-      {/* ======================================================
-          MEMBER MODAL
-          ====================================================== */}
-
-      {selectedMember &&
-        modalMode && (
+      {modalMode &&
+        selectedMember && (
           <MemberModal
             mode={
               modalMode
@@ -4378,61 +4415,65 @@ export const MusicTeamView: React.FC<
               canEdit
             }
             onClose={() => {
-              setSelectedMember(
+              setModalMode(
                 null
               );
-
-              setModalMode(
+              setSelectedMember(
                 null
               );
             }}
             onSave={
-              saveMember
+              handleSave
             }
           />
         )}
 
-      {/* ======================================================
-          DELETE MODAL
-          ====================================================== */}
-
-      {memberToDelete && (
+      {deleteMember && (
         <DeleteModal
           member={
-            memberToDelete
+            deleteMember
           }
-          onClose={() =>
-            setMemberToDelete(
+          onCancel={() =>
+            setDeleteMember(
               null
             )
           }
           onConfirm={
-            deleteConfirmed
+            handleDelete
           }
         />
       )}
 
-      {/* ======================================================
-          REFRESH OVERLAY
-          ====================================================== */}
+      {/* ================================================
+          TOASTS
+          ================================================ */}
 
-      {refreshing && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/30 backdrop-blur-sm">
-          <div className="flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-[#111214] px-5 py-4 shadow-2xl">
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/10 border-t-white/70" />
-
-            <span className="text-xs text-white/50">
-              Loading team...
-            </span>
-          </div>
-        </div>
-      )}
+      <div className="pointer-events-none fixed bottom-5 right-5 z-[200] flex flex-col gap-3">
+        {toasts.map(
+          (toast) => (
+            <ToastItem
+              key={
+                toast.id
+              }
+              toast={
+                toast
+              }
+              onClose={() =>
+                setToasts(
+                  (previous) =>
+                    previous.filter(
+                      (item) =>
+                        item.id !==
+                        toast.id
+                    )
+                )
+              }
+            />
+          )
+        )}
+      </div>
     </div>
   );
 };
-
-/* ============================================================
-   DEFAULT EXPORT
-   ============================================================ */
 
 export default MusicTeamView;
