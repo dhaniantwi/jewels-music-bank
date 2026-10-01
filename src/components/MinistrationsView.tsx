@@ -1628,8 +1628,8 @@ const MinistrationsView: React.FC<MinistrationsViewProps> = ({
   );
 };
 
+export { MinistrationsView };
 export default MinistrationsView;
-
 /* ========================================================================== */
 /* Ambient background                                                         */
 /* ========================================================================== */
