@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { TeamMember, ActiveRole } from '../types';
 import {
   Phone,
@@ -8,18 +8,13 @@ import {
   ShieldCheck,
   UserPlus,
   Camera,
+  Image as ImageIcon,
   Users,
   Mic2,
   Piano,
   Music2,
   Lock,
-  Search,
-  Crown,
   ChevronRight,
-  CheckCircle2,
-  Upload,
-  X,
-  Sparkles,
 } from 'lucide-react';
 
 interface MusicTeamViewProps {
@@ -32,8 +27,6 @@ interface MusicTeamViewProps {
   onPhotoSelected?: (member: TeamMember, file: File) => void;
 }
 
-type TeamFilter = 'all' | 'vocal' | 'instrument' | 'director';
-
 export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
   team,
   activeRole,
@@ -43,1404 +36,838 @@ export const MusicTeamView: React.FC<MusicTeamViewProps> = ({
   onTogglePermission,
   onPhotoSelected,
 }) => {
-  const isMD = activeRole === 'admin_md';
+  const [activeFilter, setActiveFilter] =
+    useState<'all' | 'vocal' | 'instrument' | 'director'>('all');
 
-  const [activeFilter, setActiveFilter] = useState<TeamFilter>('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [photoTarget, setPhotoTarget] = useState<TeamMember | null>(null);
-  const [showPhotoInfo, setShowPhotoInfo] = useState(false);
+  const [photoTarget, setPhotoTarget] =
+    useState<TeamMember | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const directors = useMemo(
-    () => team.filter((member) => member.type === 'director'),
-    [team]
+  /*
+   * ============================================================
+   * PERMISSIONS
+   * ============================================================
+   *
+   * Only the Music Director / admin_md is allowed to make
+   * changes to the team.
+   *
+   * Regular members are strictly VIEW-ONLY.
+   */
+  const isMD = activeRole === 'admin_md';
+
+  const directors = team.filter(
+    member => member.type === 'director'
   );
 
-  const vocalists = useMemo(
-    () => team.filter((member) => member.type === 'vocal'),
-    [team]
+  const vocalists = team.filter(
+    member => member.type === 'vocal'
   );
 
-  const instrumentalists = useMemo(
-    () => team.filter((member) => member.type === 'instrument'),
-    [team]
+  const instrumentalists = team.filter(
+    member => member.type === 'instrument'
   );
 
-  const filteredTeam = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-
-    return team.filter((member) => {
-      const matchesFilter =
-        activeFilter === 'all' || member.type === activeFilter;
-
-      const matchesSearch =
-        !query ||
-        member.name.toLowerCase().includes(query) ||
-        member.role?.toLowerCase().includes(query) ||
-        member.voicePart?.toLowerCase().includes(query) ||
-        member.instrumentType?.toLowerCase().includes(query) ||
-        member.phone?.toLowerCase().includes(query) ||
-        member.email?.toLowerCase().includes(query);
-
-      return matchesFilter && matchesSearch;
-    });
-  }, [team, activeFilter, searchQuery]);
-
-  const filteredDirectors = filteredTeam.filter(
-    (member) => member.type === 'director'
-  );
-
-  const filteredVocalists = filteredTeam.filter(
-    (member) => member.type === 'vocal'
-  );
-
-  const filteredInstrumentalists = filteredTeam.filter(
-    (member) => member.type === 'instrument'
-  );
+  /*
+   * ============================================================
+   * PHOTO HANDLING
+   * ============================================================
+   */
 
   const handlePhotoClick = (member: TeamMember) => {
+    // HARD BLOCK — regular members cannot change photos.
     if (!isMD) return;
 
     setPhotoTarget(member);
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (
+  const handlePhotoChange = (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
+    // HARD BLOCK — even if the input somehow gets triggered,
+    // regular members cannot upload.
+    if (!isMD) {
+      event.target.value = '';
+      return;
+    }
+
     const file = event.target.files?.[0];
 
     if (!file || !photoTarget) return;
 
-    const allowedTypes = [
-      'image/png',
-      'image/jpeg',
-      'image/webp',
-      'image/gif',
-    ];
-
-    if (!allowedTypes.includes(file.type)) {
-      alert('Please select a PNG, JPG, WEBP or GIF image.');
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file.');
       event.target.value = '';
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      alert('Image size must be 5 MB or less.');
+      alert('Please choose an image smaller than 5 MB.');
       event.target.value = '';
       return;
     }
 
     onPhotoSelected?.(photoTarget, file);
 
-    setPhotoTarget(null);
     event.target.value = '';
+    setPhotoTarget(null);
   };
 
-  const handleDelete = (member: TeamMember) => {
-    if (member.type === 'director') return;
+  /*
+   * ============================================================
+   * MEMBER PHOTO
+   * ============================================================
+   */
 
-    const confirmed = window.confirm(
-      `Remove ${member.name} from the ${
-        member.type === 'vocal' ? 'vocal' : 'band'
-      } roster?`
-    );
-
-    if (confirmed) {
-      onDeleteMember(member.id);
-    }
-  };
-
-  const filterOptions: {
-    key: TeamFilter;
-    label: string;
-    icon: React.ReactNode;
-    count: number;
-  }[] = [
-    {
-      key: 'all',
-      label: 'All Members',
-      icon: <Users size={15} />,
-      count: team.length,
-    },
-    {
-      key: 'vocal',
-      label: 'Vocals',
-      icon: <Mic2 size={15} />,
-      count: vocalists.length,
-    },
-    {
-      key: 'instrument',
-      label: 'Band',
-      icon: <Music2 size={15} />,
-      count: instrumentalists.length,
-    },
-    {
-      key: 'director',
-      label: 'Leadership',
-      icon: <Crown size={15} />,
-      count: directors.length,
-    },
-  ];
-
-  const getMemberSubtitle = (member: TeamMember) => {
-    if (member.type === 'vocal') {
-      return member.voicePart || member.role || 'Vocalist';
-    }
-
-    if (member.type === 'instrument') {
-      return member.instrumentType || member.role || 'Musician';
-    }
-
-    return member.role || 'Music Leadership';
-  };
-
-  const getMemberIcon = (member: TeamMember) => {
-    if (member.type === 'vocal') return <Mic2 size={17} />;
-    if (member.type === 'instrument') return <Piano size={17} />;
-    return <Crown size={17} />;
-  };
-
-  const getInitials = (name: string) => {
-    const parts = name.trim().split(/\s+/);
-
-    if (parts.length === 1) {
-      return parts[0].slice(0, 2).toUpperCase();
-    }
-
-    return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
-  };
-
-  const renderMemberCard = (member: TeamMember) => {
-    const isDirector = member.type === 'director';
-    const subtitle = getMemberSubtitle(member);
+  const renderMemberPhoto = (
+    member: TeamMember,
+    variant: 'director' | 'vocal' | 'instrument'
+  ) => {
+    const isDirector = variant === 'director';
 
     return (
-      <div
-        key={member.id}
-        className="
-          group relative overflow-hidden
-          rounded-[28px]
-          border border-white/[0.08]
-          bg-[#0e1218]/95
-          transition-all duration-500
-          hover:-translate-y-1
-          hover:border-[#007aff]/35
-          hover:bg-[#111720]
-          hover:shadow-[0_20px_60px_rgba(0,0,0,0.35)]
-        "
-      >
-        {/* Hover glow */}
-        <div
-          className="
-            pointer-events-none absolute -right-16 -top-16
-            h-40 w-40 rounded-full
-            bg-[#007aff]/10 blur-3xl
-            opacity-0 transition-opacity duration-500
-            group-hover:opacity-100
-          "
-        />
-
-        {/* Top accent */}
-        <div
-          className={`
-            absolute left-0 right-0 top-0 h-[2px]
-            ${
-              isDirector
-                ? 'bg-gradient-to-r from-transparent via-amber-400/80 to-transparent'
-                : 'bg-gradient-to-r from-transparent via-[#007aff]/70 to-transparent'
-            }
-            opacity-50 group-hover:opacity-100
-            transition-opacity
-          `}
-        />
-
-        <div className="p-5">
-          {/* Photo */}
-          <div className="relative mx-auto mb-5 w-fit">
-            <div
-              className={`
-                absolute inset-[-7px] rounded-full blur-md
-                opacity-40 transition-all duration-500
-                group-hover:opacity-80
-                ${
-                  isDirector
-                    ? 'bg-amber-400/20'
-                    : 'bg-[#007aff]/20'
-                }
-              `}
+      <div className="relative flex-shrink-0">
+        <button
+          type="button"
+          onClick={() => handlePhotoClick(member)}
+          disabled={!isMD}
+          title={
+            isMD
+              ? `Change photo for ${member.name}`
+              : `${member.name}'s profile photo`
+          }
+          className={`group relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-[20px] border ${
+            isDirector
+              ? 'border-amber-500/20 bg-amber-500/10'
+              : 'border-white/10 bg-white/[0.035]'
+          } ${
+            isMD
+              ? 'cursor-pointer hover:border-[#007aff]/40 hover:bg-white/[0.07]'
+              : 'cursor-default'
+          }`}
+        >
+          {member.photoUrl ? (
+            <img
+              src={member.photoUrl}
+              alt={member.name}
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
-
-            <button
-              type="button"
-              onClick={() => handlePhotoClick(member)}
-              disabled={!isMD}
-              className={`
-                relative block h-28 w-28 overflow-hidden rounded-full
-                border-2
-                ${
-                  isDirector
-                    ? 'border-amber-300/40'
-                    : 'border-[#007aff]/30'
-                }
-                bg-[#171c24]
-                ${
-                  isMD
-                    ? 'cursor-pointer'
-                    : 'cursor-default'
-                }
-              `}
-            >
-              {member.photoUrl ? (
-                <img
-                  src={member.photoUrl}
-                  alt={member.name}
-                  className="
-                    h-full w-full object-cover
-                    transition-transform duration-700
-                    group-hover:scale-110
-                  "
-                />
-              ) : member.icon ? (
-                <img
-                  src={member.icon}
-                  alt={member.name}
-                  className="
-                    h-full w-full object-cover
-                    transition-transform duration-700
-                    group-hover:scale-110
-                  "
-                />
-              ) : (
-                <div
-                  className="
-                    flex h-full w-full items-center justify-center
-                    bg-gradient-to-br from-[#151b24] to-[#0a0d12]
-                    text-2xl font-bold text-white/80
-                  "
-                >
-                  {getInitials(member.name)}
-                </div>
-              )}
-
-              {isMD && (
-                <div
-                  className="
-                    absolute inset-0 flex items-center justify-center
-                    bg-black/65 opacity-0
-                    transition-opacity duration-300
-                    group-hover:opacity-100
-                  "
-                >
-                  <Camera size={21} className="text-white" />
-                </div>
-              )}
-            </button>
-
-            {/* Status */}
-            <div
-              className="
-                absolute -bottom-1 -right-1
-                flex h-7 w-7 items-center justify-center
-                rounded-full border-4 border-[#0e1218]
-                bg-emerald-500
-              "
-            >
-              <CheckCircle2 size={12} className="text-white" />
-            </div>
-          </div>
-
-          {/* Identity */}
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-2">
-              <h3 className="max-w-[220px] truncate text-[17px] font-bold tracking-[-0.02em] text-white">
-                {member.name}
-              </h3>
-
-              {isDirector && (
-                <Crown
-                  size={14}
-                  className="shrink-0 text-amber-300"
-                />
-              )}
-            </div>
-
-            <div
-              className={`
-                mt-2 inline-flex items-center gap-2 rounded-full
-                border px-3 py-1.5 text-[11px] font-semibold
-                ${
-                  isDirector
-                    ? 'border-amber-300/15 bg-amber-300/[0.07] text-amber-200'
-                    : 'border-white/[0.07] bg-white/[0.035] text-white/60'
-                }
-              `}
-            >
-              {getMemberIcon(member)}
-              <span>{subtitle}</span>
-            </div>
-          </div>
-
-          {/* Contact */}
-          {(member.phone || member.email) && (
-            <div className="mt-5 space-y-2">
-              {member.phone && (
-                <a
-                  href={`tel:${member.phone}`}
-                  className="
-                    flex items-center gap-3 rounded-xl
-                    border border-white/[0.06]
-                    bg-black/20 px-3 py-2.5
-                    text-xs text-white/55
-                    transition-all hover:border-[#007aff]/20
-                    hover:bg-[#007aff]/[0.05]
-                    hover:text-white/80
-                  "
-                >
-                  <Phone
-                    size={14}
-                    className="shrink-0 text-[#4da3ff]"
-                  />
-                  <span className="truncate">{member.phone}</span>
-                </a>
-              )}
-
-              {member.email && (
-                <a
-                  href={`mailto:${member.email}`}
-                  className="
-                    flex items-center gap-3 rounded-xl
-                    border border-white/[0.06]
-                    bg-black/20 px-3 py-2.5
-                    text-xs text-white/55
-                    transition-all hover:border-[#007aff]/20
-                    hover:bg-[#007aff]/[0.05]
-                    hover:text-white/80
-                  "
-                >
-                  <Mail
-                    size={14}
-                    className="shrink-0 text-[#4da3ff]"
-                  />
-                  <span className="truncate">{member.email}</span>
-                </a>
-              )}
-            </div>
+          ) : member.icon ? (
+            <span className="text-2xl">
+              {member.icon}
+            </span>
+          ) : (
+            <Users className="h-6 w-6 text-white/25" />
           )}
 
-          {/* Permission */}
+          {/* Camera overlay ONLY for MD */}
           {isMD && (
-            <button
-              type="button"
-              onClick={() => onTogglePermission(member.id)}
-              className="
-                mt-4 flex w-full items-center justify-between
-                rounded-xl border border-white/[0.06]
-                bg-white/[0.025] px-3 py-2.5
-                text-left transition-all
-                hover:border-[#007aff]/20
-                hover:bg-[#007aff]/[0.05]
-              "
-            >
-              <span className="flex items-center gap-2">
-                {member.canEdit ? (
-                  <ShieldCheck
-                    size={14}
-                    className="text-emerald-300"
-                  />
-                ) : (
-                  <Lock
-                    size={14}
-                    className="text-white/30"
-                  />
-                )}
-
-                <span className="text-[11px] font-medium text-white/55">
-                  {member.canEdit
-                    ? 'Upload Access'
-                    : 'Grant Uploads'}
-                </span>
-              </span>
-
-              <ChevronRight
-                size={14}
-                className="text-white/25"
-              />
-            </button>
+            <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/30">
+              <Camera className="h-4 w-4 text-white opacity-0 transition-opacity group-hover:opacity-100" />
+            </div>
           )}
+        </button>
 
-          {/* Actions */}
-          <div className="mt-4 flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => onEditMember(member)}
-              className="
-                flex flex-1 items-center justify-center gap-2
-                rounded-xl border border-white/[0.07]
-                bg-white/[0.035] px-3 py-2.5
-                text-xs font-semibold text-white/65
-                transition-all
-                hover:border-[#007aff]/30
-                hover:bg-[#007aff]/[0.08]
-                hover:text-white
-              "
-            >
-              <Edit size={14} />
-              Edit
-            </button>
-
-            {!isDirector && (
-              <button
-                type="button"
-                onClick={() => handleDelete(member)}
-                className="
-                  flex h-10 w-10 shrink-0 items-center
-                  justify-center rounded-xl
-                  border border-red-400/10
-                  bg-red-400/[0.035]
-                  text-red-300/60
-                  transition-all
-                  hover:border-red-400/25
-                  hover:bg-red-400/[0.08]
-                  hover:text-red-300
-                "
-                title="Remove member"
-              >
-                <Trash2 size={15} />
-              </button>
-            )}
+        {/* Camera badge ONLY for MD */}
+        {isMD && (
+          <div className="pointer-events-none absolute -bottom-1.5 -right-1.5 flex h-6 w-6 items-center justify-center rounded-full border border-white/10 bg-[#19191c] shadow-lg">
+            <Camera className="h-3 w-3 text-[#4da3ff]" />
           </div>
-        </div>
+        )}
       </div>
     );
   };
 
-  const renderLeadershipCard = (member: TeamMember) => {
+  /*
+   * ============================================================
+   * CONTACT INFORMATION
+   * ============================================================
+   */
+
+  const renderContactInfo = (member: TeamMember) => {
+    if (!member.phone && !member.email) {
+      return (
+        <div className="pt-2 text-[11px] font-medium text-white/20">
+          No contact information added
+        </div>
+      );
+    }
+
     return (
-      <div
-        key={member.id}
-        className="
-          group relative overflow-hidden
-          rounded-[30px]
-          border border-amber-300/10
-          bg-gradient-to-br from-[#15130e] via-[#101218] to-[#0c1016]
-          p-6 sm:p-7
-        "
-      >
-        <div
-          className="
-            pointer-events-none absolute
-            -right-24 -top-24 h-64 w-64
-            rounded-full bg-amber-400/[0.08]
-            blur-3xl
-          "
-        />
-
-        <div
-          className="
-            pointer-events-none absolute
-            -bottom-28 -left-20 h-60 w-60
-            rounded-full bg-[#007aff]/[0.07]
-            blur-3xl
-          "
-        />
-
-        <div className="relative flex flex-col gap-6 md:flex-row md:items-center">
-          {/* Portrait */}
-          <div className="relative mx-auto md:mx-0">
-            <div
-              className="
-                absolute inset-[-9px] rounded-full
-                bg-amber-300/10 blur-xl
-              "
-            />
-
-            <button
-              type="button"
-              onClick={() => handlePhotoClick(member)}
-              disabled={!isMD}
-              className="
-                relative h-32 w-32 overflow-hidden
-                rounded-full border-2 border-amber-300/30
-                bg-[#17140e]
-              "
-            >
-              {member.photoUrl ? (
-                <img
-                  src={member.photoUrl}
-                  alt={member.name}
-                  className="
-                    h-full w-full object-cover
-                    transition-transform duration-700
-                    group-hover:scale-105
-                  "
-                />
-              ) : member.icon ? (
-                <img
-                  src={member.icon}
-                  alt={member.name}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <div
-                  className="
-                    flex h-full w-full items-center justify-center
-                    bg-gradient-to-br from-[#211d13] to-[#0d1015]
-                    text-3xl font-bold text-amber-200
-                  "
-                >
-                  {getInitials(member.name)}
-                </div>
-              )}
-
-              {isMD && (
-                <div
-                  className="
-                    absolute inset-0 flex items-center justify-center
-                    bg-black/60 opacity-0 transition-opacity
-                    group-hover:opacity-100
-                  "
-                >
-                  <Camera size={22} />
-                </div>
-              )}
-            </button>
-
-            <div
-              className="
-                absolute -bottom-1 -right-1
-                flex h-9 w-9 items-center justify-center
-                rounded-full border-4 border-[#111218]
-                bg-amber-300 text-black
-              "
-            >
-              <Crown size={15} />
+      <div className="space-y-2 pt-2 text-xs text-white/40">
+        {member.phone && (
+          <div className="flex min-w-0 items-center gap-2">
+            <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg bg-[#007aff]/10">
+              <Phone className="h-3 w-3 text-[#4da3ff]" />
             </div>
+
+            <span className="truncate">
+              {member.phone}
+            </span>
           </div>
+        )}
 
-          {/* Info */}
-          <div className="min-w-0 flex-1 text-center md:text-left">
-            <div className="mb-2 flex flex-wrap items-center justify-center gap-2 md:justify-start">
-              <span
-                className="
-                  inline-flex items-center gap-1.5
-                  rounded-full border border-amber-300/15
-                  bg-amber-300/[0.07]
-                  px-2.5 py-1 text-[10px]
-                  font-bold uppercase tracking-[0.16em]
-                  text-amber-200
-                "
-              >
-                <Sparkles size={11} />
-                Music Leadership
-              </span>
-
-              <span
-                className="
-                  inline-flex items-center gap-1.5
-                  text-[10px] font-semibold
-                  uppercase tracking-[0.14em]
-                  text-emerald-300
-                "
-              >
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                Active
-              </span>
+        {member.email && (
+          <div className="flex min-w-0 items-center gap-2">
+            <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg bg-white/[0.04]">
+              <Mail className="h-3 w-3 text-white/40" />
             </div>
 
-            <h3 className="text-2xl font-bold tracking-[-0.03em] text-white sm:text-3xl">
-              {member.name}
-            </h3>
-
-            <p className="mt-1 text-sm font-medium text-amber-200/70">
-              {member.role || 'Music Director'}
-            </p>
-
-            <p className="mt-4 max-w-2xl text-sm leading-6 text-white/45">
-              Leading the musical direction, coordination and
-              ministry excellence of the Jewels music team.
-            </p>
-
-            <div className="mt-5 flex flex-wrap justify-center gap-2 md:justify-start">
-              <div
-                className="
-                  flex items-center gap-2 rounded-xl
-                  border border-white/[0.07]
-                  bg-black/20 px-3 py-2
-                  text-xs text-white/55
-                "
-              >
-                <ShieldCheck
-                  size={14}
-                  className="text-amber-300"
-                />
-                Full Management Access
-              </div>
-
-              {member.phone && (
-                <a
-                  href={`tel:${member.phone}`}
-                  className="
-                    flex items-center gap-2 rounded-xl
-                    border border-white/[0.07]
-                    bg-black/20 px-3 py-2
-                    text-xs text-white/55
-                    hover:text-white
-                  "
-                >
-                  <Phone size={14} className="text-[#4da3ff]" />
-                  Contact
-                </a>
-              )}
-            </div>
+            <span className="truncate">
+              {member.email}
+            </span>
           </div>
+        )}
+      </div>
+    );
+  };
 
-          {/* Action */}
+  /*
+   * ============================================================
+   * EDIT / DELETE ACTIONS
+   * ============================================================
+   */
+
+  const renderMemberActions = (
+    member: TeamMember,
+    allowDelete: boolean
+  ) => {
+    // Regular members get NOTHING here.
+    if (!isMD) return null;
+
+    return (
+      <div className="flex flex-shrink-0 items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => {
+            if (!isMD) return;
+            onEditMember(member);
+          }}
+          title="Edit member"
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.035] text-white/40 transition-all hover:border-[#007aff]/25 hover:bg-[#007aff]/10 hover:text-[#4da3ff] active:scale-95"
+        >
+          <Edit className="h-3.5 w-3.5" />
+        </button>
+
+        {allowDelete && (
           <button
             type="button"
-            onClick={() => onEditMember(member)}
-            className="
-              flex items-center justify-center gap-2
-              rounded-xl border border-white/[0.08]
-              bg-white/[0.04] px-4 py-3
-              text-xs font-bold text-white/70
-              transition-all
-              hover:border-amber-300/20
-              hover:bg-amber-300/[0.07]
-              hover:text-amber-100
-            "
+            onClick={() => {
+              if (!isMD) return;
+
+              const confirmed = window.confirm(
+                `Remove ${member.name} from the ${
+                  member.type === 'vocal'
+                    ? 'vocal'
+                    : 'band'
+                } roster?`
+              );
+
+              if (confirmed) {
+                onDeleteMember(member.id);
+              }
+            }}
+            title="Delete member"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.035] text-white/40 transition-all hover:border-rose-500/20 hover:bg-rose-500/10 hover:text-rose-300 active:scale-95"
           >
-            <Edit size={14} />
-            Edit Profile
+            <Trash2 className="h-3.5 w-3.5" />
           </button>
-        </div>
+        )}
       </div>
     );
   };
 
-  const renderSectionHeader = (
-    icon: React.ReactNode,
-    eyebrow: string,
-    title: string,
-    count: number,
-    accent: 'blue' | 'amber' = 'blue'
-  ) => (
-    <div className="mb-5 flex items-end justify-between gap-4">
-      <div className="flex items-center gap-3">
-        <div
-          className={`
-            flex h-10 w-10 items-center justify-center
-            rounded-xl border
-            ${
-              accent === 'amber'
-                ? 'border-amber-300/15 bg-amber-300/[0.07] text-amber-300'
-                : 'border-[#007aff]/15 bg-[#007aff]/[0.07] text-[#4da3ff]'
-            }
-          `}
-        >
-          {icon}
-        </div>
+  /*
+   * ============================================================
+   * FILTER BUTTONS
+   * ============================================================
+   */
 
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/30">
-            {eyebrow}
-          </p>
-          <h2 className="mt-0.5 text-lg font-bold tracking-[-0.02em] text-white">
-            {title}
-          </h2>
-        </div>
-      </div>
+  const filterClass = (
+    active: boolean,
+    amber = false
+  ) =>
+    active
+      ? amber
+        ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/10'
+        : 'bg-[#007aff] text-white shadow-lg shadow-blue-500/20'
+      : 'bg-transparent text-white/40 hover:bg-white/[0.07] hover:text-white';
 
-      <span className="text-xs font-semibold text-white/30">
-        {count} {count === 1 ? 'member' : 'members'}
-      </span>
-    </div>
-  );
+  /*
+   * ============================================================
+   * UPLOAD PERMISSION
+   * ============================================================
+   */
 
-  const total = team.length;
+  const renderPermissionButton = (
+    member: TeamMember
+  ) => {
+    // Regular members cannot manage permissions.
+    if (!isMD) return null;
 
-  const vocalPercentage =
-    total > 0 ? Math.round((vocalists.length / total) * 100) : 0;
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          if (!isMD) return;
+          onTogglePermission(member.id);
+        }}
+        className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.08em] transition-all ${
+          member.canEdit
+            ? 'border-emerald-500/15 bg-emerald-500/10 text-emerald-300'
+            : 'border-white/10 bg-white/[0.035] text-white/40 hover:bg-white/[0.07] hover:text-white/70'
+        }`}
+      >
+        <ShieldCheck className="h-3 w-3" />
 
-  const bandPercentage =
-    total > 0
-      ? Math.round((instrumentalists.length / total) * 100)
-      : 0;
+        {member.canEdit
+          ? 'Upload Access'
+          : 'Grant Uploads'}
+      </button>
+    );
+  };
 
-  const leadershipPercentage =
-    total > 0 ? Math.round((directors.length / total) * 100) : 0;
+  /*
+   * ============================================================
+   * MAIN UI
+   * ============================================================
+   */
 
   return (
-    <div className="min-h-screen bg-[#050608] text-white">
-      {/* Ambient page lighting */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div
-          className="
-            absolute -left-40 top-20
-            h-96 w-96 rounded-full
-            bg-[#007aff]/[0.045] blur-[120px]
-          "
-        />
+    <div className="w-full min-w-0 max-w-full overflow-hidden rounded-[30px] border border-white/10 bg-[#0f0f11] text-white shadow-2xl shadow-black/20 animate-in fade-in duration-200">
 
-        <div
-          className="
-            absolute -right-40 top-[35%]
-            h-96 w-96 rounded-full
-            bg-[#007aff]/[0.035] blur-[120px]
-          "
-        />
-
-        <div
-          className="
-            absolute bottom-0 left-[35%]
-            h-72 w-72 rounded-full
-            bg-amber-400/[0.025] blur-[110px]
-          "
-        />
-      </div>
-
-      <div className="relative mx-auto max-w-[1500px] px-4 pb-12 pt-5 sm:px-6 lg:px-8">
-        {/* Hidden upload input */}
+      {/* Hidden photo input */}
+      {isMD && (
         <input
           ref={fileInputRef}
           type="file"
           accept="image/png,image/jpeg,image/webp,image/gif"
           className="hidden"
-          onChange={handleFileChange}
+          onChange={handlePhotoChange}
         />
+      )}
 
-        {/* =========================================================
+      <div className="space-y-6">
+
+        {/* ======================================================
             HERO
-        ========================================================= */}
-        <section
-          className="
-            relative overflow-hidden
-            rounded-[32px]
-            border border-white/[0.08]
-            bg-[#0c1016]
-            shadow-[0_30px_100px_rgba(0,0,0,0.35)]
-          "
-        >
-          <div
-            className="
-              pointer-events-none absolute right-[-120px] top-[-160px]
-              h-[420px] w-[420px]
-              rounded-full bg-[#007aff]/[0.08]
-              blur-[100px]
-            "
-          />
+        ====================================================== */}
 
-          <div
-            className="
-              pointer-events-none absolute bottom-[-180px] left-[20%]
-              h-[360px] w-[360px]
-              rounded-full bg-[#007aff]/[0.035]
-              blur-[100px]
-            "
-          />
+        <section className="relative overflow-hidden rounded-[30px] border border-white/10 bg-[#111113]/90 p-5 shadow-2xl shadow-black/20 backdrop-blur-2xl sm:p-7">
 
-          <div className="relative p-6 sm:p-8 lg:p-10">
-            <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-              <div className="max-w-3xl">
-                <div
-                  className="
-                    mb-5 inline-flex items-center gap-2
-                    rounded-full border border-[#007aff]/15
-                    bg-[#007aff]/[0.07]
-                    px-3 py-1.5
-                    text-[10px] font-bold uppercase
-                    tracking-[0.2em] text-[#69b3ff]
-                  "
-                >
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#4da3ff]" />
-                  Jewels Music Ministry
-                </div>
+          <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-[#007aff]/[0.07] blur-3xl" />
 
-                <h1
-                  className="
-                    text-4xl font-black
-                    tracking-[-0.05em]
-                    text-white sm:text-5xl lg:text-6xl
-                  "
-                >
-                  MUSIC TEAM
-                </h1>
+          <div className="relative flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
 
-                <p className="mt-4 max-w-2xl text-sm leading-6 text-white/45 sm:text-base">
-                  The people behind every song, rehearsal and
-                  ministration. Manage the team, keep roles clear,
-                  and keep the ministry moving together.
-                </p>
+            <div className="min-w-0">
 
-                {/* Quick metrics */}
-                <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  <div
-                    className="
-                      rounded-2xl border border-white/[0.07]
-                      bg-white/[0.025] p-4
-                    "
-                  >
-                    <Users size={17} className="text-[#4da3ff]" />
-                    <p className="mt-3 text-2xl font-black text-white">
-                      {total}
-                    </p>
-                    <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/30">
-                      Total Team
-                    </p>
-                  </div>
+              <div className="mb-4 flex flex-wrap items-center gap-2">
 
-                  <div
-                    className="
-                      rounded-2xl border border-white/[0.07]
-                      bg-white/[0.025] p-4
-                    "
-                  >
-                    <Mic2 size={17} className="text-[#4da3ff]" />
-                    <p className="mt-3 text-2xl font-black text-white">
-                      {vocalists.length}
-                    </p>
-                    <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/30">
-                      Vocalists
-                    </p>
-                  </div>
+                <span className="flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-[9px] font-extrabold uppercase tracking-[0.18em] text-amber-300">
+                  <Users className="h-3 w-3" />
+                  Music Team
+                </span>
 
-                  <div
-                    className="
-                      rounded-2xl border border-white/[0.07]
-                      bg-white/[0.025] p-4
-                    "
-                  >
-                    <Music2 size={17} className="text-[#4da3ff]" />
-                    <p className="mt-3 text-2xl font-black text-white">
-                      {instrumentalists.length}
-                    </p>
-                    <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/30">
-                      Band
-                    </p>
-                  </div>
+                <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-white/25">
+                  {isMD
+                    ? 'Team Control'
+                    : 'View Only'}
+                </span>
 
-                  <div
-                    className="
-                      rounded-2xl border border-amber-300/10
-                      bg-amber-300/[0.025] p-4
-                    "
-                  >
-                    <Crown size={17} className="text-amber-300" />
-                    <p className="mt-3 text-2xl font-black text-white">
-                      {directors.length}
-                    </p>
-                    <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/30">
-                      Leadership
-                    </p>
-                  </div>
-                </div>
               </div>
 
-              {/* Add member */}
-              {isMD && (
-                <button
-                  type="button"
-                  onClick={onAddNewMember}
-                  className="
-                    group relative flex shrink-0
-                    items-center justify-center gap-3
-                    overflow-hidden rounded-2xl
-                    bg-[#007aff] px-6 py-4
-                    text-sm font-bold text-white
-                    shadow-[0_12px_40px_rgba(0,122,255,0.22)]
-                    transition-all duration-300
-                    hover:-translate-y-0.5
-                    hover:bg-[#1685ff]
-                    hover:shadow-[0_18px_50px_rgba(0,122,255,0.3)]
-                  "
-                >
-                  <UserPlus size={18} />
-                  Add Team Member
-                  <ChevronRight
-                    size={16}
-                    className="
-                      transition-transform
-                      group-hover:translate-x-0.5
-                    "
-                  />
-                </button>
-              )}
-            </div>
-          </div>
-        </section>
+              <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+                Jewels Music Team
+              </h1>
 
-        {/* =========================================================
-            DIRECTORY TOOLBAR
-        ========================================================= */}
-        <section className="mt-7">
-          <div
-            className="
-              rounded-[28px]
-              border border-white/[0.08]
-              bg-[#0c1015]/90
-              p-4 sm:p-5
-            "
-          >
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#4da3ff]">
-                  Team Directory
-                </p>
-                <h2 className="mt-1 text-xl font-bold tracking-[-0.025em] text-white">
-                  Find your people
-                </h2>
-              </div>
-
-              <div className="relative w-full lg:max-w-sm">
-                <Search
-                  size={17}
-                  className="
-                    pointer-events-none absolute
-                    left-4 top-1/2 -translate-y-1/2
-                    text-white/25
-                  "
-                />
-
-                <input
-                  value={searchQuery}
-                  onChange={(event) =>
-                    setSearchQuery(event.target.value)
-                  }
-                  placeholder="Search members..."
-                  className="
-                    h-11 w-full rounded-xl
-                    border border-white/[0.08]
-                    bg-black/25 pl-11 pr-10
-                    text-sm text-white outline-none
-                    placeholder:text-white/25
-                    transition-all
-                    focus:border-[#007aff]/40
-                    focus:bg-[#007aff]/[0.035]
-                  "
-                />
-
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery('')}
-                    className="
-                      absolute right-3 top-1/2
-                      -translate-y-1/2
-                      text-white/25
-                      hover:text-white/70
-                    "
-                  >
-                    <X size={15} />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div
-              className="
-                mt-5 flex gap-2 overflow-x-auto
-                pb-1 scrollbar-hide
-              "
-            >
-              {filterOptions.map((filter) => {
-                const active = activeFilter === filter.key;
-
-                return (
-                  <button
-                    key={filter.key}
-                    type="button"
-                    onClick={() =>
-                      setActiveFilter(filter.key)
-                    }
-                    className={`
-                      flex shrink-0 items-center gap-2
-                      rounded-xl border px-3.5 py-2.5
-                      text-xs font-semibold
-                      transition-all duration-300
-                      ${
-                        active
-                          ? 'border-[#007aff]/30 bg-[#007aff]/[0.1] text-white'
-                          : 'border-white/[0.06] bg-white/[0.02] text-white/40 hover:border-white/[0.12] hover:text-white/70'
-                      }
-                    `}
-                  >
-                    {filter.icon}
-                    {filter.label}
-                    <span
-                      className={`
-                        rounded-md px-1.5 py-0.5 text-[10px]
-                        ${
-                          active
-                            ? 'bg-[#007aff]/20 text-[#69b3ff]'
-                            : 'bg-white/[0.05] text-white/25'
-                        }
-                      `}
-                    >
-                      {filter.count}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
-        {/* =========================================================
-            LEADERSHIP
-        ========================================================= */}
-        {filteredDirectors.length > 0 && (
-          <section className="mt-8">
-            {renderSectionHeader(
-              <Crown size={18} />,
-              'Leadership',
-              'Music Leadership',
-              filteredDirectors.length,
-              'amber'
-            )}
-
-            <div className="space-y-4">
-              {filteredDirectors.map(renderLeadershipCard)}
-            </div>
-          </section>
-        )}
-
-        {/* =========================================================
-            MINISTRY SNAPSHOT
-        ========================================================= */}
-        {activeFilter === 'all' && !searchQuery && (
-          <section className="mt-8">
-            <div
-              className="
-                rounded-[28px]
-                border border-white/[0.08]
-                bg-[#0b0f14]
-                p-5 sm:p-6
-              "
-            >
-              <div className="flex flex-col gap-6 lg:flex-row lg:items-center">
-                <div className="shrink-0 lg:w-56">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#4da3ff]">
-                    Ministry Snapshot
-                  </p>
-                  <h2 className="mt-1 text-lg font-bold text-white">
-                    Team coverage
-                  </h2>
-                  <p className="mt-2 text-xs leading-5 text-white/35">
-                    A quick view of how the current team is
-                    distributed across the ministry.
-                  </p>
-                </div>
-
-                <div className="grid flex-1 gap-4 sm:grid-cols-3">
-                  <div>
-                    <div className="mb-2 flex items-center justify-between">
-                      <span className="flex items-center gap-2 text-xs font-semibold text-white/60">
-                        <Mic2 size={14} className="text-[#4da3ff]" />
-                        Vocals
-                      </span>
-
-                      <span className="text-xs font-bold text-white/70">
-                        {vocalists.length}
-                      </span>
-                    </div>
-
-                    <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
-                      <div
-                        className="h-full rounded-full bg-[#007aff] transition-all duration-700"
-                        style={{
-                          width: `${vocalPercentage}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="mb-2 flex items-center justify-between">
-                      <span className="flex items-center gap-2 text-xs font-semibold text-white/60">
-                        <Music2
-                          size={14}
-                          className="text-[#4da3ff]"
-                        />
-                        Band
-                      </span>
-
-                      <span className="text-xs font-bold text-white/70">
-                        {instrumentalists.length}
-                      </span>
-                    </div>
-
-                    <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
-                      <div
-                        className="h-full rounded-full bg-[#4da3ff] transition-all duration-700"
-                        style={{
-                          width: `${bandPercentage}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="mb-2 flex items-center justify-between">
-                      <span className="flex items-center gap-2 text-xs font-semibold text-white/60">
-                        <Crown
-                          size={14}
-                          className="text-amber-300"
-                        />
-                        Leadership
-                      </span>
-
-                      <span className="text-xs font-bold text-white/70">
-                        {directors.length}
-                      </span>
-                    </div>
-
-                    <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
-                      <div
-                        className="h-full rounded-full bg-amber-300 transition-all duration-700"
-                        style={{
-                          width: `${leadershipPercentage}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* =========================================================
-            VOCAL TEAM
-        ========================================================= */}
-        {filteredVocalists.length > 0 && (
-          <section className="mt-10">
-            {renderSectionHeader(
-              <Mic2 size={18} />,
-              'Vocal Ministry',
-              'Vocal Team',
-              filteredVocalists.length
-            )}
-
-            <div
-              className="
-                grid grid-cols-1 gap-4
-                sm:grid-cols-2
-                xl:grid-cols-3
-                2xl:grid-cols-4
-              "
-            >
-              {filteredVocalists.map(renderMemberCard)}
-            </div>
-          </section>
-        )}
-
-        {/* =========================================================
-            BAND
-        ========================================================= */}
-        {filteredInstrumentalists.length > 0 && (
-          <section className="mt-10">
-            {renderSectionHeader(
-              <Music2 size={18} />,
-              'Instrumentation',
-              'Band & Musicians',
-              filteredInstrumentalists.length
-            )}
-
-            <div
-              className="
-                grid grid-cols-1 gap-4
-                sm:grid-cols-2
-                xl:grid-cols-3
-                2xl:grid-cols-4
-              "
-            >
-              {filteredInstrumentalists.map(renderMemberCard)}
-            </div>
-          </section>
-        )}
-
-        {/* =========================================================
-            EMPTY SEARCH/FILTER STATE
-        ========================================================= */}
-        {filteredTeam.length === 0 && (
-          <section
-            className="
-              mt-8 flex min-h-[300px]
-              items-center justify-center
-              rounded-[28px]
-              border border-dashed border-white/[0.1]
-              bg-[#0b0f14]
-              p-8 text-center
-            "
-          >
-            <div className="max-w-sm">
-              <div
-                className="
-                  mx-auto flex h-16 w-16
-                  items-center justify-center
-                  rounded-2xl border border-white/[0.08]
-                  bg-white/[0.025]
-                  text-white/25
-                "
-              >
-                <Search size={25} />
-              </div>
-
-              <h3 className="mt-5 text-lg font-bold text-white">
-                No team members found
-              </h3>
-
-              <p className="mt-2 text-sm leading-6 text-white/35">
-                Try another search term or choose a different
-                team category.
+              <p className="mt-2 max-w-2xl text-sm font-medium leading-relaxed text-white/40">
+                {team.length} dedicated{' '}
+                {team.length === 1
+                  ? 'member'
+                  : 'members'} serving across vocals,
+                instrumentation and music leadership.
               </p>
 
-              {(searchQuery || activeFilter !== 'all') && (
+            </div>
+
+            <div className="flex flex-shrink-0">
+
+              {isMD ? (
                 <button
                   type="button"
                   onClick={() => {
-                    setSearchQuery('');
-                    setActiveFilter('all');
+                    if (!isMD) return;
+                    onAddNewMember();
                   }}
-                  className="
-                    mt-5 rounded-xl
-                    border border-[#007aff]/20
-                    bg-[#007aff]/[0.07]
-                    px-4 py-2.5
-                    text-xs font-bold text-[#69b3ff]
-                    transition-all
-                    hover:bg-[#007aff]/[0.12]
-                  "
+                  className="group flex items-center gap-2.5 rounded-2xl bg-[#007aff] px-5 py-3 text-xs font-extrabold text-white shadow-xl shadow-blue-500/20 transition-all hover:bg-[#006fe6] active:scale-95 sm:text-sm"
                 >
-                  Clear Filters
+                  <UserPlus className="h-4 w-4" />
+                  Add Team Member
+                  <ChevronRight className="h-3.5 w-3.5 opacity-60 transition-transform group-hover:translate-x-0.5" />
                 </button>
+              ) : (
+                <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3 text-xs font-semibold text-white/35">
+                  <Lock className="h-3.5 w-3.5" />
+                  View Only
+                </div>
               )}
-            </div>
-          </section>
-        )}
 
-        {/* =========================================================
-            MD PHOTO MANAGEMENT
-        ========================================================= */}
-        {isMD && (
-          <section className="mt-10">
-            <div
-              className="
-                overflow-hidden rounded-[26px]
-                border border-[#007aff]/10
-                bg-[#0a0f15]
-              "
-            >
+            </div>
+
+          </div>
+
+          {/* FILTERS */}
+
+          <div className="relative mt-7 overflow-x-auto">
+
+            <div className="flex min-w-max items-center gap-1.5 rounded-2xl border border-white/10 bg-black/30 p-1">
+
               <button
                 type="button"
-                onClick={() =>
-                  setShowPhotoInfo((current) => !current)
-                }
-                className="
-                  flex w-full items-center justify-between
-                  gap-4 p-5 text-left
-                  transition-colors hover:bg-white/[0.02]
-                "
+                onClick={() => setActiveFilter('all')}
+                className={`rounded-xl px-3.5 py-2 text-xs font-bold whitespace-nowrap transition-all ${filterClass(
+                  activeFilter === 'all'
+                )}`}
               >
-                <div className="flex items-center gap-3">
-                  <div
-                    className="
-                      flex h-10 w-10 items-center
-                      justify-center rounded-xl
-                      border border-[#007aff]/15
-                      bg-[#007aff]/[0.07]
-                      text-[#4da3ff]
-                    "
-                  >
-                    <Camera size={18} />
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-bold text-white">
-                      Team Photo Management
-                    </p>
-                    <p className="mt-0.5 text-xs text-white/35">
-                      Update member profile photos directly
-                      from the directory.
-                    </p>
-                  </div>
-                </div>
-
-                <ChevronRight
-                  size={17}
-                  className={`
-                    text-white/25 transition-transform duration-300
-                    ${showPhotoInfo ? 'rotate-90' : ''}
-                  `}
-                />
+                All Members ({team.length})
               </button>
 
-              {showPhotoInfo && (
-                <div
-                  className="
-                    border-t border-white/[0.06]
-                    px-5 pb-5 pt-4
-                  "
-                >
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-start gap-3">
-                      <Upload
-                        size={15}
-                        className="mt-0.5 shrink-0 text-[#4da3ff]"
-                      />
+              <button
+                type="button"
+                onClick={() => setActiveFilter('vocal')}
+                className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold whitespace-nowrap transition-all ${filterClass(
+                  activeFilter === 'vocal'
+                )}`}
+              >
+                <Mic2 className="h-3.5 w-3.5" />
+                Vocalists ({vocalists.length})
+              </button>
 
-                      <p className="text-xs leading-5 text-white/40">
-                        Click any member's photo to upload a
-                        replacement. Supported formats are
-                        PNG, JPG, WEBP and GIF. Maximum size is
-                        5 MB.
-                      </p>
+              <button
+                type="button"
+                onClick={() => setActiveFilter('instrument')}
+                className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold whitespace-nowrap transition-all ${filterClass(
+                  activeFilter === 'instrument'
+                )}`}
+              >
+                <Piano className="h-3.5 w-3.5" />
+                Musicians ({instrumentalists.length})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveFilter('director')}
+                className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold whitespace-nowrap transition-all ${filterClass(
+                  activeFilter === 'director',
+                  true
+                )}`}
+              >
+                <Music2 className="h-3.5 w-3.5" />
+                Leadership ({directors.length})
+              </button>
+
+            </div>
+
+          </div>
+
+        </section>
+
+        {/* ======================================================
+            LEADERSHIP
+        ====================================================== */}
+
+        {(activeFilter === 'all' ||
+          activeFilter === 'director') &&
+          directors.length > 0 && (
+
+          <section className="rounded-[30px] border border-white/10 bg-[#111113]/90 p-5 shadow-2xl shadow-black/10 backdrop-blur-2xl sm:p-6">
+
+            <div className="mb-5 flex items-center justify-between gap-3">
+
+              <div className="flex items-center gap-2.5">
+
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/10">
+                  <ShieldCheck className="h-4 w-4 text-amber-300" />
+                </div>
+
+                <div>
+                  <h2 className="text-lg font-bold tracking-tight text-white sm:text-xl">
+                    Music Leadership
+                  </h2>
+
+                  <p className="mt-0.5 text-[11px] text-white/25">
+                    Ministry direction and administration
+                  </p>
+                </div>
+
+              </div>
+
+              <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.12em] text-amber-300">
+                {directors.length} Leader
+                {directors.length !== 1 ? 's' : ''}
+              </span>
+
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+
+              {directors.map(member => (
+
+                <div
+                  key={member.id}
+                  className="group relative overflow-hidden rounded-[26px] border border-amber-500/10 bg-white/[0.035] p-5 backdrop-blur-xl transition-all duration-300 hover:border-amber-500/20 hover:bg-white/[0.05]"
+                >
+
+                  <div className="pointer-events-none absolute -right-16 -top-16 h-32 w-32 rounded-full bg-amber-500/[0.06] blur-3xl" />
+
+                  <div className="relative">
+
+                    <div className="mb-4 flex items-start justify-between gap-3">
+
+                      <div className="flex min-w-0 items-center gap-3">
+
+                        {renderMemberPhoto(
+                          member,
+                          'director'
+                        )}
+
+                        <div className="min-w-0">
+
+                          <div className="flex items-center gap-1.5">
+
+                            <h3 className="truncate text-base font-extrabold text-white">
+                              {member.name}
+                            </h3>
+
+                            <span className="rounded-full bg-amber-500 px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-wider text-black">
+                              MD
+                            </span>
+
+                          </div>
+
+                          <p className="mt-1 truncate text-xs font-semibold text-amber-300">
+                            {member.role}
+                          </p>
+
+                        </div>
+
+                      </div>
+
+                      {renderMemberActions(
+                        member,
+                        false
+                      )}
+
                     </div>
 
-                    <span
-                      className="
-                        shrink-0 rounded-lg
-                        border border-white/[0.06]
-                        bg-white/[0.025]
-                        px-3 py-1.5
-                        text-[10px] font-bold
-                        uppercase tracking-[0.12em]
-                        text-white/30
-                      "
-                    >
-                      MD Only
-                    </span>
+                    {renderContactInfo(member)}
+
+                    <div className="mt-5 flex items-center justify-between gap-2 border-t border-white/[0.07] pt-3">
+
+                      <span className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.08em] text-amber-300">
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                        Full Admin Rights
+                      </span>
+
+                      <span className="rounded-full border border-emerald-500/10 bg-emerald-500/10 px-2 py-1 text-[9px] font-bold text-emerald-300">
+                        Active
+                      </span>
+
+                    </div>
+
                   </div>
+
                 </div>
-              )}
+
+              ))}
+
             </div>
+
           </section>
         )}
 
-        {/* =========================================================
-            FOOTER
-        ========================================================= */}
-        <footer className="mt-14 border-t border-white/[0.06] pt-7">
-          <div className="flex flex-col items-center justify-between gap-3 text-center sm:flex-row sm:text-left">
-            <div>
-              <p className="text-xs font-bold tracking-wide text-white/55">
-                Jewels Music Hub
-              </p>
-              <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-white/20">
-                MUSIC • EXCELLENCE • SERVICE
-              </p>
+        {/* ======================================================
+            VOCAL TEAM
+        ====================================================== */}
+
+        {(activeFilter === 'all' ||
+          activeFilter === 'vocal') &&
+          vocalists.length > 0 && (
+
+          <section className="rounded-[30px] border border-white/10 bg-[#111113]/90 p-5 shadow-2xl shadow-black/10 backdrop-blur-2xl sm:p-6">
+
+            <div className="mb-5 flex items-center justify-between gap-3">
+
+              <div className="flex items-center gap-2.5">
+
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#007aff]/20 bg-[#007aff]/10">
+                  <Mic2 className="h-4 w-4 text-[#4da3ff]" />
+                </div>
+
+                <div>
+                  <h2 className="text-lg font-bold tracking-tight text-white sm:text-xl">
+                    Vocal Team
+                  </h2>
+
+                  <p className="mt-0.5 text-[11px] text-white/25">
+                    Harmonies, solos and lead vocal assignments
+                  </p>
+                </div>
+
+              </div>
+
+              <span className="rounded-full border border-white/10 bg-white/[0.035] px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.12em] text-white/35">
+                {vocalists.length} Vocalist
+                {vocalists.length !== 1 ? 's' : ''}
+              </span>
+
             </div>
 
-            <div className="flex items-center gap-2 text-[10px] text-white/20">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/70" />
-              Team Directory
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+
+              {vocalists.map(member => (
+
+                <div
+                  key={member.id}
+                  className="group rounded-[26px] border border-white/10 bg-white/[0.035] p-5 backdrop-blur-xl transition-all duration-300 hover:border-[#007aff]/20 hover:bg-white/[0.05]"
+                >
+
+                  <div className="flex min-w-0 flex-col">
+
+                    <div className="mb-4 flex items-start justify-between gap-3">
+
+                      <div className="flex min-w-0 items-center gap-3">
+
+                        {renderMemberPhoto(
+                          member,
+                          'vocal'
+                        )}
+
+                        <div className="min-w-0">
+
+                          <h3 className="truncate text-base font-bold text-white">
+                            {member.name}
+                          </h3>
+
+                          <p className="mt-1 truncate text-xs font-semibold text-[#4da3ff]">
+                            {member.voicePart ||
+                              member.role}
+                          </p>
+
+                        </div>
+
+                      </div>
+
+                      {renderMemberActions(
+                        member,
+                        true
+                      )}
+
+                    </div>
+
+                    {renderContactInfo(member)}
+
+                    <div className="mt-5 flex min-h-[30px] items-center justify-between gap-2 border-t border-white/[0.07] pt-3">
+
+                      <span className="rounded-full border border-[#007aff]/20 bg-[#007aff]/10 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.08em] text-[#4da3ff]">
+                        {member.voicePart ||
+                          'Vocal Section'}
+                      </span>
+
+                      {renderPermissionButton(member)}
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+              ))}
+
             </div>
-          </div>
-        </footer>
+
+          </section>
+        )}
+
+        {/* ======================================================
+            INSTRUMENTALISTS
+        ====================================================== */}
+
+        {(activeFilter === 'all' ||
+          activeFilter === 'instrument') &&
+          instrumentalists.length > 0 && (
+
+          <section className="rounded-[30px] border border-white/10 bg-[#111113]/90 p-5 shadow-2xl shadow-black/10 backdrop-blur-2xl sm:p-6">
+
+            <div className="mb-5 flex items-center justify-between gap-3">
+
+              <div className="flex items-center gap-2.5">
+
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#007aff]/20 bg-[#007aff]/10">
+                  <Piano className="h-4 w-4 text-[#4da3ff]" />
+                </div>
+
+                <div>
+                  <h2 className="text-lg font-bold tracking-tight text-white sm:text-xl">
+                    Band & Instrumentalists
+                  </h2>
+
+                  <p className="mt-0.5 text-[11px] text-white/25">
+                    Musicians and instrumental sections
+                  </p>
+                </div>
+
+              </div>
+
+              <span className="rounded-full border border-white/10 bg-white/[0.035] px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.12em] text-white/35">
+                {instrumentalists.length} Musician
+                {instrumentalists.length !== 1 ? 's' : ''}
+              </span>
+
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+
+              {instrumentalists.map(member => (
+
+                <div
+                  key={member.id}
+                  className="group rounded-[26px] border border-white/10 bg-white/[0.035] p-5 backdrop-blur-xl transition-all duration-300 hover:border-[#007aff]/20 hover:bg-white/[0.05]"
+                >
+
+                  <div className="flex min-w-0 flex-col">
+
+                    <div className="mb-4 flex items-start justify-between gap-3">
+
+                      <div className="flex min-w-0 items-center gap-3">
+
+                        {renderMemberPhoto(
+                          member,
+                          'instrument'
+                        )}
+
+                        <div className="min-w-0">
+
+                          <h3 className="truncate text-base font-bold text-white">
+                            {member.name}
+                          </h3>
+
+                          <p className="mt-1 truncate text-xs font-semibold text-[#4da3ff]">
+                            {member.instrumentType ||
+                              member.role}
+                          </p>
+
+                        </div>
+
+                      </div>
+
+                      {renderMemberActions(
+                        member,
+                        true
+                      )}
+
+                    </div>
+
+                    {renderContactInfo(member)}
+
+                    <div className="mt-5 flex min-h-[30px] items-center justify-between gap-2 border-t border-white/[0.07] pt-3">
+
+                      <span className="rounded-full border border-[#007aff]/20 bg-[#007aff]/10 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.08em] text-[#4da3ff]">
+                        {member.instrumentType ||
+                          'Band'}
+                      </span>
+
+                      {renderPermissionButton(member)}
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+              ))}
+
+            </div>
+
+          </section>
+        )}
+
+        {/* ======================================================
+            EMPTY STATE
+        ====================================================== */}
+
+        {team.length === 0 && (
+
+          <section className="rounded-[30px] border border-white/10 bg-[#111113]/90 p-10 text-center shadow-2xl shadow-black/10 backdrop-blur-2xl">
+
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[22px] border border-[#007aff]/20 bg-[#007aff]/10">
+              <Users className="h-7 w-7 text-[#4da3ff]" />
+            </div>
+
+            <h2 className="mt-5 text-xl font-bold text-white">
+              No team members yet
+            </h2>
+
+            <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-white/35">
+              Add your first vocalist, instrumentalist
+              or music leader to begin building the
+              ministry roster.
+            </p>
+
+            {isMD && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (!isMD) return;
+                  onAddNewMember();
+                }}
+                className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[#007aff] px-5 py-3 text-xs font-extrabold text-white shadow-xl shadow-blue-500/20 hover:bg-[#006fe6]"
+              >
+                <UserPlus className="h-4 w-4" />
+                Add First Member
+              </button>
+            )}
+
+          </section>
+        )}
+
+        {/* ======================================================
+            PHOTO INFORMATION
+        ====================================================== */}
+
+        {isMD && team.length > 0 && (
+
+          <section className="rounded-[24px] border border-white/10 bg-white/[0.025] p-4 backdrop-blur-xl sm:p-5">
+
+            <div className="flex items-start gap-3">
+
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-[#007aff]/20 bg-[#007aff]/10">
+                <ImageIcon className="h-4 w-4 text-[#4da3ff]" />
+              </div>
+
+              <div className="min-w-0">
+
+                <p className="text-xs font-bold text-white">
+                  Team photos
+                </p>
+
+                <p className="mt-1 max-w-2xl text-[11px] leading-relaxed text-white/30">
+                  Click a member's photo to change their
+                  profile image. Supported formats are JPG,
+                  PNG, WebP and GIF, with a maximum file size
+                  of 5 MB.
+                </p>
+
+              </div>
+
+            </div>
+
+          </section>
+        )}
+
       </div>
     </div>
   );
 };
 
-export default MusicTeamView;
