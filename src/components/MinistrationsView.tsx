@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from 'react';
+
 import {
   Ministration,
   Song,
@@ -29,15 +35,21 @@ import {
   Volume2,
   Headphones,
   CheckCircle2,
-  Circle,
   ChevronRight,
   Save,
   Sparkles,
   ListMusic,
-  MoreHorizontal,
   CalendarPlus,
   Pencil,
-  RotateCcw
+  RotateCcw,
+  MoreHorizontal,
+  FileMusic,
+  SlidersHorizontal,
+  Zap,
+  Users,
+  Timer,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
 import { CHROMATIC_KEYS } from '../utils/audioUtils';
@@ -60,7 +72,7 @@ interface MinistrationsViewProps {
 }
 
 /* =========================================================
-   WEEKLY LEARNING TYPES
+   WEEKLY LEARNING
 ========================================================= */
 
 interface WeeklyLearning {
@@ -71,10 +83,6 @@ interface WeeklyLearning {
   songIds: number[];
   updatedAt: string;
 }
-
-/* =========================================================
-   HELPERS
-========================================================= */
 
 const WEEKLY_STORAGE_KEY =
   'jewels_music_hub_weekly_learning_v1';
@@ -99,7 +107,7 @@ const createWeeklyId = () =>
     .slice(2, 8)}`;
 
 /* =========================================================
-   COMPONENT
+   MAIN COMPONENT
 ========================================================= */
 
 export const MinistrationsView: React.FC<
@@ -141,11 +149,11 @@ export const MinistrationsView: React.FC<
   const [isEditingBrief, setIsEditingBrief] =
     useState(false);
 
-  const [isEditingMinistration, setIsEditingMinistration] =
-    useState(false);
+  const [expandedSongId, setExpandedSongId] =
+    useState<number | null>(null);
 
   /* =======================================================
-     WEEKLY LEARNING STATE
+     WEEKLY LEARNING
   ======================================================= */
 
   const [weeklyLearning, setWeeklyLearning] =
@@ -167,7 +175,7 @@ export const MinistrationsView: React.FC<
     useState(false);
 
   /* =======================================================
-     FORM STATE
+     CREATE FORM
   ======================================================= */
 
   const [newName, setNewName] = useState('');
@@ -181,7 +189,7 @@ export const MinistrationsView: React.FC<
     useState('Upcoming');
 
   /* =======================================================
-     SYNC SELECTED MINISTRATION
+     SYNC
   ======================================================= */
 
   useEffect(() => {
@@ -191,11 +199,21 @@ export const MinistrationsView: React.FC<
   }, [selectedMinistration]);
 
   useEffect(() => {
-    if (
-      !currentMin &&
-      ministrations.length > 0
-    ) {
+    if (!currentMin && ministrations.length > 0) {
       setCurrentMin(ministrations[0]);
+    }
+  }, [ministrations, currentMin]);
+
+  useEffect(() => {
+    if (
+      currentMin &&
+      !ministrations.some(
+        min => min.id === currentMin.id
+      )
+    ) {
+      if (ministrations.length > 0) {
+        setCurrentMin(ministrations[0]);
+      }
     }
   }, [ministrations, currentMin]);
 
@@ -223,10 +241,6 @@ export const MinistrationsView: React.FC<
     }
   }, []);
 
-  /* =======================================================
-     SAVE WEEKLY LEARNING
-  ======================================================= */
-
   const saveWeeklyLearning = (
     updated: WeeklyLearning
   ) => {
@@ -239,26 +253,26 @@ export const MinistrationsView: React.FC<
   };
 
   /* =======================================================
-     VOCAL MEMBERS
+     DERIVED DATA
   ======================================================= */
 
-  const vocalMembers = team.filter(
-    m =>
-      m.type === 'vocal' ||
-      m.type === 'director'
+  const vocalMembers = useMemo(
+    () =>
+      team.filter(
+        member =>
+          member.type === 'vocal' ||
+          member.type === 'director'
+      ),
+    [team]
   );
-
-  /* =======================================================
-     CURRENT SONG COUNT
-  ======================================================= */
-
-  const assignedLeadsCount =
-    currentMin?.songs.filter(
-      s => s.lead !== null
-    ).length || 0;
 
   const currentSongCount =
     currentMin?.songs.length || 0;
+
+  const assignedLeadsCount =
+    currentMin?.songs.filter(
+      song => song.lead !== null
+    ).length || 0;
 
   const assignmentPercentage =
     currentSongCount > 0
@@ -269,6 +283,42 @@ export const MinistrationsView: React.FC<
         )
       : 0;
 
+  const isReady =
+    currentSongCount > 0 &&
+    assignmentPercentage === 100;
+
+  const currentSongs = useMemo(() => {
+    if (!currentMin) return [];
+
+    return currentMin.songs
+      .map(item => {
+        const song = songs.find(
+          s => s.id === item.songId
+        );
+
+        if (!song) return null;
+
+        return {
+          item,
+          song
+        };
+      })
+      .filter(Boolean) as {
+      item: SetlistSongItem;
+      song: Song;
+    }[];
+  }, [currentMin, songs]);
+
+  const weeklySongs = useMemo(() => {
+    if (!weeklyLearning) return [];
+
+    return weeklyLearning.songIds
+      .map(id =>
+        songs.find(song => song.id === id)
+      )
+      .filter(Boolean) as Song[];
+  }, [weeklyLearning, songs]);
+
   /* =======================================================
      SELECT MINISTRATION
   ======================================================= */
@@ -277,6 +327,7 @@ export const MinistrationsView: React.FC<
     min: Ministration
   ) => {
     setCurrentMin(min);
+    setExpandedSongId(null);
     onSelectMinistration(min);
   };
 
@@ -323,10 +374,6 @@ export const MinistrationsView: React.FC<
     setNewStatus('Upcoming');
   };
 
-  /* =======================================================
-     OPEN CREATE FORM
-  ======================================================= */
-
   const openCreateForm = () => {
     if (!isMD) return;
 
@@ -342,24 +389,7 @@ export const MinistrationsView: React.FC<
   };
 
   /* =======================================================
-     EDIT MINISTRATION
-  ======================================================= */
-
-  const saveMinistrationDetails = () => {
-    if (!currentMin || !isMD) return;
-
-    const updated = {
-      ...currentMin
-    };
-
-    onUpdateMinistration(updated);
-    setCurrentMin(updated);
-
-    setIsEditDetailsOpen(false);
-  };
-
-  /* =======================================================
-     UPDATE FIELD DIRECTLY
+     UPDATE MINISTRATION
   ======================================================= */
 
   const updateCurrentMinField = (
@@ -377,6 +407,13 @@ export const MinistrationsView: React.FC<
     onUpdateMinistration(updated);
   };
 
+  const saveMinistrationDetails = () => {
+    if (!currentMin || !isMD) return;
+
+    onUpdateMinistration(currentMin);
+    setIsEditDetailsOpen(false);
+  };
+
   /* =======================================================
      ASSIGN LEAD
   ======================================================= */
@@ -388,16 +425,14 @@ export const MinistrationsView: React.FC<
     if (!isMD || !currentMin) return;
 
     const updatedSongs =
-      currentMin.songs.map(item => {
-        if (item.songId === songId) {
-          return {
-            ...item,
-            lead: memberId
-          };
-        }
-
-        return item;
-      });
+      currentMin.songs.map(item =>
+        item.songId === songId
+          ? {
+              ...item,
+              lead: memberId
+            }
+          : item
+      );
 
     const updatedMin = {
       ...currentMin,
@@ -409,7 +444,7 @@ export const MinistrationsView: React.FC<
   };
 
   /* =======================================================
-     KEY OVERRIDE
+     KEY
   ======================================================= */
 
   const handleKeyOverride = (
@@ -419,16 +454,14 @@ export const MinistrationsView: React.FC<
     if (!isMD || !currentMin) return;
 
     const updatedSongs =
-      currentMin.songs.map(item => {
-        if (item.songId === songId) {
-          return {
-            ...item,
-            keyOverride: newKey
-          };
-        }
-
-        return item;
-      });
+      currentMin.songs.map(item =>
+        item.songId === songId
+          ? {
+              ...item,
+              keyOverride: newKey
+            }
+          : item
+      );
 
     const updatedMin = {
       ...currentMin,
@@ -440,7 +473,7 @@ export const MinistrationsView: React.FC<
   };
 
   /* =======================================================
-     NOTE CHANGE
+     TRANSITION NOTE
   ======================================================= */
 
   const handleNoteChange = (
@@ -450,16 +483,14 @@ export const MinistrationsView: React.FC<
     if (!isMD || !currentMin) return;
 
     const updatedSongs =
-      currentMin.songs.map(item => {
-        if (item.songId === songId) {
-          return {
-            ...item,
-            orderNote: note
-          };
-        }
-
-        return item;
-      });
+      currentMin.songs.map(item =>
+        item.songId === songId
+          ? {
+              ...item,
+              orderNote: note
+            }
+          : item
+      );
 
     const updatedMin = {
       ...currentMin,
@@ -496,12 +527,13 @@ export const MinistrationsView: React.FC<
       return;
     }
 
-    const temp = newSongs[index];
-
-    newSongs[index] =
-      newSongs[targetIdx];
-
-    newSongs[targetIdx] = temp;
+    [
+      newSongs[index],
+      newSongs[targetIdx]
+    ] = [
+      newSongs[targetIdx],
+      newSongs[index]
+    ];
 
     const updatedMin = {
       ...currentMin,
@@ -521,33 +553,30 @@ export const MinistrationsView: React.FC<
   ) => {
     if (!isMD || !currentMin) return;
 
-    const updatedSongs =
-      currentMin.songs.filter(
-        s => s.songId !== songId
-      );
-
     const updatedMin = {
       ...currentMin,
-      songs: updatedSongs
+      songs: currentMin.songs.filter(
+        item => item.songId !== songId
+      )
     };
 
     setCurrentMin(updatedMin);
+    setExpandedSongId(null);
     onUpdateMinistration(updatedMin);
   };
 
   /* =======================================================
-     ADD SONG TO MINISTRATION
+     ADD SONG
   ======================================================= */
 
   const handleAddSongToMin = (
     songId: number
   ) => {
-    if (!currentMin) return;
+    if (!isMD || !currentMin) return;
 
     if (
       currentMin.songs.some(
-        item =>
-          item.songId === songId
+        item => item.songId === songId
       )
     ) {
       alert(
@@ -557,7 +586,7 @@ export const MinistrationsView: React.FC<
     }
 
     const song = songs.find(
-      s => s.id === songId
+      item => item.id === songId
     );
 
     const newItem: SetlistSongItem = {
@@ -583,15 +612,7 @@ export const MinistrationsView: React.FC<
   };
 
   /* =======================================================
-     PRINT
-  ======================================================= */
-
-  const handlePrint = () => {
-    window.print();
-  };
-
-  /* =======================================================
-     WEEKLY LEARNING CREATE / EDIT
+     WEEKLY LEARNING
   ======================================================= */
 
   const openWeeklyEditor = () => {
@@ -601,11 +622,9 @@ export const MinistrationsView: React.FC<
       setWeeklyTitle(
         weeklyLearning.title
       );
-
       setWeeklyWeekLabel(
         weeklyLearning.weekLabel
       );
-
       setWeeklyDescription(
         weeklyLearning.description
       );
@@ -613,7 +632,6 @@ export const MinistrationsView: React.FC<
       setWeeklyTitle(
         'This Week\'s Learning'
       );
-
       setWeeklyWeekLabel('');
       setWeeklyDescription('');
     }
@@ -651,10 +669,6 @@ export const MinistrationsView: React.FC<
     setIsWeeklyEditorOpen(false);
   };
 
-  /* =======================================================
-     DELETE WEEKLY LEARNING
-  ======================================================= */
-
   const clearWeeklyLearning = () => {
     if (!isMD) return;
 
@@ -671,10 +685,6 @@ export const MinistrationsView: React.FC<
 
     setWeeklyLearning(null);
   };
-
-  /* =======================================================
-     ADD SONG TO WEEKLY
-  ======================================================= */
 
   const addSongToWeekly = (
     songId: number
@@ -710,10 +720,6 @@ export const MinistrationsView: React.FC<
     });
   };
 
-  /* =======================================================
-     REMOVE WEEKLY SONG
-  ======================================================= */
-
   const removeWeeklySong = (
     songId: number
   ) => {
@@ -730,10 +736,6 @@ export const MinistrationsView: React.FC<
         new Date().toISOString()
     });
   };
-
-  /* =======================================================
-     MOVE WEEKLY SONG
-  ======================================================= */
 
   const moveWeeklySong = (
     index: number,
@@ -758,10 +760,13 @@ export const MinistrationsView: React.FC<
       return;
     }
 
-    const temp = ids[index];
-
-    ids[index] = ids[target];
-    ids[target] = temp;
+    [
+      ids[index],
+      ids[target]
+    ] = [
+      ids[target],
+      ids[index]
+    ];
 
     saveWeeklyLearning({
       ...weeklyLearning,
@@ -772,78 +777,88 @@ export const MinistrationsView: React.FC<
   };
 
   /* =======================================================
-     RENDER EMPTY STATE
+     EMPTY STATE
   ======================================================= */
 
   if (!currentMin) {
     return (
-      <div className="w-full space-y-7 animate-in fade-in duration-300">
+      <div className="relative w-full min-w-0 max-w-full overflow-hidden text-white">
 
-        <section className="rounded-[30px] border border-white/10 bg-[#0d0d0f]/95 p-6 sm:p-8">
+        <AmbientGlow />
 
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+        <div className="relative space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
 
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <span className="w-8 h-8 rounded-xl bg-[#007aff]/10 border border-[#007aff]/20 flex items-center justify-center">
-                  <Music2 className="w-4 h-4 text-[#4da3ff]" />
-                </span>
+          <section className="relative overflow-hidden rounded-[30px] border border-white/10 bg-[#0d0d0f]/95 p-6 sm:p-8 shadow-2xl shadow-black/20">
 
-                <span className="text-[10px] uppercase tracking-[0.18em] font-extrabold text-[#4da3ff]">
-                  Ministry Services
-                </span>
+            <div className="absolute -top-32 -right-32 h-80 w-80 rounded-full bg-[#007aff]/10 blur-3xl" />
+
+            <div className="relative flex flex-col lg:flex-row lg:items-end lg:justify-between gap-7">
+
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#007aff]/20 bg-[#007aff]/10">
+                    <Music2 className="h-4 w-4 text-[#4da3ff]" />
+                  </div>
+
+                  <span className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#4da3ff]">
+                    Ministry Services
+                  </span>
+                </div>
+
+                <h1 className="text-3xl sm:text-4xl font-extrabold tracking-[-0.03em]">
+                  Ministrations
+                </h1>
+
+                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/40">
+                  Build services, organize
+                  setlists and keep the music
+                  ministry prepared for every
+                  performance.
+                </p>
               </div>
 
-              <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-                Ministrations
-              </h1>
+              {isMD && (
+                <button
+                  onClick={openCreateForm}
+                  className="group inline-flex items-center justify-center gap-2 rounded-2xl bg-[#007aff] px-5 py-3 text-xs font-bold text-white shadow-lg shadow-blue-500/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#0062cc]"
+                >
+                  <Plus className="h-4 w-4 transition-transform duration-300 group-hover:rotate-90" />
+                  Create Ministration
+                </button>
+              )}
 
-              <p className="text-sm text-white/40 mt-3 max-w-xl">
-                Create and organize every ministry
-                service, rehearsal set and
+            </div>
+
+            <div className="relative mt-10 rounded-[28px] border border-dashed border-white/10 bg-white/[0.015] px-5 py-16 text-center">
+
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.035]">
+                <CalendarPlus className="h-7 w-7 text-white/25" />
+              </div>
+
+              <h3 className="text-sm font-bold">
+                No ministrations yet
+              </h3>
+
+              <p className="mt-2 text-xs text-white/30">
+                Start by creating a Sunday Service,
+                BaselFest event or another ministry
                 performance.
               </p>
+
+              {isMD && (
+                <button
+                  onClick={openCreateForm}
+                  className="mt-5 rounded-xl bg-[#007aff] px-4 py-2.5 text-xs font-bold text-white transition-all hover:bg-[#0062cc]"
+                >
+                  Create First Ministration
+                </button>
+              )}
+
             </div>
 
-            {isMD && (
-              <button
-                onClick={openCreateForm}
-                className="px-5 py-3 rounded-2xl bg-[#007aff] hover:bg-[#0062cc] text-white text-xs font-bold flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                Create Ministration
-              </button>
-            )}
+          </section>
 
-          </div>
-
-          <div className="mt-10 text-center py-16 border border-dashed border-white/10 rounded-[28px]">
-
-            <div className="w-16 h-16 mx-auto rounded-2xl bg-white/[0.035] border border-white/10 flex items-center justify-center mb-4">
-              <CalendarPlus className="w-7 h-7 text-white/30" />
-            </div>
-
-            <h3 className="text-sm font-bold text-white">
-              No ministrations yet
-            </h3>
-
-            <p className="text-xs text-white/30 mt-2">
-              Create the first ministration
-              for the ministry.
-            </p>
-
-            {isMD && (
-              <button
-                onClick={openCreateForm}
-                className="mt-5 px-4 py-2.5 rounded-xl bg-[#007aff] text-white text-xs font-bold"
-              >
-                Create First Ministration
-              </button>
-            )}
-
-          </div>
-
-        </section>
+        </div>
 
         {isCreateModalOpen &&
           renderCreateModal()}
@@ -853,357 +868,566 @@ export const MinistrationsView: React.FC<
   }
 
   /* =======================================================
-     MAIN RENDER
+     MAIN
   ======================================================= */
 
   return (
-    <div className="w-full min-w-0 max-w-full space-y-7 animate-in fade-in duration-300">
+    <div className="relative w-full min-w-0 max-w-full overflow-hidden text-white">
 
-      {/* =====================================================
-          HEADER
-      ====================================================== */}
+      <AmbientGlow />
 
-      <section className="relative overflow-hidden rounded-[30px] border border-white/10 bg-[#0d0d0f]/95 p-5 sm:p-7 lg:p-8 shadow-2xl shadow-black/20">
+      <div className="relative space-y-7 animate-in fade-in slide-in-from-bottom-2 duration-500">
 
-        <div className="absolute -top-32 -right-32 w-80 h-80 rounded-full bg-[#007aff]/10 blur-3xl pointer-events-none" />
+        {/* =================================================
+            HERO
+        ================================================= */}
 
-        <div className="relative flex flex-col xl:flex-row xl:items-end xl:justify-between gap-6">
+        <section className="relative overflow-hidden rounded-[30px] border border-white/10 bg-[#0d0d0f]/95 p-5 sm:p-7 lg:p-8 shadow-2xl shadow-black/20">
 
-          <div>
-            <div className="flex flex-wrap items-center gap-2 mb-4">
+          <div className="absolute -right-32 -top-40 h-96 w-96 rounded-full bg-[#007aff]/10 blur-3xl" />
+          <div className="absolute -bottom-32 left-1/3 h-72 w-72 rounded-full bg-blue-500/[0.035] blur-3xl" />
 
-              <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#4da3ff] bg-[#007aff]/10 border border-[#007aff]/20 px-3 py-1.5 rounded-full">
-                <Music2 className="w-3 h-3" />
-                Ministry Services
-              </span>
+          <div className="relative flex flex-col xl:flex-row xl:items-end xl:justify-between gap-7">
 
-              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/25">
-                Performance Management
-              </span>
+            <div className="min-w-0">
+
+              <div className="mb-4 flex flex-wrap items-center gap-2">
+
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#007aff]/20 bg-[#007aff]/10 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#4da3ff]">
+                  <Music2 className="h-3 w-3" />
+                  Ministry Services
+                </span>
+
+                <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/20">
+                  Performance Management
+                </span>
+
+              </div>
+
+              <h1 className="text-3xl sm:text-4xl lg:text-[44px] font-extrabold tracking-[-0.04em]">
+                Ministrations
+              </h1>
+
+              <p className="mt-3 max-w-2xl text-sm sm:text-[15px] leading-relaxed text-white/40">
+                Prepare every service from one
+                place — event details, setlists,
+                vocal assignments, transitions and
+                weekly learning.
+              </p>
 
             </div>
 
-            <h1 className="text-3xl sm:text-4xl lg:text-[42px] font-extrabold text-white tracking-[-0.03em]">
-              Ministrations
-            </h1>
+            <div className="flex flex-wrap items-center gap-2">
 
-            <p className="text-sm sm:text-[15px] text-white/40 mt-3 max-w-2xl leading-relaxed">
-              Plan services, organize setlists,
-              prepare the ministry team and
-              keep everyone ready for
-              performance.
-            </p>
-          </div>
+              {isMD && (
+                <button
+                  onClick={openCreateForm}
+                  className="group inline-flex items-center gap-2 rounded-2xl bg-[#007aff] px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-blue-500/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#0062cc]"
+                >
+                  <Plus className="h-4 w-4 transition-transform duration-300 group-hover:rotate-90" />
+                  New Ministration
+                </button>
+              )}
 
-          <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3 backdrop-blur-xl">
 
-            {isMD && (
-              <button
-                onClick={openCreateForm}
-                className="px-4 py-2.5 rounded-2xl bg-[#007aff] hover:bg-[#0062cc] text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-blue-500/20"
-              >
-                <Plus className="w-4 h-4" />
-                New Ministration
-              </button>
-            )}
+                <div
+                  className={`h-2.5 w-2.5 rounded-full ${
+                    isMD
+                      ? 'bg-[#007aff] shadow-[0_0_15px_rgba(0,122,255,.7)]'
+                      : 'bg-white/30'
+                  }`}
+                />
 
-            <div className="px-4 py-3 rounded-2xl border border-white/10 bg-white/[0.035] flex items-center gap-3">
+                <div>
+                  <p className="text-[8px] font-extrabold uppercase tracking-[0.16em] text-white/20">
+                    Access
+                  </p>
 
-              <div
-                className={`w-2.5 h-2.5 rounded-full ${
-                  isMD
-                    ? 'bg-[#007aff] shadow-[0_0_15px_rgba(0,122,255,.6)]'
-                    : 'bg-white/30'
-                }`}
-              />
+                  <p className="mt-0.5 text-xs font-bold">
+                    {isMD
+                      ? 'Admin / MD Control'
+                      : 'Member View'}
+                  </p>
+                </div>
 
-              <div>
-                <p className="text-[8px] uppercase tracking-[0.16em] text-white/25 font-extrabold">
-                  Access
-                </p>
-
-                <p className="text-xs font-bold text-white mt-0.5">
-                  {isMD
-                    ? 'Admin / MD Control'
-                    : 'Member View'}
-                </p>
               </div>
 
             </div>
 
           </div>
 
-        </div>
+        </section>
 
-      </section>
+        {/* =================================================
+            EVENT SELECTOR
+        ================================================= */}
 
-      {/* =====================================================
-          MINISTRATION CARDS
-      ====================================================== */}
+        <section>
 
-      <section>
+          <div className="mb-4 flex items-end justify-between gap-4">
 
-        <div className="flex items-end justify-between mb-4">
+            <div>
+              <p className="text-[9px] font-extrabold uppercase tracking-[0.18em] text-[#4da3ff]">
+                Ministry Calendar
+              </p>
 
-          <div>
-            <p className="text-[9px] uppercase tracking-[0.18em] font-extrabold text-[#4da3ff]">
-              Your Ministry Calendar
-            </p>
+              <h2 className="mt-1 text-xl sm:text-2xl font-extrabold">
+                Upcoming Services
+              </h2>
+            </div>
 
-            <h2 className="text-xl sm:text-2xl font-extrabold text-white mt-1">
-              Upcoming Ministrations
-            </h2>
+            <span className="rounded-full border border-white/10 bg-white/[0.025] px-3 py-1.5 text-[9px] font-bold text-white/30">
+              {ministrations.length}{' '}
+              {ministrations.length === 1
+                ? 'event'
+                : 'events'}
+            </span>
+
           </div>
 
-          <span className="text-[10px] font-bold text-white/30">
-            {ministrations.length} events
-          </span>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
 
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-
-          {ministrations.map(min => {
-
-            const ready =
-              min.songs.length > 0 &&
-              min.songs.every(
-                song =>
-                  song.lead !== null
-              );
-
-            const percentage =
-              min.songs.length > 0
-                ? Math.round(
-                    (min.songs.filter(
-                      song =>
-                        song.lead !== null
-                    ).length /
-                      min.songs.length) *
-                      100
-                  )
-                : 0;
-
-            return (
-              <button
+            {ministrations.map(min => (
+              <EventCard
                 key={min.id}
+                min={min}
+                active={
+                  currentMin.id === min.id
+                }
                 onClick={() =>
                   selectMinistration(min)
                 }
-                className={`text-left group rounded-[26px] border p-5 transition-all duration-200 ${
-                  currentMin.id === min.id
-                    ? 'border-[#007aff]/40 bg-[#007aff]/[0.08] shadow-xl shadow-blue-500/[0.08]'
-                    : 'border-white/10 bg-[#111113]/90 hover:border-white/20 hover:bg-white/[0.04]'
-                }`}
-              >
+              />
+            ))}
 
-                <div className="flex items-start justify-between gap-3">
+          </div>
 
-                  <div className="min-w-0">
+        </section>
 
-                    <span className="inline-flex text-[8px] uppercase tracking-[0.15em] font-extrabold px-2 py-1 rounded-lg bg-white/[0.05] text-white/40 border border-white/[0.07]">
-                      {min.status}
-                    </span>
+        {/* =================================================
+            CURRENT EVENT
+        ================================================= */}
 
-                    <h3 className="text-base font-extrabold text-white mt-3 truncate">
-                      {min.name}
-                    </h3>
+        <section className="relative overflow-hidden rounded-[30px] border border-white/10 bg-[#111113]/95 p-5 sm:p-7 shadow-2xl shadow-black/20">
 
-                  </div>
+          <div className="absolute -right-28 -top-28 h-72 w-72 rounded-full bg-[#007aff]/[0.07] blur-3xl" />
 
-                  <ChevronRight
-                    className={`w-4 h-4 flex-shrink-0 transition-transform ${
-                      currentMin.id === min.id
-                        ? 'text-[#4da3ff] translate-x-0.5'
-                        : 'text-white/20 group-hover:text-white/50 group-hover:translate-x-0.5'
-                    }`}
-                  />
+          <div className="relative flex flex-col xl:flex-row xl:items-center xl:justify-between gap-7">
 
-                </div>
+            <div className="min-w-0">
 
-                <div className="mt-4 space-y-2">
+              <div className="mb-3 flex flex-wrap items-center gap-2">
 
-                  <div className="flex items-center gap-2 text-[11px] text-white/35">
-                    <Calendar className="w-3.5 h-3.5 text-[#4da3ff]" />
-                    {min.date || 'Date not set'}
-                  </div>
-
-                  {min.time && (
-                    <div className="flex items-center gap-2 text-[11px] text-white/35">
-                      <Clock className="w-3.5 h-3.5 text-[#4da3ff]" />
-                      {min.time}
-                    </div>
-                  )}
-
-                  {min.venue && (
-                    <div className="flex items-center gap-2 text-[11px] text-white/35 truncate">
-                      <MapPin className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-                      <span className="truncate">
-                        {min.venue}
-                      </span>
-                    </div>
-                  )}
-
-                </div>
-
-                <div className="mt-5 pt-4 border-t border-white/[0.07]">
-
-                  <div className="flex items-center justify-between">
-
-                    <span className="text-[9px] uppercase tracking-[0.14em] font-extrabold text-white/25">
-                      Setlist
-                    </span>
-
-                    <span className="text-xs font-extrabold text-white">
-                      {min.songs.length}{' '}
-                      <span className="text-white/25 font-medium">
-                        songs
-                      </span>
-                    </span>
-
-                  </div>
-
-                  <div className="mt-3 h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-[#007aff] transition-all"
-                      style={{
-                        width: `${percentage}%`
-                      }}
-                    />
-                  </div>
-
-                  <div className="flex justify-between mt-2">
-
-                    <span className="text-[9px] text-white/25">
-                      {percentage}% leads assigned
-                    </span>
-
-                    <span
-                      className={`text-[9px] font-bold ${
-                        ready
-                          ? 'text-emerald-400'
-                          : 'text-white/25'
-                      }`}
-                    >
-                      {ready
-                        ? 'Ready'
-                        : 'In preparation'}
-                    </span>
-
-                  </div>
-
-                </div>
-
-              </button>
-            );
-          })}
-
-        </div>
-
-      </section>
-
-      {/* =====================================================
-          WEEKLY LEARNING
-      ====================================================== */}
-
-      <section className="relative overflow-hidden rounded-[30px] border border-white/10 bg-[#111113]/95 p-5 sm:p-7 shadow-2xl shadow-black/20">
-
-        <div className="absolute -right-24 -top-24 w-72 h-72 rounded-full bg-purple-500/[0.06] blur-3xl pointer-events-none" />
-
-        <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-
-          <div className="flex items-start gap-4">
-
-            <div className="w-12 h-12 rounded-2xl border border-purple-500/20 bg-purple-500/10 flex items-center justify-center text-purple-300 flex-shrink-0">
-              <BookOpen className="w-5 h-5" />
-            </div>
-
-            <div>
-
-              <div className="flex items-center gap-2">
-
-                <span className="text-[9px] uppercase tracking-[0.18em] font-extrabold text-purple-300">
-                  Weekly Learning
+                <span className="rounded-full border border-[#007aff]/20 bg-[#007aff]/10 px-2.5 py-1.5 text-[9px] font-extrabold uppercase tracking-[0.16em] text-[#4da3ff]">
+                  {currentMin.status}
                 </span>
 
-                <Sparkles className="w-3.5 h-3.5 text-purple-300" />
+                {currentMin.theme && (
+                  <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1.5 text-[9px] font-extrabold uppercase tracking-[0.16em] text-amber-300">
+                    {currentMin.theme}
+                  </span>
+                )}
 
               </div>
 
-              <h2 className="text-xl font-extrabold text-white mt-1">
-                {weeklyLearning?.title ||
-                  'This Week\'s Learning'}
+              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+                {currentMin.name}
               </h2>
 
-              <p className="text-xs text-white/30 mt-1.5 max-w-xl">
-                {weeklyLearning?.description ||
-                  'Songs selected for members to learn, listen to and prepare throughout the week.'}
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/35">
+                {currentMin.description ||
+                  'No description has been added for this ministration.'}
               </p>
 
-              {weeklyLearning?.weekLabel && (
-                <p className="text-[10px] text-purple-300/70 font-bold mt-2">
-                  {weeklyLearning.weekLabel}
-                </p>
+              <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2.5 text-xs font-semibold text-white/35">
+
+                <MetaItem
+                  icon={
+                    <Calendar className="h-3.5 w-3.5" />
+                  }
+                  value={
+                    currentMin.date ||
+                    'Date not set'
+                  }
+                />
+
+                {currentMin.time && (
+                  <MetaItem
+                    icon={
+                      <Clock className="h-3.5 w-3.5" />
+                    }
+                    value={currentMin.time}
+                  />
+                )}
+
+                {currentMin.venue && (
+                  <MetaItem
+                    icon={
+                      <MapPin className="h-3.5 w-3.5 text-amber-400" />
+                    }
+                    value={currentMin.venue}
+                  />
+                )}
+
+              </div>
+
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+
+              {isMD && (
+                <button
+                  onClick={() =>
+                    setIsEditDetailsOpen(true)
+                  }
+                  className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-2.5 text-xs font-bold text-white transition-all hover:bg-white/[0.08]"
+                >
+                  <Pencil className="h-3.5 w-3.5 text-[#4da3ff]" />
+                  Edit Details
+                </button>
               )}
+
+              <button
+                onClick={openStageMode}
+                className="inline-flex items-center gap-2 rounded-2xl bg-[#007aff] px-4 py-2.5 text-xs font-bold text-white shadow-xl shadow-blue-500/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#0062cc]"
+              >
+                <Radio className="h-4 w-4" />
+                Stage Mode
+              </button>
+
+              <button
+                onClick={() =>
+                  window.print()
+                }
+                className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.035] px-3.5 py-2.5 text-xs font-bold text-white/45 transition-all hover:bg-white/[0.08] hover:text-white"
+              >
+                <Printer className="h-4 w-4" />
+                <span className="hidden sm:inline">
+                  Print
+                </span>
+              </button>
 
             </div>
 
           </div>
 
-          {isMD && (
-            <div className="flex flex-wrap gap-2">
+        </section>
 
+        {/* =================================================
+            DASHBOARD-STYLE STATS
+        ================================================= */}
+
+        <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+
+          <PreparationCard
+            icon={
+              <ListMusic className="h-5 w-5" />
+            }
+            label="Setlist"
+            value={String(
+              currentSongCount
+            ).padStart(2, '0')}
+            description="Songs prepared"
+            progress={
+              currentSongCount > 0
+                ? 100
+                : 0
+            }
+          />
+
+          <PreparationCard
+            icon={
+              <Mic2 className="h-5 w-5" />
+            }
+            label="Vocals"
+            value={`${assignedLeadsCount}/${currentSongCount}`}
+            description={
+              currentSongCount > 0
+                ? `${assignmentPercentage}% assigned`
+                : 'No assignments'
+            }
+            progress={
+              assignmentPercentage
+            }
+          />
+
+          <PreparationCard
+            icon={
+              <CheckCircle2 className="h-5 w-5" />
+            }
+            label="Readiness"
+            value={
+              isReady
+                ? '100%'
+                : `${assignmentPercentage}%`
+            }
+            description={
+              isReady
+                ? 'Ready for rehearsal'
+                : 'Still preparing'
+            }
+            progress={
+              assignmentPercentage
+            }
+          />
+
+          <PreparationCard
+            icon={
+              <Users className="h-5 w-5" />
+            }
+            label="Team"
+            value={String(
+              vocalMembers.length
+            ).padStart(2, '0')}
+            description="Vocal / director team"
+            progress={100}
+          />
+
+        </section>
+
+        {/* =================================================
+            SETLIST
+        ================================================= */}
+
+        <section className="rounded-[30px] border border-white/10 bg-[#111113]/95 p-4 sm:p-6 lg:p-7 shadow-2xl shadow-black/10">
+
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+
+            <div className="flex items-start gap-3">
+
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl border border-[#007aff]/20 bg-[#007aff]/10">
+                <ListMusic className="h-5 w-5 text-[#4da3ff]" />
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-extrabold">
+                    Performance Setlist
+                  </h3>
+
+                  <span className="rounded-full bg-white/[0.04] px-2 py-1 text-[8px] font-extrabold text-white/30">
+                    {currentSongCount}
+                  </span>
+                </div>
+
+                <p className="mt-1.5 text-xs text-white/25">
+                  Songs, vocal assignments,
+                  performance keys and transition
+                  cues for this service.
+                </p>
+              </div>
+
+            </div>
+
+            {isMD && (
               <button
                 onClick={() =>
-                  setIsWeeklySongModalOpen(
-                    true
-                  )
+                  setIsAddSongModalOpen(true)
                 }
-                className="px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.035] hover:bg-white/[0.07] text-white text-xs font-bold flex items-center gap-2"
+                className="group inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.035] px-4 py-2.5 text-xs font-bold transition-all hover:bg-white/[0.08]"
               >
-                <Plus className="w-3.5 h-3.5" />
-                Add Songs
+                <Plus className="h-4 w-4 text-[#4da3ff] transition-transform group-hover:rotate-90" />
+                Add Song
               </button>
+            )}
 
-              <button
-                onClick={openWeeklyEditor}
-                className="px-4 py-2.5 rounded-xl bg-purple-500 hover:bg-purple-400 text-white text-xs font-bold flex items-center gap-2"
-              >
-                <Pencil className="w-3.5 h-3.5" />
-                Edit Week
-              </button>
+          </div>
+
+          {currentSongs.length > 0 ? (
+            <div className="space-y-3">
+
+              {currentSongs.map(
+                ({ item, song }, index) => (
+                  <SetlistCard
+                    key={`${item.songId}-${index}`}
+                    item={item}
+                    song={song}
+                    index={index}
+                    isMD={isMD}
+                    expanded={
+                      expandedSongId ===
+                      song.id
+                    }
+                    leadMember={team.find(
+                      member =>
+                        member.id ===
+                        item.lead
+                    )}
+                    vocalMembers={
+                      vocalMembers
+                    }
+                    onToggle={() =>
+                      setExpandedSongId(
+                        expandedSongId ===
+                          song.id
+                          ? null
+                          : song.id
+                      )
+                    }
+                    onSelectSong={() =>
+                      onSelectSong(song)
+                    }
+                    onMoveUp={() =>
+                      handleMoveSong(
+                        index,
+                        'up'
+                      )
+                    }
+                    onMoveDown={() =>
+                      handleMoveSong(
+                        index,
+                        'down'
+                      )
+                    }
+                    onRemove={() =>
+                      handleRemoveSong(
+                        item.songId
+                      )
+                    }
+                    onAssignLead={memberId =>
+                      handleAssignLead(
+                        item.songId,
+                        memberId
+                      )
+                    }
+                    onChangeKey={key =>
+                      handleKeyOverride(
+                        item.songId,
+                        key
+                      )
+                    }
+                    onChangeNote={note =>
+                      handleNoteChange(
+                        item.songId,
+                        note
+                      )
+                    }
+                  />
+                )
+              )}
+
+            </div>
+          ) : (
+            <div className="rounded-[26px] border border-dashed border-white/10 bg-white/[0.015] py-16 text-center">
+
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03]">
+                <FileMusic className="h-6 w-6 text-white/20" />
+              </div>
+
+              <p className="text-sm font-bold">
+                No songs in this setlist
+              </p>
+
+              <p className="mt-1 text-xs text-white/25">
+                Build the performance repertoire
+                from the Song Bank.
+              </p>
+
+              {isMD && (
+                <button
+                  onClick={() =>
+                    setIsAddSongModalOpen(true)
+                  }
+                  className="mt-5 rounded-xl bg-[#007aff] px-4 py-2.5 text-xs font-bold text-white transition-all hover:bg-[#0062cc]"
+                >
+                  Add Songs
+                </button>
+              )}
 
             </div>
           )}
 
-        </div>
+        </section>
 
-        {/* WEEKLY SONGS */}
+        {/* =================================================
+            WEEKLY LEARNING
+        ================================================= */}
 
-        {weeklyLearning &&
-        weeklyLearning.songIds.length > 0 ? (
+        <section className="relative overflow-hidden rounded-[30px] border border-white/10 bg-[#111113]/95 p-5 sm:p-7 shadow-2xl shadow-black/10">
 
-          <div className="relative mt-6 space-y-3">
+          <div className="absolute -right-28 -top-28 h-80 w-80 rounded-full bg-[#007aff]/[0.045] blur-3xl" />
 
-            {weeklyLearning.songIds.map(
-              (songId, index) => {
+          <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
 
-                const song =
-                  songs.find(
-                    s => s.id === songId
-                  );
+            <div className="flex items-start gap-4">
 
-                if (!song) return null;
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl border border-[#007aff]/20 bg-[#007aff]/10">
+                <BookOpen className="h-5 w-5 text-[#4da3ff]" />
+              </div>
 
-                const audioUrl =
-                  getSongAudioUrl(song);
+              <div>
 
-                return (
+                <div className="flex items-center gap-2">
+
+                  <span className="text-[9px] font-extrabold uppercase tracking-[0.18em] text-[#4da3ff]">
+                    Weekly Learning
+                  </span>
+
+                  <Sparkles className="h-3.5 w-3.5 text-[#4da3ff]" />
+
+                </div>
+
+                <h2 className="mt-1 text-xl font-extrabold">
+                  {weeklyLearning?.title ||
+                    'This Week\'s Learning'}
+                </h2>
+
+                <p className="mt-1.5 max-w-xl text-xs leading-relaxed text-white/30">
+                  {weeklyLearning?.description ||
+                    'Songs selected for members to learn, listen to and prepare throughout the week.'}
+                </p>
+
+                {weeklyLearning?.weekLabel && (
+                  <p className="mt-2 text-[10px] font-bold text-[#4da3ff]/70">
+                    {weeklyLearning.weekLabel}
+                  </p>
+                )}
+
+              </div>
+
+            </div>
+
+            {isMD && (
+              <div className="flex flex-wrap gap-2">
+
+                <button
+                  onClick={() =>
+                    setIsWeeklySongModalOpen(
+                      true
+                    )
+                  }
+                  className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.035] px-4 py-2.5 text-xs font-bold transition-all hover:bg-white/[0.08]"
+                >
+                  <Plus className="h-3.5 w-3.5 text-[#4da3ff]" />
+                  Add Songs
+                </button>
+
+                <button
+                  onClick={openWeeklyEditor}
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#007aff] px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-blue-500/15 transition-all hover:bg-[#0062cc]"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Edit Week
+                </button>
+
+              </div>
+            )}
+
+          </div>
+
+          {weeklySongs.length > 0 ? (
+            <div className="relative mt-6 space-y-3">
+
+              {weeklySongs.map(
+                (song, index) => (
                   <WeeklySongCard
                     key={song.id}
                     song={song}
                     index={index}
-                    audioUrl={audioUrl}
+                    audioUrl={getSongAudioUrl(
+                      song
+                    )}
                     isMD={isMD}
                     onRemove={() =>
                       removeWeeklySong(
@@ -1226,718 +1450,173 @@ export const MinistrationsView: React.FC<
                       onSelectSong(song)
                     }
                   />
-                );
-              }
-            )}
-
-          </div>
-
-        ) : (
-
-          <div className="relative mt-6 py-12 text-center rounded-[24px] border border-dashed border-white/10 bg-white/[0.015]">
-
-            <Headphones className="w-8 h-8 text-white/15 mx-auto mb-3" />
-
-            <p className="text-sm font-bold text-white">
-              No weekly songs yet
-            </p>
-
-            <p className="text-xs text-white/25 mt-1">
-              {isMD
-                ? 'Add songs from the Song Bank for members to learn this week.'
-                : 'The Music Director has not published this week\'s songs yet.'}
-            </p>
-
-            {isMD && (
-              <button
-                onClick={() =>
-                  setIsWeeklySongModalOpen(
-                    true
-                  )
-                }
-                className="mt-5 px-4 py-2.5 rounded-xl bg-purple-500 hover:bg-purple-400 text-white text-xs font-bold inline-flex items-center gap-2"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Add Weekly Songs
-              </button>
-            )}
-
-          </div>
-
-        )}
-
-      </section>
-
-      {/* =====================================================
-          CURRENT MINISTRATION HEADER
-      ====================================================== */}
-
-      <section className="rounded-[30px] border border-white/10 bg-[#111113]/95 p-5 sm:p-7 shadow-2xl shadow-black/20">
-
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
-
-          <div className="min-w-0">
-
-            <div className="flex flex-wrap items-center gap-2 mb-3">
-
-              <span className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-[#4da3ff] bg-[#007aff]/10 border border-[#007aff]/20 px-2.5 py-1.5 rounded-full">
-                {currentMin.status}
-              </span>
-
-              {currentMin.theme && (
-                <span className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1.5 rounded-full">
-                  {currentMin.theme}
-                </span>
+                )
               )}
 
             </div>
-
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              {currentMin.name}
-            </h2>
-
-            <p className="text-sm text-white/35 mt-2 max-w-2xl">
-              {currentMin.description ||
-                'No description has been added for this ministration.'}
-            </p>
-
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2.5 mt-4 text-xs text-white/35 font-semibold">
-
-              <div className="flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-[#4da3ff]" />
-                {currentMin.date ||
-                  'Date not set'}
-              </div>
-
-              {currentMin.time && (
-                <div className="flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-[#4da3ff]" />
-                  {currentMin.time}
-                </div>
-              )}
-
-              {currentMin.venue && (
-                <div className="flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-amber-400" />
-                  {currentMin.venue}
-                </div>
-              )}
-
-            </div>
-
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
-
-            {isMD && (
-              <button
-                onClick={() =>
-                  setIsEditDetailsOpen(
-                    true
-                  )
-                }
-                className="px-4 py-2.5 rounded-2xl border border-white/10 bg-white/[0.035] hover:bg-white/[0.08] text-white text-xs font-bold flex items-center gap-2"
-              >
-                <Pencil className="w-3.5 h-3.5 text-[#4da3ff]" />
-                Edit Details
-              </button>
-            )}
-
-            <button
-              onClick={openStageMode}
-              className="px-4 py-2.5 rounded-2xl bg-[#007aff] hover:bg-[#0062cc] text-white text-xs font-bold flex items-center gap-2 shadow-xl shadow-blue-500/20"
-            >
-              <Radio className="w-4 h-4" />
-              Stage Mode
-            </button>
-
-            <button
-              onClick={handlePrint}
-              className="px-3.5 py-2.5 rounded-2xl border border-white/10 bg-white/[0.035] hover:bg-white/[0.08] text-white/50 hover:text-white text-xs font-bold flex items-center gap-2"
-            >
-              <Printer className="w-4 h-4" />
-              <span className="hidden sm:inline">
-                Print
-              </span>
-            </button>
-
-          </div>
-
-        </div>
-
-      </section>
-
-      {/* =====================================================
-          PREPARATION STATS
-      ====================================================== */}
-
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-
-        <PreparationCard
-          icon={
-            <ListMusic className="w-5 h-5" />
-          }
-          label="Setlist"
-          value={String(currentSongCount).padStart(2, '0')}
-          description="Songs prepared"
-          progress={
-            currentSongCount > 0
-              ? 100
-              : 0
-          }
-        />
-
-        <PreparationCard
-          icon={
-            <Mic2 className="w-5 h-5" />
-          }
-          label="Lead Assignments"
-          value={`${assignedLeadsCount}/${currentSongCount}`}
-          description={
-            currentSongCount > 0
-              ? `${assignmentPercentage}% complete`
-              : 'No songs assigned'
-          }
-          progress={
-            assignmentPercentage
-          }
-        />
-
-        <PreparationCard
-          icon={
-            <CheckCircle2 className="w-5 h-5" />
-          }
-          label="Preparation"
-          value={
-            currentSongCount > 0 &&
-            assignmentPercentage === 100
-              ? 'READY'
-              : 'IN PROGRESS'
-          }
-          description={
-            currentSongCount > 0 &&
-            assignmentPercentage === 100
-              ? 'Setlist ready for rehearsal'
-              : 'Complete remaining assignments'
-          }
-          progress={
-            assignmentPercentage
-          }
-        />
-
-      </section>
-
-      {/* =====================================================
-          SETLIST
-      ====================================================== */}
-
-      <section className="rounded-[30px] border border-white/10 bg-[#111113]/95 p-4 sm:p-6 lg:p-7">
-
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-
-          <div>
-
-            <div className="flex items-center gap-2">
-
-              <div className="w-8 h-8 rounded-xl bg-[#007aff]/10 border border-[#007aff]/20 flex items-center justify-center">
-                <Music2 className="w-4 h-4 text-[#4da3ff]" />
-              </div>
-
-              <h3 className="text-lg font-extrabold text-white">
-                Setlist
-              </h3>
-
-            </div>
-
-            <p className="text-xs text-white/25 mt-2">
-              Arrange songs, assign vocalists,
-              set performance keys and prepare
-              transitions.
-            </p>
-
-          </div>
-
-          {isMD && (
-            <button
-              onClick={() =>
-                setIsAddSongModalOpen(
-                  true
-                )
-              }
-              className="px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.035] hover:bg-white/[0.08] text-white text-xs font-bold flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4 text-[#4da3ff]" />
-              Add Song
-            </button>
-          )}
-
-        </div>
-
-        {currentMin.songs.length > 0 ? (
-
-          <div className="space-y-3">
-
-            {currentMin.songs.map(
-              (item, index) => {
-
-                const song =
-                  songs.find(
-                    s =>
-                      s.id ===
-                      item.songId
-                  );
-
-                const leadMember =
-                  team.find(
-                    m =>
-                      m.id ===
-                      item.lead
-                  );
-
-                if (!song) return null;
-
-                const effectiveKey =
-                  item.keyOverride ||
-                  song.key;
-
-                return (
-                  <article
-                    key={`${item.songId}-${index}`}
-                    className="rounded-[24px] border border-white/10 bg-white/[0.025] hover:bg-white/[0.04] p-4 sm:p-5 transition-all"
-                  >
-
-                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-
-                      <div className="flex items-center gap-3 min-w-0">
-
-                        <div className="flex items-center gap-1">
-
-                          <span className="w-9 h-9 rounded-xl bg-[#007aff]/10 border border-[#007aff]/20 text-[#4da3ff] text-[10px] font-extrabold flex items-center justify-center">
-                            {String(
-                              index + 1
-                            ).padStart(
-                              2,
-                              '0'
-                            )}
-                          </span>
-
-                          {isMD && (
-                            <div className="flex flex-col">
-
-                              <button
-                                onClick={() =>
-                                  handleMoveSong(
-                                    index,
-                                    'up'
-                                  )
-                                }
-                                disabled={
-                                  index ===
-                                  0
-                                }
-                                className="text-white/20 hover:text-[#4da3ff] disabled:opacity-10"
-                              >
-                                <ArrowUp className="w-3 h-3" />
-                              </button>
-
-                              <button
-                                onClick={() =>
-                                  handleMoveSong(
-                                    index,
-                                    'down'
-                                  )
-                                }
-                                disabled={
-                                  index ===
-                                  currentMin
-                                    .songs
-                                    .length -
-                                    1
-                                }
-                                className="text-white/20 hover:text-[#4da3ff] disabled:opacity-10"
-                              >
-                                <ArrowDown className="w-3 h-3" />
-                              </button>
-
-                            </div>
-                          )}
-
-                        </div>
-
-                        <div className="min-w-0">
-
-                          <div className="flex flex-wrap items-center gap-2">
-
-                            <button
-                              onClick={() =>
-                                onSelectSong(
-                                  song
-                                )
-                              }
-                              className="text-sm sm:text-base font-bold text-white hover:text-[#4da3ff] truncate text-left"
-                            >
-                              {song.title}
-                            </button>
-
-                            <span className="text-[8px] uppercase tracking-[0.12em] font-extrabold text-[#4da3ff] bg-[#007aff]/10 border border-[#007aff]/20 px-2 py-1 rounded-lg">
-                              {song.category}
-                            </span>
-
-                          </div>
-
-                          <p className="text-[10px] text-white/25 mt-1">
-                            {song.artist} •{' '}
-                            {song.tempo}
-                          </p>
-
-                        </div>
-
-                      </div>
-
-                      <div className="flex items-center gap-2">
-
-                        <button
-                          onClick={() =>
-                            onSelectSong(
-                              song
-                            )
-                          }
-                          className="px-3 py-2 rounded-xl border border-white/10 bg-white/[0.025] hover:bg-white/[0.07] text-[#4da3ff] text-[10px] font-bold"
-                        >
-                          View Arrangement
-                        </button>
-
-                        {isMD && (
-                          <button
-                            onClick={() =>
-                              handleRemoveSong(
-                                item.songId
-                              )
-                            }
-                            className="w-9 h-9 rounded-xl border border-white/10 text-white/25 hover:text-red-300 hover:bg-red-500/10 flex items-center justify-center"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
-
-                      </div>
-
-                    </div>
-
-                    <div className="mt-4 p-3.5 rounded-2xl bg-black/25 border border-white/[0.06] grid grid-cols-1 md:grid-cols-12 gap-4">
-
-                      <div className="md:col-span-5">
-
-                        <label className="text-[8px] uppercase tracking-[0.16em] font-extrabold text-amber-300">
-                          Lead Vocalist
-                        </label>
-
-                        {isMD ? (
-                          <select
-                            value={
-                              item.lead ||
-                              ''
-                            }
-                            onChange={e =>
-                              handleAssignLead(
-                                item.songId,
-                                e.target
-                                  .value
-                                  ? Number(
-                                      e
-                                        .target
-                                        .value
-                                    )
-                                  : null
-                              )
-                            }
-                            className="mt-2 w-full bg-[#1a1a1d] border border-white/10 rounded-xl px-3 py-2.5 text-xs font-bold text-white outline-none"
-                          >
-
-                            <option value="">
-                              -- Not Assigned --
-                            </option>
-
-                            {vocalMembers.map(
-                              vm => (
-                                <option
-                                  key={
-                                    vm.id
-                                  }
-                                  value={
-                                    vm.id
-                                  }
-                                >
-                                  {
-                                    vm.name
-                                  }{' '}
-                                  (
-                                  {vm.voicePart ||
-                                    vm.role}
-                                  )
-                                </option>
-                              )
-                            )}
-
-                          </select>
-                        ) : (
-                          <p className="text-xs font-bold text-white mt-2">
-                            {leadMember?.name ||
-                              'Pending MD Assignment'}
-                          </p>
-                        )}
-
-                      </div>
-
-                      <div className="md:col-span-3">
-
-                        <label className="text-[8px] uppercase tracking-[0.16em] font-extrabold text-[#4da3ff]">
-                          Performance Key
-                        </label>
-
-                        {isMD ? (
-                          <select
-                            value={
-                              effectiveKey
-                            }
-                            onChange={e =>
-                              handleKeyOverride(
-                                item.songId,
-                                e.target
-                                  .value
-                              )
-                            }
-                            className="mt-2 w-full bg-[#1a1a1d] border border-white/10 rounded-xl px-3 py-2.5 text-xs font-bold text-[#4da3ff] outline-none"
-                          >
-                            {CHROMATIC_KEYS.map(
-                              k => (
-                                <option
-                                  key={k}
-                                  value={k}
-                                >
-                                  {k}{' '}
-                                  Major
-                                </option>
-                              )
-                            )}
-                          </select>
-                        ) : (
-                          <p className="text-xs font-extrabold text-[#4da3ff] mt-2">
-                            Key of{' '}
-                            {
-                              effectiveKey
-                            }
-                          </p>
-                        )}
-
-                      </div>
-
-                      <div className="md:col-span-4">
-
-                        <label className="text-[8px] uppercase tracking-[0.16em] font-extrabold text-white/25">
-                          Transition Cue
-                        </label>
-
-                        {isMD ? (
-                          <input
-                            value={
-                              item.orderNote ||
-                              ''
-                            }
-                            onChange={e =>
-                              handleNoteChange(
-                                item.songId,
-                                e.target
-                                  .value
-                              )
-                            }
-                            placeholder="Transition instruction..."
-                            className="mt-2 w-full bg-[#1a1a1d] border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white outline-none"
-                          />
-                        ) : (
-                          <p className="text-xs text-white/35 mt-2">
-                            {item.orderNote ||
-                              'Standard transition.'}
-                          </p>
-                        )}
-
-                      </div>
-
-                    </div>
-
-                  </article>
-                );
-              }
-            )}
-
-          </div>
-
-        ) : (
-
-          <div className="py-16 text-center border border-dashed border-white/10 rounded-[26px]">
-
-            <Music2 className="w-8 h-8 text-white/15 mx-auto mb-3" />
-
-            <p className="text-sm font-bold text-white">
-              No songs in this setlist
-            </p>
-
-            <p className="text-xs text-white/25 mt-1">
-              Build the performance repertoire
-              from the Song Bank.
-            </p>
-
-            {isMD && (
-              <button
-                onClick={() =>
-                  setIsAddSongModalOpen(
-                    true
-                  )
-                }
-                className="mt-5 px-4 py-2.5 rounded-xl bg-[#007aff] text-white text-xs font-bold"
-              >
-                Add Songs
-              </button>
-            )}
-
-          </div>
-
-        )}
-
-      </section>
-
-      {/* =====================================================
-          MINISTRY BRIEF
-      ====================================================== */}
-
-      <section className="relative overflow-hidden rounded-[30px] border border-amber-500/15 bg-amber-500/[0.045] p-5 sm:p-7">
-
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-
-          <div className="flex items-start gap-4">
-
-            <div className="w-11 h-11 rounded-2xl border border-amber-500/20 bg-amber-500/10 flex items-center justify-center text-amber-300">
-              <Edit3 className="w-5 h-5" />
-            </div>
-
-            <div>
-
-              <span className="text-[9px] uppercase tracking-[0.18em] font-extrabold text-amber-300">
-                Ministry Brief
-              </span>
-
-              <h3 className="text-lg font-extrabold text-white mt-1">
-                Instructions for this ministration
-              </h3>
-
-            </div>
-
-          </div>
-
-          {isMD && (
-            <button
-              onClick={() =>
-                setIsEditingBrief(
-                  !isEditingBrief
-                )
-              }
-              className="px-3.5 py-2 rounded-xl border border-amber-500/20 bg-amber-500/10 text-amber-300 text-[10px] font-bold"
-            >
-              {isEditingBrief
-                ? 'Done'
-                : 'Edit Brief'}
-            </button>
-          )}
-
-        </div>
-
-        <div className="mt-5">
-
-          {isEditingBrief &&
-          isMD ? (
-            <textarea
-              rows={5}
-              value={
-                currentMin.mdGlobalNotes ||
-                ''
-              }
-              onChange={e =>
-                updateCurrentMinField(
-                  'mdGlobalNotes',
-                  e.target.value
-                )
-              }
-              placeholder="Arrival time, dress code, sound check, instruments, prayer, special instructions..."
-              className="w-full bg-black/25 border border-amber-500/20 rounded-2xl p-4 text-sm text-white placeholder:text-white/20 outline-none"
-            />
           ) : (
+            <div className="relative mt-6 rounded-[24px] border border-dashed border-white/10 bg-white/[0.015] py-12 text-center">
 
-            <div className="grid grid-cols-1 lg:grid-cols-[180px_1fr] gap-5">
+              <Headphones className="mx-auto mb-3 h-8 w-8 text-white/15" />
 
-              <div className="space-y-3">
+              <p className="text-sm font-bold">
+                No weekly songs yet
+              </p>
 
-                <BriefItem
-                  label="Arrival"
-                  value="As instructed by MD"
-                />
+              <p className="mt-1 text-xs text-white/25">
+                {isMD
+                  ? 'Add songs from the Song Bank for members to learn this week.'
+                  : 'The Music Director has not published this week\'s songs yet.'}
+              </p>
 
-                <BriefItem
-                  label="Dress"
-                  value="Ministry standard"
-                />
+              {isMD && (
+                <button
+                  onClick={() =>
+                    setIsWeeklySongModalOpen(
+                      true
+                    )
+                  }
+                  className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#007aff] px-4 py-2.5 text-xs font-bold text-white transition-all hover:bg-[#0062cc]"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add Weekly Songs
+                </button>
+              )}
 
+            </div>
+          )}
+
+        </section>
+
+        {/* =================================================
+            MINISTRY BRIEF
+        ================================================= */}
+
+        <section className="relative overflow-hidden rounded-[30px] border border-amber-500/15 bg-[#111113]/95 p-5 sm:p-7">
+
+          <div className="absolute -right-20 -bottom-28 h-72 w-72 rounded-full bg-amber-500/[0.035] blur-3xl" />
+
+          <div className="relative flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+
+            <div className="flex items-start gap-4">
+
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-500/20 bg-amber-500/10 text-amber-300">
+                <Edit3 className="h-5 w-5" />
               </div>
 
-              <div className="rounded-2xl border border-amber-500/10 bg-black/20 p-4">
+              <div>
 
-                <p className="text-[8px] uppercase tracking-[0.16em] font-extrabold text-amber-300/50 mb-2">
-                  Important Instructions
-                </p>
+                <span className="text-[9px] font-extrabold uppercase tracking-[0.18em] text-amber-300">
+                  Ministry Brief
+                </span>
 
-                <p className="text-sm text-amber-100/55 leading-relaxed whitespace-pre-wrap">
-                  {currentMin.mdGlobalNotes ||
-                    'No special instructions have been added for this ministration yet.'}
-                </p>
+                <h3 className="mt-1 text-lg font-extrabold">
+                  Instructions for this ministration
+                </h3>
 
               </div>
 
             </div>
 
-          )}
+            {isMD && (
+              <button
+                onClick={() =>
+                  setIsEditingBrief(
+                    !isEditingBrief
+                  )
+                }
+                className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3.5 py-2 text-[10px] font-bold text-amber-300 transition-all hover:bg-amber-500/15"
+              >
+                {isEditingBrief
+                  ? 'Done'
+                  : 'Edit Brief'}
+              </button>
+            )}
 
-        </div>
+          </div>
 
-      </section>
+          <div className="relative mt-5">
 
-      {/* =====================================================
-          FOOTER
-      ====================================================== */}
+            {isEditingBrief && isMD ? (
+              <textarea
+                rows={5}
+                value={
+                  currentMin.mdGlobalNotes ||
+                  ''
+                }
+                onChange={e =>
+                  updateCurrentMinField(
+                    'mdGlobalNotes',
+                    e.target.value
+                  )
+                }
+                placeholder="Arrival time, dress code, sound check, instruments, prayer, special instructions..."
+                className="w-full resize-none rounded-2xl border border-amber-500/20 bg-black/25 p-4 text-sm text-white outline-none placeholder:text-white/20 focus:border-amber-400/40"
+              />
+            ) : (
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-[190px_1fr]">
 
-      <footer className="pt-5 pb-8 border-t border-white/[0.06] text-center">
+                <div className="space-y-3">
 
-        <div className="flex items-center justify-center gap-2">
+                  <BriefItem
+                    label="Arrival"
+                    value="As instructed by MD"
+                  />
 
-          <Music2 className="w-3.5 h-3.5 text-[#4da3ff]" />
+                  <BriefItem
+                    label="Dress"
+                    value="Ministry standard"
+                  />
 
-          <span className="text-[10px] font-extrabold tracking-[0.18em] text-white/30 uppercase">
-            Jewels Music Hub
-          </span>
+                </div>
 
-        </div>
+                <div className="rounded-2xl border border-amber-500/10 bg-black/20 p-4">
 
-        <p className="text-[9px] text-white/15 mt-2 tracking-[0.12em]">
-          MUSIC • EXCELLENCE • SERVICE
-        </p>
+                  <p className="mb-2 text-[8px] font-extrabold uppercase tracking-[0.16em] text-amber-300/50">
+                    Important Instructions
+                  </p>
 
-        <p className="text-[9px] text-white/15 mt-1">
-          Jewels Music Ministry Portal
-        </p>
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-amber-100/55">
+                    {currentMin.mdGlobalNotes ||
+                      'No special instructions have been added for this ministration yet.'}
+                  </p>
 
-      </footer>
+                </div>
 
-      {/* =====================================================
+              </div>
+            )}
+
+          </div>
+
+        </section>
+
+        {/* =================================================
+            FOOTER
+        ================================================= */}
+
+        <footer className="border-t border-white/[0.06] pb-8 pt-5 text-center">
+
+          <div className="flex items-center justify-center gap-2">
+
+            <Music2 className="h-3.5 w-3.5 text-[#4da3ff]" />
+
+            <span className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-white/30">
+              Jewels Music Hub
+            </span>
+
+          </div>
+
+          <p className="mt-2 text-[9px] tracking-[0.12em] text-white/15">
+            MUSIC • EXCELLENCE • SERVICE
+          </p>
+
+        </footer>
+
+      </div>
+
+      {/* =================================================
           MODALS
-      ====================================================== */}
+      ================================================= */}
 
       {isCreateModalOpen &&
         renderCreateModal()}
@@ -1958,9 +1637,9 @@ export const MinistrationsView: React.FC<
     </div>
   );
 
-  /* =========================================================
+  /* =======================================================
      CREATE MODAL
-  ========================================================= */
+  ======================================================= */
 
   function renderCreateModal() {
     return (
@@ -1969,19 +1648,18 @@ export const MinistrationsView: React.FC<
           setIsCreateModalOpen(false)
         }
       >
-
         <ModalHeader
-          eyebrow="New Ministry Event"
+          eyebrow="Ministry Calendar"
           title="Create Ministration"
           icon={
-            <CalendarPlus className="w-4 h-4" />
+            <CalendarPlus className="h-4 w-4" />
           }
           onClose={() =>
             setIsCreateModalOpen(false)
           }
         />
 
-        <div className="p-5 space-y-4 overflow-y-auto">
+        <div className="space-y-4 overflow-y-auto p-5">
 
           <FormField
             label="Ministration Name"
@@ -1997,11 +1675,10 @@ export const MinistrationsView: React.FC<
             placeholder="Describe the ministration..."
           />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
 
             <FormField
               label="Date"
-              type="text"
               value={newDate}
               onChange={setNewDate}
               placeholder="Sunday, 4th October 2026"
@@ -2023,7 +1700,7 @@ export const MinistrationsView: React.FC<
             placeholder="Main Worship Auditorium"
           />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
 
             <FormField
               label="Theme"
@@ -2034,7 +1711,7 @@ export const MinistrationsView: React.FC<
 
             <div>
 
-              <label className="text-[9px] uppercase tracking-[0.15em] font-extrabold text-white/30">
+              <label className="text-[9px] font-extrabold uppercase tracking-[0.15em] text-white/30">
                 Status
               </label>
 
@@ -2045,7 +1722,7 @@ export const MinistrationsView: React.FC<
                     e.target.value
                   )
                 }
-                className="mt-2 w-full bg-[#1a1a1d] border border-white/10 rounded-xl px-3 py-3 text-xs font-bold text-white outline-none"
+                className="mt-2 w-full rounded-xl border border-white/10 bg-[#1a1a1d] px-3 py-3 text-xs font-bold text-white outline-none transition-colors focus:border-[#007aff]/40"
               >
                 <option>
                   Upcoming
@@ -2076,14 +1753,13 @@ export const MinistrationsView: React.FC<
           }
           saveText="Create Ministration"
         />
-
       </ModalShell>
     );
   }
 
-  /* =========================================================
-     EDIT DETAILS MODAL
-  ========================================================= */
+  /* =======================================================
+     EDIT DETAILS
+  ======================================================= */
 
   function renderEditDetailsModal() {
     if (!currentMin) return null;
@@ -2094,25 +1770,22 @@ export const MinistrationsView: React.FC<
           setIsEditDetailsOpen(false)
         }
       >
-
         <ModalHeader
           eyebrow="Ministration Settings"
           title="Edit Event Details"
           icon={
-            <Settings2 className="w-4 h-4" />
+            <Settings2 className="h-4 w-4" />
           }
           onClose={() =>
             setIsEditDetailsOpen(false)
           }
         />
 
-        <div className="p-5 space-y-4 overflow-y-auto">
+        <div className="space-y-4 overflow-y-auto p-5">
 
           <FormField
             label="Ministration Name"
-            value={
-              currentMin.name
-            }
+            value={currentMin.name}
             onChange={value =>
               updateCurrentMinField(
                 'name',
@@ -2135,13 +1808,12 @@ export const MinistrationsView: React.FC<
             }
           />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
 
             <FormField
               label="Date"
               value={
-                currentMin.date ||
-                ''
+                currentMin.date || ''
               }
               onChange={value =>
                 updateCurrentMinField(
@@ -2154,8 +1826,7 @@ export const MinistrationsView: React.FC<
             <FormField
               label="Time"
               value={
-                currentMin.time ||
-                ''
+                currentMin.time || ''
               }
               onChange={value =>
                 updateCurrentMinField(
@@ -2170,8 +1841,7 @@ export const MinistrationsView: React.FC<
           <FormField
             label="Venue"
             value={
-              currentMin.venue ||
-              ''
+              currentMin.venue || ''
             }
             onChange={value =>
               updateCurrentMinField(
@@ -2181,13 +1851,12 @@ export const MinistrationsView: React.FC<
             }
           />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
 
             <FormField
               label="Theme"
               value={
-                currentMin.theme ||
-                ''
+                currentMin.theme || ''
               }
               onChange={value =>
                 updateCurrentMinField(
@@ -2199,21 +1868,19 @@ export const MinistrationsView: React.FC<
 
             <div>
 
-              <label className="text-[9px] uppercase tracking-[0.15em] font-extrabold text-white/30">
+              <label className="text-[9px] font-extrabold uppercase tracking-[0.15em] text-white/30">
                 Status
               </label>
 
               <select
-                value={
-                  currentMin.status
-                }
+                value={currentMin.status}
                 onChange={e =>
                   updateCurrentMinField(
                     'status',
                     e.target.value
                   )
                 }
-                className="mt-2 w-full bg-[#1a1a1d] border border-white/10 rounded-xl px-3 py-3 text-xs font-bold text-white outline-none"
+                className="mt-2 w-full rounded-xl border border-white/10 bg-[#1a1a1d] px-3 py-3 text-xs font-bold text-white outline-none focus:border-[#007aff]/40"
               >
                 <option>
                   Upcoming
@@ -2244,14 +1911,13 @@ export const MinistrationsView: React.FC<
           }
           saveText="Save Changes"
         />
-
       </ModalShell>
     );
   }
 
-  /* =========================================================
-     ADD SONG MODAL
-  ========================================================= */
+  /* =======================================================
+     ADD SONG
+  ======================================================= */
 
   function renderAddSongModal() {
     return (
@@ -2260,50 +1926,56 @@ export const MinistrationsView: React.FC<
           setIsAddSongModalOpen(false)
         }
       >
-
         <ModalHeader
           eyebrow="Song Bank"
           title="Add Song to Setlist"
           icon={
-            <Music2 className="w-4 h-4" />
+            <Music2 className="h-4 w-4" />
           }
           onClose={() =>
             setIsAddSongModalOpen(false)
           }
         />
 
-        <div className="p-4 overflow-y-auto max-h-[65vh] space-y-2">
+        <div className="max-h-[70vh] space-y-2 overflow-y-auto p-4">
 
           {songs.map(song => {
 
             const exists =
               currentMin?.songs.some(
                 item =>
-                  item.songId ===
-                  song.id
+                  item.songId === song.id
               );
 
             return (
               <div
                 key={song.id}
-                className={`p-3.5 rounded-2xl border flex items-center justify-between gap-3 ${
+                className={`group flex items-center justify-between gap-3 rounded-2xl border p-3.5 transition-all ${
                   exists
-                    ? 'opacity-40 border-white/[0.05] bg-white/[0.01]'
-                    : 'border-white/10 bg-white/[0.025] hover:bg-white/[0.05]'
+                    ? 'border-white/[0.05] bg-white/[0.01] opacity-40'
+                    : 'border-white/10 bg-white/[0.025] hover:-translate-y-0.5 hover:bg-white/[0.05]'
                 }`}
               >
 
-                <div className="min-w-0">
+                <div className="flex min-w-0 items-center gap-3">
 
-                  <p className="text-xs font-bold text-white truncate">
-                    {song.title}
-                  </p>
+                  <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-[#007aff]/15 bg-[#007aff]/10">
+                    <Music2 className="h-4 w-4 text-[#4da3ff]" />
+                  </div>
 
-                  <p className="text-[10px] text-white/25 mt-1 truncate">
-                    {song.artist} • Key:{' '}
-                    {song.key} •{' '}
-                    {song.category}
-                  </p>
+                  <div className="min-w-0">
+
+                    <p className="truncate text-xs font-bold">
+                      {song.title}
+                    </p>
+
+                    <p className="mt-1 truncate text-[10px] text-white/25">
+                      {song.artist} • Key:{' '}
+                      {song.key} •{' '}
+                      {song.category}
+                    </p>
+
+                  </div>
 
                 </div>
 
@@ -2314,10 +1986,10 @@ export const MinistrationsView: React.FC<
                       song.id
                     )
                   }
-                  className={`px-3 py-2 rounded-xl text-[10px] font-bold ${
+                  className={`flex-shrink-0 rounded-xl px-3 py-2 text-[10px] font-bold transition-all ${
                     exists
                       ? 'bg-white/[0.04] text-white/20'
-                      : 'bg-[#007aff] text-white'
+                      : 'bg-[#007aff] text-white hover:bg-[#0062cc]'
                   }`}
                 >
                   {exists
@@ -2330,14 +2002,13 @@ export const MinistrationsView: React.FC<
           })}
 
         </div>
-
       </ModalShell>
     );
   }
 
-  /* =========================================================
+  /* =======================================================
      WEEKLY EDITOR
-  ========================================================= */
+  ======================================================= */
 
   function renderWeeklyEditorModal() {
     return (
@@ -2346,19 +2017,18 @@ export const MinistrationsView: React.FC<
           setIsWeeklyEditorOpen(false)
         }
       >
-
         <ModalHeader
           eyebrow="Weekly Learning"
           title="Configure This Week"
           icon={
-            <BookOpen className="w-4 h-4" />
+            <BookOpen className="h-4 w-4" />
           }
           onClose={() =>
             setIsWeeklyEditorOpen(false)
           }
         />
 
-        <div className="p-5 space-y-4">
+        <div className="space-y-4 p-5">
 
           <FormField
             label="Title"
@@ -2383,18 +2053,22 @@ export const MinistrationsView: React.FC<
 
         </div>
 
-        <div className="p-5 border-t border-white/[0.07] flex justify-between gap-2">
+        <div className="flex justify-between gap-2 border-t border-white/[0.07] p-5">
 
-          {weeklyLearning && (
+          {weeklyLearning ? (
             <button
-              onClick={clearWeeklyLearning}
-              className="px-3 py-2.5 rounded-xl text-xs font-bold text-red-300 hover:bg-red-500/10"
+              onClick={
+                clearWeeklyLearning
+              }
+              className="rounded-xl px-3 py-2.5 text-xs font-bold text-red-300 transition-all hover:bg-red-500/10"
             >
               Remove Week
             </button>
+          ) : (
+            <div />
           )}
 
-          <div className="flex gap-2 ml-auto">
+          <div className="ml-auto flex gap-2">
 
             <button
               onClick={() =>
@@ -2402,7 +2076,7 @@ export const MinistrationsView: React.FC<
                   false
                 )
               }
-              className="px-4 py-2.5 rounded-xl border border-white/10 text-white/50 text-xs font-bold"
+              className="rounded-xl border border-white/10 px-4 py-2.5 text-xs font-bold text-white/45 transition-all hover:text-white"
             >
               Cancel
             </button>
@@ -2411,28 +2085,26 @@ export const MinistrationsView: React.FC<
               onClick={
                 saveWeeklyDetails
               }
-              className="px-4 py-2.5 rounded-xl bg-purple-500 hover:bg-purple-400 text-white text-xs font-bold flex items-center gap-2"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#007aff] px-4 py-2.5 text-xs font-bold text-white transition-all hover:bg-[#0062cc]"
             >
-              <Save className="w-3.5 h-3.5" />
+              <Save className="h-3.5 w-3.5" />
               Save Week
             </button>
 
           </div>
 
         </div>
-
       </ModalShell>
     );
   }
 
-  /* =========================================================
+  /* =======================================================
      WEEKLY SONG MODAL
-  ========================================================= */
+  ======================================================= */
 
   function renderWeeklySongModal() {
     const weeklyIds =
-      weeklyLearning?.songIds ||
-      [];
+      weeklyLearning?.songIds || [];
 
     return (
       <ModalShell
@@ -2442,12 +2114,11 @@ export const MinistrationsView: React.FC<
           )
         }
       >
-
         <ModalHeader
           eyebrow="Weekly Learning"
           title="Select Songs"
           icon={
-            <Headphones className="w-4 h-4" />
+            <Headphones className="h-4 w-4" />
           }
           onClose={() =>
             setIsWeeklySongModalOpen(
@@ -2456,7 +2127,7 @@ export const MinistrationsView: React.FC<
           }
         />
 
-        <div className="p-4 max-h-[70vh] overflow-y-auto space-y-2">
+        <div className="max-h-[70vh] space-y-2 overflow-y-auto p-4">
 
           {songs.map(song => {
 
@@ -2471,30 +2142,30 @@ export const MinistrationsView: React.FC<
             return (
               <div
                 key={song.id}
-                className={`p-3.5 rounded-2xl border flex items-center gap-3 ${
+                className={`flex items-center gap-3 rounded-2xl border p-3.5 transition-all ${
                   added
-                    ? 'border-purple-500/20 bg-purple-500/[0.05]'
-                    : 'border-white/10 bg-white/[0.025]'
+                    ? 'border-[#007aff]/20 bg-[#007aff]/[0.05]'
+                    : 'border-white/10 bg-white/[0.025] hover:bg-white/[0.05]'
                 }`}
               >
 
-                <div className="w-9 h-9 rounded-xl bg-white/[0.04] flex items-center justify-center text-white/30">
-                  <Music2 className="w-4 h-4" />
+                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-white/30">
+                  <Music2 className="h-4 w-4" />
                 </div>
 
                 <div className="min-w-0 flex-1">
 
-                  <p className="text-xs font-bold text-white truncate">
+                  <p className="truncate text-xs font-bold">
                     {song.title}
                   </p>
 
-                  <p className="text-[10px] text-white/25 mt-1 truncate">
-                    {song.artist} •{' '}
-                    Key {song.key}
+                  <p className="mt-1 truncate text-[10px] text-white/25">
+                    {song.artist} • Key{' '}
+                    {song.key}
                   </p>
 
                   {audio && (
-                    <span className="text-[8px] text-emerald-400 font-bold">
+                    <span className="text-[8px] font-bold text-emerald-400">
                       AUDIO AVAILABLE
                     </span>
                   )}
@@ -2511,10 +2182,10 @@ export const MinistrationsView: React.FC<
                           song.id
                         )
                   }
-                  className={`px-3 py-2 rounded-xl text-[10px] font-bold ${
+                  className={`flex-shrink-0 rounded-xl px-3 py-2 text-[10px] font-bold transition-all ${
                     added
-                      ? 'bg-purple-500/10 text-purple-300'
-                      : 'bg-[#007aff] text-white'
+                      ? 'bg-[#007aff]/10 text-[#4da3ff]'
+                      : 'bg-[#007aff] text-white hover:bg-[#0062cc]'
                   }`}
                 >
                   {added
@@ -2527,10 +2198,615 @@ export const MinistrationsView: React.FC<
           })}
 
         </div>
-
       </ModalShell>
     );
   }
+};
+
+/* ===========================================================
+   AMBIENT BACKGROUND
+=========================================================== */
+
+const AmbientGlow: React.FC = () => (
+  <>
+    <div className="pointer-events-none fixed -left-32 top-1/3 h-72 w-72 rounded-full bg-[#007aff]/[0.025] blur-3xl" />
+    <div className="pointer-events-none fixed -right-32 bottom-0 h-80 w-80 rounded-full bg-blue-500/[0.02] blur-3xl" />
+  </>
+);
+
+/* ===========================================================
+   EVENT CARD
+=========================================================== */
+
+const EventCard: React.FC<{
+  min: Ministration;
+  active: boolean;
+  onClick: () => void;
+}> = ({
+  min,
+  active,
+  onClick
+}) => {
+  const assigned =
+    min.songs.filter(
+      song => song.lead !== null
+    ).length;
+
+  const total =
+    min.songs.length;
+
+  const percentage =
+    total > 0
+      ? Math.round(
+          (assigned / total) * 100
+        )
+      : 0;
+
+  const ready =
+    total > 0 &&
+    percentage === 100;
+
+  return (
+    <button
+      onClick={onClick}
+      className={`group relative overflow-hidden rounded-[26px] border p-5 text-left transition-all duration-300 hover:-translate-y-1 ${
+        active
+          ? 'border-[#007aff]/40 bg-[#007aff]/[0.07] shadow-xl shadow-blue-500/[0.08]'
+          : 'border-white/10 bg-[#111113]/90 hover:border-white/20 hover:bg-white/[0.04]'
+      }`}
+    >
+
+      {active && (
+        <div className="absolute inset-y-0 left-0 w-0.5 bg-[#007aff] shadow-[0_0_15px_rgba(0,122,255,.8)]" />
+      )}
+
+      <div className="flex items-start justify-between gap-3">
+
+        <div className="min-w-0">
+
+          <span className="inline-flex rounded-lg border border-white/[0.07] bg-white/[0.04] px-2 py-1 text-[8px] font-extrabold uppercase tracking-[0.15em] text-white/35">
+            {min.status}
+          </span>
+
+          <h3 className="mt-3 truncate text-base font-extrabold">
+            {min.name}
+          </h3>
+
+        </div>
+
+        <ChevronRight
+          className={`h-4 w-4 flex-shrink-0 transition-all duration-300 ${
+            active
+              ? 'translate-x-0.5 text-[#4da3ff]'
+              : 'text-white/15 group-hover:translate-x-0.5 group-hover:text-white/45'
+          }`}
+        />
+
+      </div>
+
+      <div className="mt-4 space-y-2">
+
+        <SmallMeta
+          icon={
+            <Calendar className="h-3.5 w-3.5" />
+          }
+          value={
+            min.date || 'Date not set'
+          }
+        />
+
+        {min.time && (
+          <SmallMeta
+            icon={
+              <Clock className="h-3.5 w-3.5" />
+            }
+            value={min.time}
+          />
+        )}
+
+        {min.venue && (
+          <SmallMeta
+            icon={
+              <MapPin className="h-3.5 w-3.5 text-amber-400" />
+            }
+            value={min.venue}
+          />
+        )}
+
+      </div>
+
+      <div className="mt-5 border-t border-white/[0.07] pt-4">
+
+        <div className="flex items-center justify-between">
+
+          <span className="text-[9px] font-extrabold uppercase tracking-[0.14em] text-white/20">
+            Setlist
+          </span>
+
+          <span className="text-xs font-extrabold">
+            {total}{' '}
+            <span className="font-medium text-white/25">
+              songs
+            </span>
+          </span>
+
+        </div>
+
+        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+
+          <div
+            className="h-full rounded-full bg-[#007aff] transition-all duration-500"
+            style={{
+              width: `${percentage}%`
+            }}
+          />
+
+        </div>
+
+        <div className="mt-2 flex items-center justify-between">
+
+          <span className="text-[9px] text-white/20">
+            {percentage}% leads assigned
+          </span>
+
+          <span
+            className={`text-[9px] font-bold ${
+              ready
+                ? 'text-emerald-400'
+                : 'text-white/20'
+            }`}
+          >
+            {ready
+              ? 'Ready'
+              : 'Preparing'}
+          </span>
+
+        </div>
+
+      </div>
+
+    </button>
+  );
+};
+
+/* ===========================================================
+   SETLIST CARD
+=========================================================== */
+
+interface SetlistCardProps {
+  item: SetlistSongItem;
+  song: Song;
+  index: number;
+  isMD: boolean;
+  expanded: boolean;
+  leadMember?: TeamMember;
+  vocalMembers: TeamMember[];
+
+  onToggle: () => void;
+  onSelectSong: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  onRemove: () => void;
+  onAssignLead: (
+    memberId: number | null
+  ) => void;
+  onChangeKey: (
+    key: string
+  ) => void;
+  onChangeNote: (
+    note: string
+  ) => void;
+}
+
+const SetlistCard: React.FC<
+  SetlistCardProps
+> = ({
+  item,
+  song,
+  index,
+  isMD,
+  expanded,
+  leadMember,
+  vocalMembers,
+  onToggle,
+  onSelectSong,
+  onMoveUp,
+  onMoveDown,
+  onRemove,
+  onAssignLead,
+  onChangeKey,
+  onChangeNote
+}) => {
+  const effectiveKey =
+    item.keyOverride ||
+    song.key;
+
+  const audioUrl =
+    getSongAudioUrl(song);
+
+  const [isPlaying, setIsPlaying] =
+    useState(false);
+
+  const audioRef =
+    useRef<HTMLAudioElement | null>(
+      null
+    );
+
+  const toggleAudio = () => {
+    if (!audioRef.current) return;
+
+    if (audioRef.current.paused) {
+      audioRef.current.play();
+    } else {
+      audioRef.current.pause();
+    }
+  };
+
+  return (
+    <article
+      className={`overflow-hidden rounded-[24px] border transition-all duration-300 ${
+        expanded
+          ? 'border-[#007aff]/30 bg-[#007aff]/[0.045] shadow-xl shadow-blue-500/[0.04]'
+          : 'border-white/10 bg-white/[0.02] hover:border-white/15 hover:bg-white/[0.035]'
+      }`}
+    >
+
+      <div className="flex items-center gap-3 p-4 sm:p-5">
+
+        <div className="flex flex-shrink-0 items-center gap-1">
+
+          <span
+            className={`flex h-10 w-10 items-center justify-center rounded-xl border text-[10px] font-extrabold transition-all ${
+              expanded
+                ? 'border-[#007aff]/30 bg-[#007aff]/10 text-[#4da3ff]'
+                : 'border-white/10 bg-white/[0.035] text-white/30'
+            }`}
+          >
+            {String(index + 1).padStart(
+              2,
+              '0'
+            )}
+          </span>
+
+          {isMD && (
+            <div className="flex flex-col">
+
+              <button
+                onClick={onMoveUp}
+                disabled={index === 0}
+                className="rounded text-white/15 transition-colors hover:text-[#4da3ff] disabled:opacity-10"
+              >
+                <ArrowUp className="h-3 w-3" />
+              </button>
+
+              <button
+                onClick={onMoveDown}
+                className="rounded text-white/15 transition-colors hover:text-[#4da3ff]"
+              >
+                <ArrowDown className="h-3 w-3" />
+              </button>
+
+            </div>
+          )}
+
+        </div>
+
+        <button
+          onClick={onToggle}
+          className="min-w-0 flex-1 text-left"
+        >
+
+          <div className="flex flex-wrap items-center gap-2">
+
+            <span className="truncate text-sm sm:text-base font-extrabold">
+              {song.title}
+            </span>
+
+            <span className="rounded-lg border border-[#007aff]/20 bg-[#007aff]/10 px-2 py-1 text-[8px] font-extrabold uppercase tracking-[0.12em] text-[#4da3ff]">
+              {song.category}
+            </span>
+
+          </div>
+
+          <p className="mt-1 truncate text-[10px] text-white/25">
+            {song.artist} • {song.tempo}
+          </p>
+
+        </button>
+
+        <div className="hidden items-center gap-2 sm:flex">
+
+          <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] px-3 py-2 text-right">
+
+            <p className="text-[7px] font-extrabold uppercase tracking-[0.15em] text-white/20">
+              Key
+            </p>
+
+            <p className="mt-0.5 text-xs font-extrabold text-[#4da3ff]">
+              {effectiveKey}
+            </p>
+
+          </div>
+
+          <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] px-3 py-2 text-right">
+
+            <p className="text-[7px] font-extrabold uppercase tracking-[0.15em] text-white/20">
+              Lead
+            </p>
+
+            <p className="mt-0.5 max-w-[90px] truncate text-xs font-bold text-white/60">
+              {leadMember?.name ||
+                'Pending'}
+            </p>
+
+          </div>
+
+        </div>
+
+        <button
+          onClick={onToggle}
+          className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border transition-all ${
+            expanded
+              ? 'border-[#007aff]/20 bg-[#007aff]/10 text-[#4da3ff]'
+              : 'border-white/10 bg-white/[0.03] text-white/30 hover:text-white'
+          }`}
+        >
+          <ChevronRight
+            className={`h-4 w-4 transition-transform duration-300 ${
+              expanded
+                ? 'rotate-90'
+                : ''
+            }`}
+          />
+        </button>
+
+      </div>
+
+      {/* EXPANDED PERFORMANCE PANEL */}
+
+      <div
+        className={`grid transition-all duration-300 ${
+          expanded
+            ? 'grid-rows-[1fr] opacity-100'
+            : 'grid-rows-[0fr] opacity-0'
+        }`}
+      >
+
+        <div className="overflow-hidden">
+
+          <div className="border-t border-white/[0.07] px-4 pb-4 pt-4 sm:px-5 sm:pb-5">
+
+            <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-white/[0.06] bg-black/20 p-3 sm:flex-row sm:items-center sm:justify-between">
+
+              <div className="flex items-center gap-3">
+
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#007aff]/15 bg-[#007aff]/10">
+                  <Music2 className="h-4 w-4 text-[#4da3ff]" />
+                </div>
+
+                <div>
+                  <p className="text-[8px] font-extrabold uppercase tracking-[0.16em] text-white/20">
+                    Arrangement
+                  </p>
+
+                  <p className="mt-0.5 text-xs font-bold">
+                    {song.title}
+                  </p>
+                </div>
+
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+
+                {audioUrl && (
+                  <>
+                    <audio
+                      ref={audioRef}
+                      src={audioUrl}
+                      preload="none"
+                      onPlay={() =>
+                        setIsPlaying(true)
+                      }
+                      onPause={() =>
+                        setIsPlaying(false)
+                      }
+                      onEnded={() =>
+                        setIsPlaying(false)
+                      }
+                      className="hidden"
+                    />
+
+                    <button
+                      onClick={
+                        toggleAudio
+                      }
+                      className="inline-flex items-center gap-2 rounded-xl bg-[#007aff] px-3 py-2 text-[10px] font-bold text-white transition-all hover:bg-[#0062cc]"
+                    >
+                      {isPlaying ? (
+                        <Pause className="h-3.5 w-3.5" />
+                      ) : (
+                        <Play className="h-3.5 w-3.5 fill-current" />
+                      )}
+
+                      {isPlaying
+                        ? 'Pause'
+                        : 'Listen'}
+                    </button>
+
+                    <a
+                      href={audioUrl}
+                      download
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2 text-[10px] font-bold text-white/50 transition-all hover:bg-white/[0.08] hover:text-white"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      Download
+                    </a>
+                  </>
+                )}
+
+                <button
+                  onClick={onSelectSong}
+                  className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2 text-[10px] font-bold text-white/50 transition-all hover:bg-white/[0.08] hover:text-white"
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                  Arrangement
+                </button>
+
+              </div>
+
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-12">
+
+              <div className="rounded-2xl border border-white/[0.07] bg-black/20 p-3 md:col-span-5">
+
+                <label className="text-[8px] font-extrabold uppercase tracking-[0.16em] text-amber-300">
+                  Lead Vocalist
+                </label>
+
+                {isMD ? (
+                  <select
+                    value={
+                      item.lead || ''
+                    }
+                    onChange={e =>
+                      onAssignLead(
+                        e.target.value
+                          ? Number(
+                              e.target
+                                .value
+                            )
+                          : null
+                      )
+                    }
+                    className="mt-2 w-full rounded-xl border border-white/10 bg-[#1a1a1d] px-3 py-2.5 text-xs font-bold text-white outline-none focus:border-amber-400/30"
+                  >
+                    <option value="">
+                      -- Not Assigned --
+                    </option>
+
+                    {vocalMembers.map(
+                      member => (
+                        <option
+                          key={
+                            member.id
+                          }
+                          value={
+                            member.id
+                          }
+                        >
+                          {
+                            member.name
+                          }{' '}
+                          (
+                          {member.voicePart ||
+                            member.role}
+                          )
+                        </option>
+                      )
+                    )}
+                  </select>
+                ) : (
+                  <p className="mt-2 text-xs font-bold text-white/70">
+                    {leadMember?.name ||
+                      'Pending MD Assignment'}
+                  </p>
+                )}
+
+              </div>
+
+              <div className="rounded-2xl border border-white/[0.07] bg-black/20 p-3 md:col-span-3">
+
+                <label className="text-[8px] font-extrabold uppercase tracking-[0.16em] text-[#4da3ff]">
+                  Performance Key
+                </label>
+
+                {isMD ? (
+                  <select
+                    value={
+                      effectiveKey
+                    }
+                    onChange={e =>
+                      onChangeKey(
+                        e.target.value
+                      )
+                    }
+                    className="mt-2 w-full rounded-xl border border-white/10 bg-[#1a1a1d] px-3 py-2.5 text-xs font-bold text-[#4da3ff] outline-none focus:border-[#007aff]/40"
+                  >
+                    {CHROMATIC_KEYS.map(
+                      key => (
+                        <option
+                          key={key}
+                          value={key}
+                        >
+                          {key} Major
+                        </option>
+                      )
+                    )}
+                  </select>
+                ) : (
+                  <p className="mt-2 text-xs font-extrabold text-[#4da3ff]">
+                    Key of {effectiveKey}
+                  </p>
+                )}
+
+              </div>
+
+              <div className="rounded-2xl border border-white/[0.07] bg-black/20 p-3 md:col-span-4">
+
+                <label className="text-[8px] font-extrabold uppercase tracking-[0.16em] text-white/25">
+                  Transition Cue
+                </label>
+
+                {isMD ? (
+                  <input
+                    value={
+                      item.orderNote ||
+                      ''
+                    }
+                    onChange={e =>
+                      onChangeNote(
+                        e.target.value
+                      )
+                    }
+                    placeholder="Transition instruction..."
+                    className="mt-2 w-full rounded-xl border border-white/10 bg-[#1a1a1d] px-3 py-2.5 text-xs text-white outline-none placeholder:text-white/15 focus:border-[#007aff]/40"
+                  />
+                ) : (
+                  <p className="mt-2 text-xs leading-relaxed text-white/35">
+                    {item.orderNote ||
+                      'Standard transition.'}
+                  </p>
+                )}
+
+              </div>
+
+            </div>
+
+            {isMD && (
+              <div className="mt-3 flex justify-end">
+
+                <button
+                  onClick={onRemove}
+                  className="inline-flex items-center gap-2 rounded-xl border border-red-500/15 bg-red-500/[0.04] px-3 py-2 text-[10px] font-bold text-red-300 transition-all hover:bg-red-500/10"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Remove Song
+                </button>
+
+              </div>
+            )}
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </article>
+  );
 };
 
 /* ===========================================================
@@ -2564,7 +2840,7 @@ const WeeklySongCard: React.FC<
     useState(false);
 
   const audioRef =
-    React.useRef<HTMLAudioElement | null>(
+    useRef<HTMLAudioElement | null>(
       null
     );
 
@@ -2579,15 +2855,15 @@ const WeeklySongCard: React.FC<
   };
 
   return (
-    <article className="rounded-[24px] border border-white/10 bg-white/[0.025] hover:bg-white/[0.04] p-4 transition-all">
+    <article className="group rounded-[24px] border border-white/10 bg-white/[0.02] p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/15 hover:bg-white/[0.035]">
 
-      <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
 
-        <div className="flex items-center gap-3 min-w-0 flex-1">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
 
-          <div className="flex items-center gap-1">
+          <div className="flex flex-shrink-0 items-center gap-1">
 
-            <span className="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-300 text-[10px] font-extrabold flex items-center justify-center">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#007aff]/20 bg-[#007aff]/10 text-[10px] font-extrabold text-[#4da3ff]">
               {String(
                 index + 1
               ).padStart(2, '0')}
@@ -2603,18 +2879,18 @@ const WeeklySongCard: React.FC<
                   disabled={
                     index === 0
                   }
-                  className="text-white/20 hover:text-purple-300 disabled:opacity-10"
+                  className="text-white/15 transition-colors hover:text-[#4da3ff] disabled:opacity-10"
                 >
-                  <ArrowUp className="w-3 h-3" />
+                  <ArrowUp className="h-3 w-3" />
                 </button>
 
                 <button
                   onClick={
                     onMoveDown
                   }
-                  className="text-white/20 hover:text-purple-300"
+                  className="text-white/15 transition-colors hover:text-[#4da3ff]"
                 >
-                  <ArrowDown className="w-3 h-3" />
+                  <ArrowDown className="h-3 w-3" />
                 </button>
 
               </div>
@@ -2625,29 +2901,24 @@ const WeeklySongCard: React.FC<
           <div className="min-w-0">
 
             <button
-              onClick={
-                onSelectSong
-              }
-              className="text-sm font-bold text-white hover:text-purple-300 truncate text-left"
+              onClick={onSelectSong}
+              className="block max-w-full truncate text-sm font-bold text-white transition-colors hover:text-[#4da3ff]"
             >
               {song.title}
             </button>
 
-            <p className="text-[10px] text-white/25 mt-1">
-              {song.artist} •{' '}
-              Key {song.key}
+            <p className="mt-1 truncate text-[10px] text-white/25">
+              {song.artist} • Key{' '}
+              {song.key}
             </p>
 
           </div>
 
         </div>
 
-        {/* AUDIO */}
-
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-wrap items-center gap-2">
 
           {audioUrl ? (
-
             <>
               <audio
                 ref={audioRef}
@@ -2663,12 +2934,12 @@ const WeeklySongCard: React.FC<
                 onEnded={() =>
                   setIsPlaying(false)
                 }
-                className="h-9 max-w-[320px]"
+                className="h-9 max-w-[280px]"
               />
 
               <button
                 onClick={togglePlay}
-                className="w-9 h-9 rounded-xl bg-purple-500 hover:bg-purple-400 text-white flex items-center justify-center"
+                className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#007aff] text-white transition-all hover:bg-[#0062cc]"
                 title={
                   isPlaying
                     ? 'Pause'
@@ -2676,9 +2947,9 @@ const WeeklySongCard: React.FC<
                 }
               >
                 {isPlaying ? (
-                  <Pause className="w-4 h-4" />
+                  <Pause className="h-4 w-4" />
                 ) : (
-                  <Play className="w-4 h-4 fill-current" />
+                  <Play className="h-4 w-4 fill-current" />
                 )}
               </button>
 
@@ -2687,31 +2958,26 @@ const WeeklySongCard: React.FC<
                 download
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-9 h-9 rounded-xl border border-white/10 bg-white/[0.035] hover:bg-white/[0.08] text-white/50 hover:text-white flex items-center justify-center"
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.035] text-white/45 transition-all hover:bg-white/[0.08] hover:text-white"
                 title="Download audio"
               >
-                <Download className="w-4 h-4" />
+                <Download className="h-4 w-4" />
               </a>
             </>
-
           ) : (
-
-            <span className="inline-flex items-center gap-1.5 text-[9px] font-bold text-white/20 border border-white/[0.06] px-3 py-2 rounded-xl">
-              <Volume2 className="w-3.5 h-3.5" />
+            <span className="inline-flex items-center gap-1.5 rounded-xl border border-white/[0.06] px-3 py-2 text-[9px] font-bold text-white/20">
+              <Volume2 className="h-3.5 w-3.5" />
               Audio not available
             </span>
-
           )}
 
           {isMD && (
             <button
-              onClick={
-                onRemove
-              }
-              className="w-9 h-9 rounded-xl border border-white/10 text-white/25 hover:text-red-300 hover:bg-red-500/10 flex items-center justify-center"
+              onClick={onRemove}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 text-white/20 transition-all hover:bg-red-500/10 hover:text-red-300"
               title="Remove from weekly learning"
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className="h-4 w-4" />
             </button>
           )}
 
@@ -2740,36 +3006,36 @@ const PreparationCard: React.FC<{
   description,
   progress
 }) => (
-  <div className="rounded-[24px] border border-white/10 bg-[#111113]/95 p-5">
+  <div className="group rounded-[24px] border border-white/10 bg-[#111113]/95 p-4 sm:p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/15 hover:bg-[#141416]">
 
-    <div className="flex items-start justify-between">
+    <div className="flex items-start justify-between gap-3">
 
-      <div>
+      <div className="min-w-0">
 
-        <p className="text-[8px] uppercase tracking-[0.17em] font-extrabold text-white/25">
+        <p className="text-[8px] font-extrabold uppercase tracking-[0.17em] text-white/25">
           {label}
         </p>
 
-        <p className="text-2xl font-extrabold text-white mt-2 tracking-tight">
+        <p className="mt-2 truncate text-xl sm:text-2xl font-extrabold tracking-tight">
           {value}
         </p>
 
       </div>
 
-      <div className="w-10 h-10 rounded-xl bg-[#007aff]/10 border border-[#007aff]/15 text-[#4da3ff] flex items-center justify-center">
+      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-[#007aff]/15 bg-[#007aff]/10 text-[#4da3ff] transition-transform duration-300 group-hover:scale-105">
         {icon}
       </div>
 
     </div>
 
-    <p className="text-[10px] text-white/25 mt-2">
+    <p className="mt-2 truncate text-[10px] text-white/25">
       {description}
     </p>
 
-    <div className="mt-4 h-1.5 bg-white/[0.05] rounded-full overflow-hidden">
+    <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/[0.05]">
 
       <div
-        className="h-full rounded-full bg-[#007aff] transition-all"
+        className="h-full rounded-full bg-[#007aff] shadow-[0_0_12px_rgba(0,122,255,.25)] transition-all duration-500"
         style={{
           width: `${Math.min(
             Math.max(progress, 0),
@@ -2780,6 +3046,42 @@ const PreparationCard: React.FC<{
 
     </div>
 
+  </div>
+);
+
+/* ===========================================================
+   META
+=========================================================== */
+
+const MetaItem: React.FC<{
+  icon: React.ReactNode;
+  value: string;
+}> = ({
+  icon,
+  value
+}) => (
+  <div className="flex items-center gap-1.5">
+    <span className="text-[#4da3ff]">
+      {icon}
+    </span>
+    {value}
+  </div>
+);
+
+const SmallMeta: React.FC<{
+  icon: React.ReactNode;
+  value: string;
+}> = ({
+  icon,
+  value
+}) => (
+  <div className="flex min-w-0 items-center gap-2 text-[11px] text-white/30">
+    <span className="flex-shrink-0 text-[#4da3ff]">
+      {icon}
+    </span>
+    <span className="truncate">
+      {value}
+    </span>
   </div>
 );
 
@@ -2796,11 +3098,11 @@ const BriefItem: React.FC<{
 }) => (
   <div className="rounded-xl border border-amber-500/10 bg-black/15 p-3">
 
-    <p className="text-[8px] uppercase tracking-[0.15em] font-extrabold text-amber-300/40">
+    <p className="text-[8px] font-extrabold uppercase tracking-[0.15em] text-amber-300/40">
       {label}
     </p>
 
-    <p className="text-xs font-bold text-white/60 mt-1">
+    <p className="mt-1 text-xs font-bold text-white/60">
       {value}
     </p>
 
@@ -2818,9 +3120,16 @@ const ModalShell: React.FC<{
   children,
   onClose
 }) => (
-  <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-xl">
+  <div
+    className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 backdrop-blur-xl sm:p-5"
+    onMouseDown={e => {
+      if (e.target === e.currentTarget) {
+        onClose();
+      }
+    }}
+  >
 
-    <div className="w-full max-w-xl max-h-[90vh] overflow-hidden rounded-[28px] border border-white/10 bg-[#101012] shadow-2xl flex flex-col">
+    <div className="flex max-h-[92vh] w-full max-w-xl flex-col overflow-hidden rounded-[28px] border border-white/10 bg-[#101012] shadow-2xl shadow-black/50">
 
       {children}
 
@@ -2844,21 +3153,21 @@ const ModalHeader: React.FC<{
   icon,
   onClose
 }) => (
-  <div className="p-5 border-b border-white/[0.07] flex items-center justify-between gap-4">
+  <div className="flex items-center justify-between gap-4 border-b border-white/[0.07] p-5">
 
     <div className="flex items-center gap-3">
 
-      <div className="w-9 h-9 rounded-xl bg-[#007aff]/10 border border-[#007aff]/20 text-[#4da3ff] flex items-center justify-center">
+      <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#007aff]/20 bg-[#007aff]/10 text-[#4da3ff]">
         {icon}
       </div>
 
       <div>
 
-        <p className="text-[8px] uppercase tracking-[0.18em] font-extrabold text-[#4da3ff]">
+        <p className="text-[8px] font-extrabold uppercase tracking-[0.18em] text-[#4da3ff]">
           {eyebrow}
         </p>
 
-        <h3 className="text-base font-extrabold text-white mt-1">
+        <h3 className="mt-1 text-base font-extrabold">
           {title}
         </h3>
 
@@ -2868,9 +3177,9 @@ const ModalHeader: React.FC<{
 
     <button
       onClick={onClose}
-      className="w-9 h-9 rounded-xl border border-white/10 bg-white/[0.035] text-white/35 hover:text-white flex items-center justify-center"
+      className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.035] text-white/35 transition-all hover:bg-white/[0.08] hover:text-white"
     >
-      <X className="w-4 h-4" />
+      <X className="h-4 w-4" />
     </button>
 
   </div>
@@ -2889,20 +3198,20 @@ const ModalFooter: React.FC<{
   onSave,
   saveText
 }) => (
-  <div className="p-5 border-t border-white/[0.07] flex justify-end gap-2">
+  <div className="flex justify-end gap-2 border-t border-white/[0.07] p-5">
 
     <button
       onClick={onCancel}
-      className="px-4 py-2.5 rounded-xl border border-white/10 text-white/45 hover:text-white text-xs font-bold"
+      className="rounded-xl border border-white/10 px-4 py-2.5 text-xs font-bold text-white/45 transition-all hover:bg-white/[0.04] hover:text-white"
     >
       Cancel
     </button>
 
     <button
       onClick={onSave}
-      className="px-4 py-2.5 rounded-xl bg-[#007aff] hover:bg-[#0062cc] text-white text-xs font-bold flex items-center gap-2"
+      className="inline-flex items-center gap-2 rounded-xl bg-[#007aff] px-4 py-2.5 text-xs font-bold text-white transition-all hover:bg-[#0062cc]"
     >
-      <Save className="w-3.5 h-3.5" />
+      <Save className="h-3.5 w-3.5" />
       {saveText}
     </button>
 
@@ -2916,7 +3225,9 @@ const ModalFooter: React.FC<{
 const FormField: React.FC<{
   label: string;
   value: string;
-  onChange: (value: string) => void;
+  onChange: (
+    value: string
+  ) => void;
   placeholder?: string;
   type?: string;
 }> = ({
@@ -2928,7 +3239,7 @@ const FormField: React.FC<{
 }) => (
   <div>
 
-    <label className="text-[9px] uppercase tracking-[0.15em] font-extrabold text-white/30">
+    <label className="text-[9px] font-extrabold uppercase tracking-[0.15em] text-white/30">
       {label}
     </label>
 
@@ -2941,7 +3252,7 @@ const FormField: React.FC<{
         )
       }
       placeholder={placeholder}
-      className="mt-2 w-full bg-[#1a1a1d] border border-white/10 rounded-xl px-3.5 py-3 text-xs font-bold text-white placeholder:text-white/15 outline-none focus:border-[#007aff]/40"
+      className="mt-2 w-full rounded-xl border border-white/10 bg-[#1a1a1d] px-3.5 py-3 text-xs font-bold text-white outline-none transition-all placeholder:text-white/15 focus:border-[#007aff]/40 focus:bg-[#1c1c1f]"
     />
 
   </div>
@@ -2954,7 +3265,9 @@ const FormField: React.FC<{
 const FormTextarea: React.FC<{
   label: string;
   value: string;
-  onChange: (value: string) => void;
+  onChange: (
+    value: string
+  ) => void;
   placeholder?: string;
 }> = ({
   label,
@@ -2964,7 +3277,7 @@ const FormTextarea: React.FC<{
 }) => (
   <div>
 
-    <label className="text-[9px] uppercase tracking-[0.15em] font-extrabold text-white/30">
+    <label className="text-[9px] font-extrabold uppercase tracking-[0.15em] text-white/30">
       {label}
     </label>
 
@@ -2977,7 +3290,7 @@ const FormTextarea: React.FC<{
         )
       }
       placeholder={placeholder}
-      className="mt-2 w-full bg-[#1a1a1d] border border-white/10 rounded-xl px-3.5 py-3 text-xs text-white placeholder:text-white/15 outline-none focus:border-[#007aff]/40 resize-none"
+      className="mt-2 w-full resize-none rounded-xl border border-white/10 bg-[#1a1a1d] px-3.5 py-3 text-xs text-white outline-none transition-all placeholder:text-white/15 focus:border-[#007aff]/40 focus:bg-[#1c1c1f]"
     />
 
   </div>
