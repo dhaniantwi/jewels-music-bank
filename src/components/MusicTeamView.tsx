@@ -8,6 +8,17 @@ import React, {
 /* ============================================================
    JEWELS MUSIC HUB
    MUSIC TEAM VIEW — PREMIUM EDITION
+   SAFE STORAGE EDITION
+
+   IMPORTANT:
+   - Existing team data is loaded before anything is saved.
+   - Multiple historical storage keys are supported.
+   - Empty state NEVER overwrites existing saved data.
+   - Only the MD can modify team members.
+   ============================================================ */
+
+/* ============================================================
+   TYPES
    ============================================================ */
 
 export type TeamRole =
@@ -42,7 +53,14 @@ export type InstrumentCategory =
   | "sound"
   | "other";
 
-type ViewMode = "grid" | "list";
+type TeamSection =
+  | "all"
+  | "vocalists"
+  | "instrumentalists";
+
+type ViewMode =
+  | "grid"
+  | "list";
 
 type SortMode =
   | "name"
@@ -67,6 +85,7 @@ export interface TeamMember {
   id: string;
   name: string;
   nickname?: string;
+
   role: TeamRole;
   status: MemberStatus;
   gender?: MemberGender;
@@ -121,17 +140,30 @@ interface MusicTeamViewProps {
 }
 
 /* ============================================================
-   CONSTANTS
+   STORAGE
    ============================================================ */
 
-const STORAGE_KEY =
-  "jewels_music_hub_team_v2";
+/*
+ * team_v2 is the primary key used by the Music Team page.
+ *
+ * The other keys are deliberately retained because older
+ * versions of the Jewels Music Hub may have stored the
+ * members under different names.
+ */
 
-const LEGACY_STORAGE_KEYS = [
+const STORAGE_KEY =
+  "team_v2";
+
+const COMPATIBILITY_STORAGE_KEYS = [
+  "jewels_music_hub_team_v2",
   "jewels_music_hub_team",
   "jewels_team_members",
   "team_members",
 ];
+
+/* ============================================================
+   ACCESS
+   ============================================================ */
 
 const MD_ROLES = [
   "admin_md",
@@ -139,6 +171,10 @@ const MD_ROLES = [
   "music_director",
   "music-director",
 ];
+
+/* ============================================================
+   CONSTANTS
+   ============================================================ */
 
 const WEEK_DAYS = [
   "Monday",
@@ -197,6 +233,7 @@ const EMPTY_MEMBER: TeamMember = {
   id: "",
   name: "",
   nickname: "",
+
   role: "backing_vocalist",
   status: "active",
   gender: "other",
@@ -247,69 +284,270 @@ const createId = (): string => {
     "_" +
     Math.random()
       .toString(36)
-      .slice(2, 9)
+      .slice(2, 10)
   );
 };
 
 const isMD = (
   role?: string
 ): boolean => {
-  if (!role) return false;
+  if (!role) {
+    return false;
+  }
 
   return MD_ROLES.includes(
     role.trim().toLowerCase()
   );
 };
 
+const safeArray = (
+  value: unknown
+): string[] => {
+  return Array.isArray(value)
+    ? value.filter(
+        (item): item is string =>
+          typeof item === "string"
+      )
+    : [];
+};
+
+const normalizeRole = (
+  value: unknown
+): TeamRole => {
+  const role =
+    String(value || "")
+      .trim()
+      .toLowerCase();
+
+  if (
+    role === "admin_md" ||
+    role === "md" ||
+    role === "music_director" ||
+    role === "music-director"
+  ) {
+    return "admin_md";
+  }
+
+  if (
+    role === "lead_vocalist" ||
+    role === "lead vocalist" ||
+    role === "lead"
+  ) {
+    return "lead_vocalist";
+  }
+
+  if (
+    role === "backing_vocalist" ||
+    role === "backing vocalist" ||
+    role === "backing" ||
+    role === "backup vocalist"
+  ) {
+    return "backing_vocalist";
+  }
+
+  if (
+    role === "instrumentalist" ||
+    role === "instrument" ||
+    role === "band"
+  ) {
+    return "instrumentalist";
+  }
+
+  if (role === "media") {
+    return "media";
+  }
+
+  if (role === "sound") {
+    return "sound";
+  }
+
+  return "other";
+};
+
+const normalizeStatus = (
+  value: unknown
+): MemberStatus => {
+  const status =
+    String(value || "")
+      .trim()
+      .toLowerCase();
+
+  if (
+    status === "inactive" ||
+    status === "in-active"
+  ) {
+    return "inactive";
+  }
+
+  if (
+    status === "on_leave" ||
+    status === "on leave" ||
+    status === "leave"
+  ) {
+    return "on_leave";
+  }
+
+  return "active";
+};
+
 const normalizeMember = (
-  member: Partial<TeamMember>
+  member: Partial<TeamMember> & Record<string, any>
 ): TeamMember => {
   const now =
     new Date().toISOString();
+
+  const rawRole =
+    member.role ??
+    member.teamRole ??
+    member.memberRole ??
+    member.type;
+
+  const rawName =
+    member.name ??
+    member.fullName ??
+    member.memberName ??
+    member.displayName;
+
+  const rawAvatar =
+    member.avatar ??
+    member.image ??
+    member.photo ??
+    member.profileImage ??
+    member.photoUrl;
+
+  const rawInstrument =
+    member.instrument ??
+    member.instrumentName;
+
+  const rawVoicePart =
+    member.voicePart ??
+    member.voice ??
+    member.vocalPart;
 
   return {
     ...EMPTY_MEMBER,
     ...member,
 
     id:
-      member.id ||
-      createId(),
+      String(
+        member.id ||
+          member.memberId ||
+          createId()
+      ),
 
     name:
-      member.name ||
-      "Unnamed Member",
+      String(
+        rawName ||
+          "Unnamed Member"
+      ),
+
+    nickname:
+      member.nickname ??
+      member.nickName ??
+      "",
 
     role:
-      member.role ||
-      "other",
+      normalizeRole(
+        rawRole
+      ),
 
     status:
-      member.status ||
-      "active",
+      normalizeStatus(
+        member.status
+      ),
+
+    gender:
+      member.gender ||
+      "other",
+
+    phone:
+      member.phone ??
+      member.mobile ??
+      "",
+
+    email:
+      member.email ??
+      "",
+
+    avatar:
+      rawAvatar ??
+      "",
+
+    instrument:
+      rawInstrument ??
+      "",
+
+    instrumentCategory:
+      member.instrumentCategory ||
+      "other",
+
+    voicePart:
+      rawVoicePart ??
+      "",
 
     joinedAt:
       member.joinedAt ||
+      member.createdAt ||
       now,
 
     updatedAt:
       member.updatedAt ||
+      member.modifiedAt ||
       now,
 
+    notes:
+      member.notes ??
+      "",
+
+    ministry:
+      member.ministry ??
+      "",
+
+    section:
+      member.section ??
+      "",
+
+    emergencyContact:
+      member.emergencyContact ??
+      "",
+
+    emergencyPhone:
+      member.emergencyPhone ??
+      "",
+
+    isLeader:
+      Boolean(
+        member.isLeader
+      ),
+
+    isFeatured:
+      Boolean(
+        member.isFeatured
+      ),
+
+    isAvailable:
+      member.isAvailable !==
+      false,
+
     availability:
-      member.availability ||
-      [],
+      safeArray(
+        member.availability
+      ),
 
     skills:
-      member.skills ||
-      [],
+      safeArray(
+        member.skills
+      ),
 
     assignedSongs:
-      member.assignedSongs ||
-      [],
+      safeArray(
+        member.assignedSongs
+      ),
 
     assignedMinistrations:
-      member.assignedMinistrations ||
-      [],
+      safeArray(
+        member.assignedMinistrations
+      ),
 
     socials: {
       ...EMPTY_MEMBER.socials,
@@ -318,85 +556,235 @@ const normalizeMember = (
   };
 };
 
+/* ============================================================
+   PARSING
+   ============================================================ */
+
 const parseMembers = (
   value: string | null
 ): TeamMember[] => {
-  if (!value) return [];
+  if (!value) {
+    return [];
+  }
 
   try {
     const parsed =
       JSON.parse(value);
 
-    if (!Array.isArray(parsed)) {
+    /*
+     * Some older versions may have stored:
+     *
+     * { members: [...] }
+     *
+     * instead of:
+     *
+     * [...]
+     */
+
+    let rawMembers: unknown =
+      parsed;
+
+    if (
+      parsed &&
+      typeof parsed === "object" &&
+      !Array.isArray(parsed)
+    ) {
+      const possible =
+        parsed as Record<
+          string,
+          unknown
+        >;
+
+      rawMembers =
+        possible.members ??
+        possible.team ??
+        possible.teamMembers ??
+        possible.data ??
+        [];
+    }
+
+    if (
+      !Array.isArray(
+        rawMembers
+      )
+    ) {
       return [];
     }
 
-    return parsed.map(
-      normalizeMember
-    );
+    return rawMembers
+      .filter(
+        (
+          item
+        ): item is Record<
+          string,
+          any
+        > =>
+          !!item &&
+          typeof item ===
+            "object"
+      )
+      .map(
+        normalizeMember
+      );
   } catch {
     return [];
   }
 };
 
+/* ============================================================
+   SAFE STORAGE LOADER
+   ============================================================ */
+
 const loadMembers =
   (): TeamMember[] => {
+    if (
+      typeof window ===
+      "undefined"
+    ) {
+      return [];
+    }
+
+    const keys = [
+      STORAGE_KEY,
+      ...COMPATIBILITY_STORAGE_KEYS,
+    ];
+
     try {
-      const current =
-        localStorage.getItem(
-          STORAGE_KEY
-        );
-
-      const currentMembers =
-        parseMembers(current);
-
-      if (
-        currentMembers.length >
-        0
-      ) {
-        return currentMembers;
-      }
-
-      for (const key of LEGACY_STORAGE_KEYS) {
-        const legacy =
+      for (const key of keys) {
+        const value =
           localStorage.getItem(
             key
           );
 
-        const parsed =
-          parseMembers(legacy);
+        if (!value) {
+          continue;
+        }
 
-        if (parsed.length > 0) {
+        const parsed =
+          parseMembers(value);
+
+        if (
+          parsed.length >
+          0
+        ) {
+          console.log(
+            `[MusicTeamView] Loaded ${parsed.length} members from "${key}".`
+          );
+
           return parsed;
         }
       }
-    } catch {
-      return [];
+    } catch (error) {
+      console.error(
+        "[MusicTeamView] Storage loading error:",
+        error
+      );
     }
 
     return [];
   };
 
+/* ============================================================
+   SAVE STORAGE
+   ============================================================ */
+
+const saveMembersSafely = (
+  members: TeamMember[]
+): boolean => {
+  if (
+    typeof window ===
+    "undefined"
+  ) {
+    return false;
+  }
+
+  /*
+   * NEVER write an empty array here.
+   *
+   * This is a protection against accidentally destroying
+   * an existing team directory.
+   */
+
+  if (
+    members.length ===
+    0
+  ) {
+    const existing =
+      loadMembers();
+
+    if (
+      existing.length >
+      0
+    ) {
+      console.warn(
+        "[MusicTeamView] Refused to overwrite existing team data with an empty array."
+      );
+
+      return false;
+    }
+  }
+
+  try {
+    const serialized =
+      JSON.stringify(
+        members
+      );
+
+    localStorage.setItem(
+      STORAGE_KEY,
+      serialized
+    );
+
+    /*
+     * Keep the old key synchronized for compatibility
+     * with older parts of the application.
+     */
+
+    localStorage.setItem(
+      "jewels_music_hub_team_v2",
+      serialized
+    );
+
+    return true;
+  } catch (error) {
+    console.error(
+      "[MusicTeamView] Storage saving error:",
+      error
+    );
+
+    return false;
+  }
+};
+
+/* ============================================================
+   GENERAL HELPERS
+   ============================================================ */
+
 const initials = (
   name: string
 ): string => {
-  return name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map(
-      (part) =>
-        part
-          .charAt(0)
-          .toUpperCase()
-    )
-    .join("");
+  return (
+    name
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map(
+        (part) =>
+          part
+            .charAt(0)
+            .toUpperCase()
+      )
+      .join("") ||
+    "?"
+  );
 };
 
 const formatDate = (
   value?: string
 ): string => {
-  if (!value) return "—";
+  if (!value) {
+    return "—";
+  }
 
   const date =
     new Date(value);
@@ -745,26 +1133,24 @@ const RoleBadge = ({
 }: {
   role: TeamRole;
 }) => {
+  const icon =
+    role === "lead_vocalist" ||
+    role === "backing_vocalist"
+      ? "mic"
+      : role ===
+        "instrumentalist"
+      ? "music"
+      : role ===
+        "admin_md"
+      ? "shield"
+      : "users";
+
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-medium text-white/60">
       <Icon
-        name={
-          role ===
-            "lead_vocalist" ||
-          role ===
-            "backing_vocalist"
-            ? "mic"
-            : role ===
-              "instrumentalist"
-            ? "music"
-            : role ===
-              "admin_md"
-            ? "shield"
-            : "users"
-        }
+        name={icon}
         size={11}
       />
-
       {ROLE_LABELS[role]}
     </span>
   );
@@ -812,7 +1198,10 @@ const Avatar = ({
       ? "h-16 w-16 text-lg"
       : "h-24 w-24 text-2xl";
 
-  if (member.avatar) {
+  if (
+    member.avatar &&
+    member.avatar.trim()
+  ) {
     return (
       <img
         src={member.avatar}
@@ -860,6 +1249,9 @@ const ToastItem = ({
               : toast.type ===
                 "error"
               ? "alert"
+              : toast.type ===
+                "warning"
+              ? "alert"
               : "info"
           }
           size={15}
@@ -893,144 +1285,103 @@ const ToastItem = ({
 };
 
 /* ============================================================
-   CATEGORY SELECTOR
+   TEAM SECTION SELECTOR
    ============================================================ */
 
 const CategorySelector = ({
-  vocalistCount,
-  instrumentalistCount,
   selected,
   onSelect,
 }: {
-  vocalistCount: number;
-  instrumentalistCount: number;
-  selected:
-    | "all"
-    | "vocalists"
-    | "instrumentalists";
+  selected: TeamSection;
   onSelect: (
-    value:
-      | "all"
-      | "vocalists"
-      | "instrumentalists"
+    value: TeamSection
   ) => void;
 }) => {
+  const items: Array<{
+    id: TeamSection;
+    title: string;
+    description: string;
+    icon: string;
+  }> = [
+    {
+      id: "all",
+      title: "All Members",
+      description:
+        "View the complete music team",
+      icon: "users",
+    },
+    {
+      id: "vocalists",
+      title: "Vocalists",
+      description:
+        "Lead and backing vocal team",
+      icon: "mic",
+    },
+    {
+      id: "instrumentalists",
+      title: "Instrumentalists",
+      description:
+        "Band and instrumental team",
+      icon: "music",
+    },
+  ];
+
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-      <button
-        type="button"
-        onClick={() =>
-          onSelect("all")
-        }
-        className={[
-          "group relative overflow-hidden rounded-2xl border p-4 text-left transition-all",
-          selected === "all"
-            ? "border-white/15 bg-white/[0.07]"
-            : "border-white/[0.07] bg-white/[0.025] hover:bg-white/[0.05]",
-        ].join(" ")}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.05] text-white/60">
-            <Icon
-              name="users"
-              size={17}
-            />
-          </div>
-
-          <Icon
-            name="arrow"
-            size={14}
-          />
-        </div>
-
-        <div className="mt-4 text-lg font-semibold text-white">
-          All Members
-        </div>
-
-        <div className="mt-1 text-[10px] text-white/30">
-          View the complete music team
-        </div>
-      </button>
-
-      <button
-        type="button"
-        onClick={() =>
-          onSelect(
+      {items.map(
+        (item) => {
+          const active =
             selected ===
-              "vocalists"
-              ? "all"
-              : "vocalists"
-          )
+            item.id;
+
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() =>
+                onSelect(
+                  item.id
+                )
+              }
+              className={[
+                "group relative overflow-hidden rounded-2xl border p-5 text-left transition-all duration-300",
+                active
+                  ? "border-white/15 bg-white/[0.075] shadow-xl"
+                  : "border-white/[0.07] bg-white/[0.025] hover:-translate-y-0.5 hover:border-white/[0.12] hover:bg-white/[0.05]",
+              ].join(" ")}
+            >
+              <div className="flex items-center justify-between">
+                <div
+                  className={[
+                    "flex h-11 w-11 items-center justify-center rounded-xl transition",
+                    active
+                      ? "bg-white text-black"
+                      : "bg-white/[0.05] text-white/50 group-hover:text-white",
+                  ].join(" ")}
+                >
+                  <Icon
+                    name={item.icon}
+                    size={18}
+                  />
+                </div>
+
+                <Icon
+                  name="arrow"
+                  size={14}
+                />
+              </div>
+
+              <div className="mt-5 text-lg font-semibold text-white">
+                {item.title}
+              </div>
+
+              <div className="mt-1 text-[10px] leading-5 text-white/30">
+                {item.description}
+              </div>
+            </button>
+          );
         }
-        className={[
-          "group relative overflow-hidden rounded-2xl border p-4 text-left transition-all",
-          selected ===
-          "vocalists"
-            ? "border-white/15 bg-white/[0.07]"
-            : "border-white/[0.07] bg-white/[0.025] hover:bg-white/[0.05]",
-        ].join(" ")}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.05] text-white/60">
-            <Icon
-              name="mic"
-              size={17}
-            />
-          </div>
-
-          <span className="rounded-full bg-white/[0.05] px-2 py-1 text-[10px] text-white/40">
-            {vocalistCount}
-          </span>
-        </div>
-
-        <div className="mt-4 text-lg font-semibold text-white">
-          Vocalists
-        </div>
-
-        <div className="mt-1 text-[10px] text-white/30">
-          Lead and backing vocal team
-        </div>
-      </button>
-
-      <button
-        type="button"
-        onClick={() =>
-          onSelect(
-            selected ===
-              "instrumentalists"
-              ? "all"
-              : "instrumentalists"
-          )
-        }
-        className={[
-          "group relative overflow-hidden rounded-2xl border p-4 text-left transition-all",
-          selected ===
-          "instrumentalists"
-            ? "border-white/15 bg-white/[0.07]"
-            : "border-white/[0.07] bg-white/[0.025] hover:bg-white/[0.05]",
-        ].join(" ")}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.05] text-white/60">
-            <Icon
-              name="music"
-              size={17}
-            />
-          </div>
-
-          <span className="rounded-full bg-white/[0.05] px-2 py-1 text-[10px] text-white/40">
-            {instrumentalistCount}
-          </span>
-        </div>
-
-        <div className="mt-4 text-lg font-semibold text-white">
-          Instrumentalists
-        </div>
-
-        <div className="mt-1 text-[10px] text-white/30">
-          Band and instrumental team
-        </div>
-      </button>
+      )}
     </div>
   );
 };
@@ -1057,7 +1408,7 @@ const MemberCard = ({
   return (
     <div className="group relative overflow-hidden rounded-[24px] border border-white/[0.07] bg-[#111214] transition-all duration-300 hover:-translate-y-0.5 hover:border-white/[0.14] hover:bg-[#141518]">
       {member.isFeatured && (
-        <div className="absolute left-0 right-0 top-0 h-0.5 bg-white/40" />
+        <div className="absolute left-0 right-0 top-0 h-0.5 bg-white/50" />
       )}
 
       <div className="p-5">
@@ -1065,6 +1416,7 @@ const MemberCard = ({
           <button
             type="button"
             onClick={onView}
+            className="rounded-2xl outline-none focus:ring-2 focus:ring-white/20"
           >
             <Avatar
               member={member}
@@ -1082,7 +1434,11 @@ const MemberCard = ({
                     ? "bg-white/10 text-white"
                     : "text-white/20 hover:bg-white/5 hover:text-white"
                 }`}
-                title="Featured"
+                title={
+                  member.isFeatured
+                    ? "Remove featured"
+                    : "Feature member"
+                }
               >
                 <Icon
                   name="star"
@@ -1095,6 +1451,7 @@ const MemberCard = ({
               type="button"
               onClick={onView}
               className="flex h-8 w-8 items-center justify-center rounded-xl text-white/25 hover:bg-white/5 hover:text-white"
+              title="View profile"
             >
               <Icon
                 name="eye"
@@ -1107,6 +1464,7 @@ const MemberCard = ({
                 type="button"
                 onClick={onEdit}
                 className="flex h-8 w-8 items-center justify-center rounded-xl text-white/25 hover:bg-white/5 hover:text-white"
+                title="Edit member"
               >
                 <Icon
                   name="edit"
@@ -1124,15 +1482,17 @@ const MemberCard = ({
             </h3>
 
             {member.isLeader && (
-              <Icon
-                name="shield"
-                size={12}
-              />
+              <span className="text-white/50">
+                <Icon
+                  name="shield"
+                  size={12}
+                />
+              </span>
             )}
           </div>
 
           {member.nickname && (
-            <div className="mt-1 text-[10px] text-white/25">
+            <div className="mt-1 truncate text-[10px] text-white/25">
               {member.nickname}
             </div>
           )}
@@ -1155,8 +1515,9 @@ const MemberCard = ({
                 name="music"
                 size={13}
               />
-
-              {member.instrument}
+              <span className="truncate">
+                {member.instrument}
+              </span>
             </div>
           )}
 
@@ -1166,8 +1527,9 @@ const MemberCard = ({
                 name="mic"
                 size={13}
               />
-
-              {member.voicePart}
+              <span className="truncate">
+                {member.voicePart}
+              </span>
             </div>
           )}
 
@@ -1177,8 +1539,9 @@ const MemberCard = ({
                 name="users"
                 size={13}
               />
-
-              {member.section}
+              <span className="truncate">
+                {member.section}
+              </span>
             </div>
           )}
         </div>
@@ -1190,9 +1553,13 @@ const MemberCard = ({
               {member.skills
                 .slice(0, 3)
                 .map(
-                  (skill) => (
+                  (
+                    skill
+                  ) => (
                     <span
-                      key={skill}
+                      key={
+                        skill
+                      }
                       className="rounded-lg bg-white/[0.035] px-2 py-1 text-[9px] text-white/35"
                     >
                       {skill}
@@ -1204,8 +1571,7 @@ const MemberCard = ({
                 3 && (
                 <span className="rounded-lg bg-white/[0.035] px-2 py-1 text-[9px] text-white/25">
                   +
-                  {member.skills
-                    .length -
+                  {member.skills.length -
                     3}
                 </span>
               )}
@@ -1219,7 +1585,6 @@ const MemberCard = ({
             className="flex w-full items-center justify-between text-xs text-white/35 hover:text-white"
           >
             View profile
-
             <Icon
               name="arrow"
               size={13}
@@ -1233,6 +1598,7 @@ const MemberCard = ({
           type="button"
           onClick={onDelete}
           className="absolute bottom-4 right-4 hidden text-white/15 hover:text-red-400 group-hover:block"
+          title="Remove member"
         >
           <Icon
             name="trash"
@@ -1254,19 +1620,17 @@ const FieldLabel = ({
 }: {
   children: React.ReactNode;
   required?: boolean;
-}) => {
-  return (
-    <label className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.14em] text-white/30">
-      {children}
+}) => (
+  <label className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.14em] text-white/30">
+    {children}
 
-      {required && (
-        <span className="ml-1 text-white/50">
-          *
-        </span>
-      )}
-    </label>
-  );
-};
+    {required && (
+      <span className="ml-1 text-white/50">
+        *
+      </span>
+    )}
+  </label>
+);
 
 const Input = ({
   value,
@@ -1280,17 +1644,15 @@ const Input = ({
   ) => void;
   placeholder?: string;
   type?: string;
-}) => {
-  return (
-    <input
-      type={type}
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      className="h-11 w-full rounded-xl border border-white/[0.08] bg-white/[0.035] px-3.5 text-sm text-white outline-none placeholder:text-white/20 focus:border-white/20"
-    />
-  );
-};
+}) => (
+  <input
+    type={type}
+    value={value}
+    onChange={onChange}
+    placeholder={placeholder}
+    className="h-11 w-full rounded-xl border border-white/[0.08] bg-white/[0.035] px-3.5 text-sm text-white outline-none placeholder:text-white/20 focus:border-white/20 focus:bg-white/[0.05]"
+  />
+);
 
 const Textarea = ({
   value,
@@ -1302,17 +1664,15 @@ const Textarea = ({
     event: React.ChangeEvent<HTMLTextAreaElement>
   ) => void;
   placeholder?: string;
-}) => {
-  return (
-    <textarea
-      rows={4}
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      className="w-full resize-none rounded-xl border border-white/[0.08] bg-white/[0.035] px-3.5 py-3 text-sm text-white outline-none placeholder:text-white/20 focus:border-white/20"
-    />
-  );
-};
+}) => (
+  <textarea
+    rows={4}
+    value={value}
+    onChange={onChange}
+    placeholder={placeholder}
+    className="w-full resize-none rounded-xl border border-white/[0.08] bg-white/[0.035] px-3.5 py-3 text-sm text-white outline-none placeholder:text-white/20 focus:border-white/20"
+  />
+);
 
 /* ============================================================
    MEMBER MODAL
@@ -1338,8 +1698,10 @@ const MemberModal = ({
     mode !== "view";
 
   const [form, setForm] =
-    useState<TeamMember>(
-      normalizeMember(member)
+    useState<TeamMember>(() =>
+      normalizeMember(
+        member
+      )
     );
 
   const [skill, setSkill] =
@@ -1347,7 +1709,9 @@ const MemberModal = ({
 
   useEffect(() => {
     setForm(
-      normalizeMember(member)
+      normalizeMember(
+        member
+      )
     );
   }, [member]);
 
@@ -1357,12 +1721,14 @@ const MemberModal = ({
     key: K,
     value: TeamMember[K]
   ) => {
-    setForm((previous) => ({
-      ...previous,
-      [key]: value,
-      updatedAt:
-        new Date().toISOString(),
-    }));
+    setForm(
+      (previous) => ({
+        ...previous,
+        [key]: value,
+        updatedAt:
+          new Date().toISOString(),
+      })
+    );
   };
 
   const toggleDay = (
@@ -1379,7 +1745,10 @@ const MemberModal = ({
             (item) =>
               item !== day
           )
-        : [...current, day]
+        : [
+            ...current,
+            day,
+          ]
     );
   };
 
@@ -1387,25 +1756,35 @@ const MemberModal = ({
     const clean =
       skill.trim();
 
-    if (!clean) return;
+    if (!clean) {
+      return;
+    }
 
-    if (
-      (form.skills || [])
-        .map((x) =>
-          x.toLowerCase()
+    const exists =
+      (
+        form.skills ||
+        []
+      )
+        .map((item) =>
+          item.toLowerCase()
         )
         .includes(
           clean.toLowerCase()
-        )
-    ) {
+        );
+
+    if (exists) {
       setSkill("");
       return;
     }
 
-    update("skills", [
-      ...(form.skills || []),
-      clean,
-    ]);
+    update(
+      "skills",
+      [
+        ...(form.skills ||
+          []),
+        clean,
+      ]
+    );
 
     setSkill("");
   };
@@ -1415,7 +1794,10 @@ const MemberModal = ({
   ) => {
     update(
       "skills",
-      (form.skills || []).filter(
+      (
+        form.skills ||
+        []
+      ).filter(
         (item) =>
           item !== value
       )
@@ -1427,9 +1809,13 @@ const MemberModal = ({
   ) => {
     event.preventDefault();
 
-    if (!editable) return;
+    if (!editable) {
+      return;
+    }
 
-    if (!form.name.trim()) {
+    if (
+      !form.name.trim()
+    ) {
       return;
     }
 
@@ -1453,7 +1839,9 @@ const MemberModal = ({
   return (
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-4 backdrop-blur-md"
-      onMouseDown={(event) => {
+      onMouseDown={(
+        event
+      ) => {
         if (
           event.target ===
           event.currentTarget
@@ -1531,7 +1919,8 @@ const MemberModal = ({
                       ) =>
                         update(
                           "avatar",
-                          event.target
+                          event
+                            .target
                             .value
                         )
                       }
@@ -1555,8 +1944,10 @@ const MemberModal = ({
                       </div>
 
                       <div className="mt-1 text-[10px] leading-5 text-white/25">
-                        Only the Music Director can
-                        modify team information.
+                        Only the Music
+                        Director can
+                        modify team
+                        information.
                       </div>
                     </div>
                   </div>
@@ -1590,7 +1981,8 @@ const MemberModal = ({
                         ) =>
                           update(
                             "name",
-                            event.target
+                            event
+                              .target
                               .value
                           )
                         }
@@ -1619,7 +2011,8 @@ const MemberModal = ({
                         ) =>
                           update(
                             "nickname",
-                            event.target
+                            event
+                              .target
                               .value
                           )
                         }
@@ -1647,7 +2040,8 @@ const MemberModal = ({
                         ) =>
                           update(
                             "role",
-                            event.target
+                            event
+                              .target
                               .value as TeamRole
                           )
                         }
@@ -1699,7 +2093,8 @@ const MemberModal = ({
                         ) =>
                           update(
                             "status",
-                            event.target
+                            event
+                              .target
                               .value as MemberStatus
                           )
                         }
@@ -1752,7 +2147,8 @@ const MemberModal = ({
                         ) =>
                           update(
                             "section",
-                            event.target
+                            event
+                              .target
                               .value
                           )
                         }
@@ -1782,7 +2178,8 @@ const MemberModal = ({
                         ) =>
                           update(
                             "ministry",
-                            event.target
+                            event
+                              .target
                               .value
                           )
                         }
@@ -1823,7 +2220,8 @@ const MemberModal = ({
                         ) =>
                           update(
                             "instrument",
-                            event.target
+                            event
+                              .target
                               .value
                           )
                         }
@@ -1833,6 +2231,64 @@ const MemberModal = ({
                       <div className="text-sm text-white/55">
                         {form.instrument ||
                           "—"}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <FieldLabel>
+                      Instrument Category
+                    </FieldLabel>
+
+                    {editable ? (
+                      <select
+                        value={
+                          form.instrumentCategory ||
+                          "other"
+                        }
+                        onChange={(
+                          event
+                        ) =>
+                          update(
+                            "instrumentCategory",
+                            event
+                              .target
+                              .value as InstrumentCategory
+                          )
+                        }
+                        className="h-11 w-full rounded-xl border border-white/[0.08] bg-[#17181b] px-3 text-sm text-white outline-none"
+                      >
+                        {Object.entries(
+                          CATEGORY_LABELS
+                        ).map(
+                          ([
+                            value,
+                            label,
+                          ]) => (
+                            <option
+                              key={
+                                value
+                              }
+                              value={
+                                value
+                              }
+                            >
+                              {
+                                label
+                              }
+                            </option>
+                          )
+                        )}
+                      </select>
+                    ) : (
+                      <div className="text-sm text-white/55">
+                        {
+                          CATEGORY_LABELS[
+                            form
+                              .instrumentCategory ||
+                              "other"
+                          ]
+                        }
                       </div>
                     )}
                   </div>
@@ -1853,7 +2309,8 @@ const MemberModal = ({
                         ) =>
                           update(
                             "voicePart",
-                            event.target
+                            event
+                              .target
                               .value
                           )
                         }
@@ -1896,7 +2353,8 @@ const MemberModal = ({
                         ) =>
                           update(
                             "phone",
-                            event.target
+                            event
+                              .target
                               .value
                           )
                         }
@@ -1930,7 +2388,8 @@ const MemberModal = ({
                         ) =>
                           update(
                             "email",
-                            event.target
+                            event
+                              .target
                               .value
                           )
                         }
@@ -1969,7 +2428,9 @@ const MemberModal = ({
                           day
                         );
 
-                      if (!editable) {
+                      if (
+                        !editable
+                      ) {
                         return (
                           <span
                             key={
@@ -2036,7 +2497,8 @@ const MemberModal = ({
                         event
                       ) =>
                         setSkill(
-                          event.target
+                          event
+                            .target
                             .value
                         )
                       }
@@ -2048,7 +2510,7 @@ const MemberModal = ({
                       onClick={
                         addSkill
                       }
-                      className="rounded-xl border border-white/10 bg-white/[0.05] px-4 text-xs text-white"
+                      className="rounded-xl border border-white/10 bg-white/[0.05] px-4 text-xs text-white hover:bg-white/10"
                     >
                       Add
                     </button>
@@ -2056,7 +2518,8 @@ const MemberModal = ({
                 )}
 
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {(form.skills ||
+                  {(
+                    form.skills ||
                     []
                   ).map(
                     (item) => (
@@ -2110,7 +2573,8 @@ const MemberModal = ({
                     ) =>
                       update(
                         "notes",
-                        event.target
+                        event
+                          .target
                           .value
                       )
                     }
@@ -2150,7 +2614,8 @@ const MemberModal = ({
                         ) =>
                           update(
                             "isLeader",
-                            event.target
+                            event
+                              .target
                               .checked
                           )
                         }
@@ -2179,7 +2644,8 @@ const MemberModal = ({
                         ) =>
                           update(
                             "isFeatured",
-                            event.target
+                            event
+                              .target
                               .checked
                           )
                         }
@@ -2209,7 +2675,8 @@ const MemberModal = ({
                         ) =>
                           update(
                             "isAvailable",
-                            event.target
+                            event
+                              .target
                               .checked
                           )
                         }
@@ -2261,50 +2728,48 @@ const DeleteModal = ({
   member: TeamMember;
   onClose: () => void;
   onConfirm: () => void;
-}) => {
-  return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/75 p-4 backdrop-blur-md">
-      <div className="w-full max-w-md rounded-[26px] border border-white/[0.09] bg-[#111214] p-6 shadow-2xl">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-500/10 text-red-400">
-          <Icon
-            name="trash"
-            size={18}
-          />
-        </div>
+}) => (
+  <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/75 p-4 backdrop-blur-md">
+    <div className="w-full max-w-md rounded-[26px] border border-white/[0.09] bg-[#111214] p-6 shadow-2xl">
+      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-500/10 text-red-400">
+        <Icon
+          name="trash"
+          size={18}
+        />
+      </div>
 
-        <h3 className="mt-5 text-base font-semibold text-white">
-          Remove team member?
-        </h3>
+      <h3 className="mt-5 text-base font-semibold text-white">
+        Remove team member?
+      </h3>
 
-        <p className="mt-2 text-xs leading-6 text-white/35">
-          Remove{" "}
-          <span className="text-white/70">
-            {member.name}
-          </span>{" "}
-          from the music team?
-        </p>
+      <p className="mt-2 text-xs leading-6 text-white/35">
+        Remove{" "}
+        <span className="text-white/70">
+          {member.name}
+        </span>{" "}
+        from the music team?
+      </p>
 
-        <div className="mt-6 flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-xl border border-white/[0.07] px-4 py-2.5 text-xs text-white/50"
-          >
-            Cancel
-          </button>
+      <div className="mt-6 flex justify-end gap-3">
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-xl border border-white/[0.07] px-4 py-2.5 text-xs text-white/50 hover:text-white"
+        >
+          Cancel
+        </button>
 
-          <button
-            type="button"
-            onClick={onConfirm}
-            className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-xs font-semibold text-red-400"
-          >
-            Remove Member
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={onConfirm}
+          className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-xs font-semibold text-red-400 hover:bg-red-500/15"
+        >
+          Remove Member
+        </button>
       </div>
     </div>
-  );
-};
+  </div>
+);
 
 /* ============================================================
    MAIN MUSIC TEAM VIEW
@@ -2316,19 +2781,14 @@ export const MusicTeamView: React.FC<
   activeRole,
   currentRole,
   role,
-  members: externalMembers,
+  members:
+    externalMembers,
   onMembersChange,
   readOnly = false,
 }) => {
-  /*
-   * IMPORTANT:
-   *
-   * App.tsx currently imports:
-   *
-   * import { MusicTeamView } from "./components/MusicTeamView";
-   *
-   * Therefore this MUST remain a named export.
-   */
+  /* ==========================================================
+     ROLE
+     ========================================================== */
 
   const userRole =
     activeRole ||
@@ -2340,43 +2800,153 @@ export const MusicTeamView: React.FC<
     !readOnly &&
     isMD(userRole);
 
+  /* ==========================================================
+     STORAGE HYDRATION
+     ========================================================== */
+
+  const [
+    storageReady,
+    setStorageReady,
+  ] = useState(false);
+
   const [
     members,
     setMembers,
-  ] = useState<TeamMember[]>(() => {
+  ] = useState<
+    TeamMember[]
+  >([]);
+
+  /*
+   * Load the existing team exactly once.
+   *
+   * This prevents the initial empty state from overwriting
+   * existing localStorage data.
+   */
+
+  useEffect(() => {
     if (
       externalMembers &&
-      externalMembers.length
+      externalMembers.length >
+        0
     ) {
-      return externalMembers.map(
-        normalizeMember
+      const normalized =
+        externalMembers.map(
+          normalizeMember
+        );
+
+      setMembers(
+        normalized
       );
+
+      setStorageReady(
+        true
+      );
+
+      return;
+    }
+
+    const saved =
+      loadMembers();
+
+    setMembers(saved);
+    setStorageReady(true);
+  }, []);
+
+  /* ==========================================================
+     EXTERNAL MEMBER SYNC
+     ========================================================== */
+
+  useEffect(() => {
+    if (
+      !storageReady
+    ) {
+      return;
     }
 
     if (
-      typeof window !==
-      "undefined"
+      externalMembers &&
+      externalMembers.length >
+        0
     ) {
-      return loadMembers();
+      setMembers(
+        externalMembers.map(
+          normalizeMember
+        )
+      );
+    }
+  }, [
+    externalMembers,
+    storageReady,
+  ]);
+
+  /* ==========================================================
+     PERSISTENCE
+     ========================================================== */
+
+  useEffect(() => {
+    if (
+      !storageReady
+    ) {
+      return;
     }
 
-    return [];
-  });
+    /*
+     * Protection:
+     *
+     * If we somehow reach an empty state while saved data
+     * still exists, do NOT destroy that saved data.
+     */
+
+    if (
+      members.length ===
+      0
+    ) {
+      const existing =
+        loadMembers();
+
+      if (
+        existing.length >
+        0
+      ) {
+        setMembers(
+          existing
+        );
+
+        return;
+      }
+    }
+
+    saveMembersSafely(
+      members
+    );
+
+    onMembersChange?.(
+      members
+    );
+  }, [
+    members,
+    storageReady,
+    onMembersChange,
+  ]);
+
+  /* ==========================================================
+     UI STATE
+     ========================================================== */
 
   const [search, setSearch] =
     useState("");
 
   const [
-    category,
-    setCategory,
-  ] = useState<
-    | "all"
-    | "vocalists"
-    | "instrumentalists"
-  >("all");
+    section,
+    setSection,
+  ] = useState<TeamSection>(
+    "all"
+  );
 
-  const [roleFilter, setRoleFilter] =
-    useState("all");
+  const [
+    roleFilter,
+    setRoleFilter,
+  ] = useState("all");
 
   const [
     statusFilter,
@@ -2389,10 +2959,14 @@ export const MusicTeamView: React.FC<
   ] = useState("all");
 
   const [sortMode, setSortMode] =
-    useState<SortMode>("name");
+    useState<SortMode>(
+      "name"
+    );
 
   const [viewMode, setViewMode] =
-    useState<ViewMode>("grid");
+    useState<ViewMode>(
+      "grid"
+    );
 
   const [
     showFilters,
@@ -2407,7 +2981,10 @@ export const MusicTeamView: React.FC<
       null
     );
 
-  const [modalMode, setModalMode] =
+  const [
+    modalMode,
+    setModalMode,
+  ] =
     useState<ModalMode>(null);
 
   const [
@@ -2427,45 +3004,6 @@ export const MusicTeamView: React.FC<
   ] = useState(false);
 
   /* ==========================================================
-     EXTERNAL MEMBER SYNC
-     ========================================================== */
-
-  useEffect(() => {
-    if (
-      externalMembers &&
-      externalMembers.length
-    ) {
-      setMembers(
-        externalMembers.map(
-          normalizeMember
-        )
-      );
-    }
-  }, [externalMembers]);
-
-  /* ==========================================================
-     PERSISTENCE
-     ========================================================== */
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(members)
-      );
-    } catch {
-      // Storage unavailable.
-    }
-
-    onMembersChange?.(
-      members
-    );
-  }, [
-    members,
-    onMembersChange,
-  ]);
-
-  /* ==========================================================
      TOAST
      ========================================================== */
 
@@ -2475,24 +3013,29 @@ export const MusicTeamView: React.FC<
       title: string,
       message?: string
     ) => {
-      const id = createId();
+      const id =
+        createId();
 
-      setToasts((previous) => [
-        ...previous,
-        {
-          id,
-          type,
-          title,
-          message,
-        },
-      ]);
+      setToasts(
+        (previous) => [
+          ...previous,
+          {
+            id,
+            type,
+            title,
+            message,
+          },
+        ]
+      );
 
       window.setTimeout(
         () => {
           setToasts(
             (previous) =>
               previous.filter(
-                (toast) =>
+                (
+                  toast
+                ) =>
                   toast.id !==
                   id
               )
@@ -2507,41 +3050,14 @@ export const MusicTeamView: React.FC<
   const removeToast = (
     id: string
   ) => {
-    setToasts((previous) =>
-      previous.filter(
-        (toast) =>
-          toast.id !== id
-      )
+    setToasts(
+      (previous) =>
+        previous.filter(
+          (toast) =>
+            toast.id !== id
+        )
     );
   };
-
-  /* ==========================================================
-     COUNTS
-     ========================================================== */
-
-  const vocalistCount =
-    useMemo(
-      () =>
-        members.filter(
-          (member) =>
-            member.role ===
-              "lead_vocalist" ||
-            member.role ===
-              "backing_vocalist"
-        ).length,
-      [members]
-    );
-
-  const instrumentalistCount =
-    useMemo(
-      () =>
-        members.filter(
-          (member) =>
-            member.role ===
-            "instrumentalist"
-        ).length,
-      [members]
-    );
 
   /* ==========================================================
      FILTERED MEMBERS
@@ -2580,14 +3096,14 @@ export const MusicTeamView: React.FC<
                 query
               );
 
-            let matchesCategory =
+            let matchesSection =
               true;
 
             if (
-              category ===
+              section ===
               "vocalists"
             ) {
-              matchesCategory =
+              matchesSection =
                 member.role ===
                   "lead_vocalist" ||
                 member.role ===
@@ -2595,10 +3111,10 @@ export const MusicTeamView: React.FC<
             }
 
             if (
-              category ===
+              section ===
               "instrumentalists"
             ) {
-              matchesCategory =
+              matchesSection =
                 member.role ===
                 "instrumentalist";
             }
@@ -2615,7 +3131,7 @@ export const MusicTeamView: React.FC<
               member.status ===
                 statusFilter;
 
-            const matchesInstrumentCategory =
+            const matchesCategory =
               categoryFilter ===
                 "all" ||
               member.instrumentCategory ===
@@ -2623,17 +3139,19 @@ export const MusicTeamView: React.FC<
 
             return (
               matchesSearch &&
-              matchesCategory &&
+              matchesSection &&
               matchesRole &&
               matchesStatus &&
-              matchesInstrumentCategory
+              matchesCategory
             );
           }
         );
 
       result.sort(
         (a, b) => {
-          switch (sortMode) {
+          switch (
+            sortMode
+          ) {
             case "role":
               return ROLE_LABELS[
                 a.role
@@ -2685,7 +3203,7 @@ export const MusicTeamView: React.FC<
     }, [
       members,
       search,
-      category,
+      section,
       roleFilter,
       statusFilter,
       categoryFilter,
@@ -2717,22 +3235,29 @@ export const MusicTeamView: React.FC<
       updatedAt: now,
     });
 
-    setModalMode("create");
+    setModalMode(
+      "create"
+    );
   };
 
   /* ==========================================================
-     OPEN VIEW
+     VIEW
      ========================================================== */
 
   const openView = (
     member: TeamMember
   ) => {
-    setSelectedMember(member);
+    setSelectedMember(
+      normalizeMember(
+        member
+      )
+    );
+
     setModalMode("view");
   };
 
   /* ==========================================================
-     OPEN EDIT
+     EDIT
      ========================================================== */
 
   const openEdit = (
@@ -2749,14 +3274,18 @@ export const MusicTeamView: React.FC<
     }
 
     setSelectedMember(
-      normalizeMember(member)
+      normalizeMember(
+        member
+      )
     );
 
-    setModalMode("edit");
+    setModalMode(
+      "edit"
+    );
   };
 
   /* ==========================================================
-     SAVE
+     SAVE MEMBER
      ========================================================== */
 
   const saveMember = (
@@ -2772,31 +3301,36 @@ export const MusicTeamView: React.FC<
       return;
     }
 
-    setMembers((previous) => {
-      const exists =
-        previous.some(
-          (item) =>
-            item.id ===
-            member.id
-        );
+    const normalized =
+      normalizeMember(
+        member
+      );
 
-      if (exists) {
-        return previous.map(
-          (item) =>
-            item.id ===
-            member.id
-              ? normalizeMember(
-                  member
-                )
-              : item
-        );
+    setMembers(
+      (previous) => {
+        const exists =
+          previous.some(
+            (item) =>
+              item.id ===
+              normalized.id
+          );
+
+        if (exists) {
+          return previous.map(
+            (item) =>
+              item.id ===
+              normalized.id
+                ? normalized
+                : item
+          );
+        }
+
+        return [
+          ...previous,
+          normalized,
+        ];
       }
-
-      return [
-        ...previous,
-        normalizeMember(member),
-      ];
-    });
+    );
 
     addToast(
       "success",
@@ -2804,44 +3338,53 @@ export const MusicTeamView: React.FC<
         "create"
         ? "Member added"
         : "Changes saved",
-      `${member.name} has been updated.`
+      `${normalized.name} has been updated.`
     );
 
-    setSelectedMember(null);
-    setModalMode(null);
+    setSelectedMember(
+      null
+    );
+
+    setModalMode(
+      null
+    );
   };
 
   /* ==========================================================
      DELETE
      ========================================================== */
 
-  const deleteConfirmed = () => {
-    if (
-      !canEdit ||
-      !memberToDelete
-    ) {
-      return;
-    }
+  const deleteConfirmed =
+    () => {
+      if (
+        !canEdit ||
+        !memberToDelete
+      ) {
+        return;
+      }
 
-    const name =
-      memberToDelete.name;
+      const name =
+        memberToDelete.name;
 
-    setMembers((previous) =>
-      previous.filter(
-        (member) =>
-          member.id !==
-          memberToDelete.id
-      )
-    );
+      setMembers(
+        (previous) =>
+          previous.filter(
+            (member) =>
+              member.id !==
+              memberToDelete.id
+          )
+      );
 
-    setMemberToDelete(null);
+      setMemberToDelete(
+        null
+      );
 
-    addToast(
-      "success",
-      "Member removed",
-      `${name} was removed from the music team.`
-    );
-  };
+      addToast(
+        "success",
+        "Member removed",
+        `${name} was removed from the music team.`
+      );
+    };
 
   /* ==========================================================
      FEATURE
@@ -2854,18 +3397,21 @@ export const MusicTeamView: React.FC<
       return;
     }
 
-    setMembers((previous) =>
-      previous.map((item) =>
-        item.id === member.id
-          ? {
-              ...item,
-              isFeatured:
-                !item.isFeatured,
-              updatedAt:
-                new Date().toISOString(),
-            }
-          : item
-      )
+    setMembers(
+      (previous) =>
+        previous.map(
+          (item) =>
+            item.id ===
+            member.id
+              ? {
+                  ...item,
+                  isFeatured:
+                    !item.isFeatured,
+                  updatedAt:
+                    new Date().toISOString(),
+                }
+              : item
+        )
     );
   };
 
@@ -2873,13 +3419,20 @@ export const MusicTeamView: React.FC<
      CLEAR FILTERS
      ========================================================== */
 
-  const clearFilters = () => {
-    setSearch("");
-    setCategory("all");
-    setRoleFilter("all");
-    setStatusFilter("all");
-    setCategoryFilter("all");
-  };
+  const clearFilters =
+    () => {
+      setSearch("");
+      setSection("all");
+      setRoleFilter(
+        "all"
+      );
+      setStatusFilter(
+        "all"
+      );
+      setCategoryFilter(
+        "all"
+      );
+    };
 
   /* ==========================================================
      REFRESH
@@ -2890,31 +3443,51 @@ export const MusicTeamView: React.FC<
 
     window.setTimeout(
       () => {
-        try {
-          const saved =
-            localStorage.getItem(
-              STORAGE_KEY
-            );
+        const saved =
+          loadMembers();
 
-          const parsed =
-            parseMembers(saved);
-
-          setMembers(parsed);
+        if (
+          saved.length >
+          0
+        ) {
+          setMembers(
+            saved
+          );
 
           addToast(
             "success",
             "Team refreshed",
-            "Saved team information has been loaded."
+            "Your saved team information has been loaded."
           );
-        } catch {
-          addToast(
-            "error",
-            "Refresh failed",
-            "Unable to load saved team data."
-          );
-        } finally {
-          setRefreshing(false);
+        } else {
+          /*
+           * IMPORTANT:
+           *
+           * Do not replace an existing non-empty team with
+           * an empty refresh result.
+           */
+
+          if (
+            members.length >
+            0
+          ) {
+            addToast(
+              "warning",
+              "No replacement data found",
+              "Your current team was kept safe."
+            );
+          } else {
+            setMembers([]);
+
+            addToast(
+              "info",
+              "No saved members",
+              "No saved team members were found."
+            );
+          }
         }
+
+        setRefreshing(false);
       },
       450
     );
@@ -2924,66 +3497,72 @@ export const MusicTeamView: React.FC<
      EXPORT
      ========================================================== */
 
-  const exportTeam = () => {
-    try {
-      const blob =
-        new Blob(
-          [
-            JSON.stringify(
-              {
-                exportedAt:
-                  new Date().toISOString(),
-                team: members,
-              },
-              null,
-              2
-            ),
-          ],
-          {
-            type: "application/json",
-          }
+  const exportTeam =
+    () => {
+      try {
+        const blob =
+          new Blob(
+            [
+              JSON.stringify(
+                {
+                  exportedAt:
+                    new Date().toISOString(),
+                  team: members,
+                },
+                null,
+                2
+              ),
+            ],
+            {
+              type: "application/json",
+            }
+          );
+
+        const url =
+          URL.createObjectURL(
+            blob
+          );
+
+        const anchor =
+          document.createElement(
+            "a"
+          );
+
+        anchor.href =
+          url;
+
+        anchor.download =
+          `jewels-music-team-${new Date()
+            .toISOString()
+            .slice(
+              0,
+              10
+            )}.json`;
+
+        document.body.appendChild(
+          anchor
         );
 
-      const url =
-        URL.createObjectURL(
-          blob
+        anchor.click();
+        anchor.remove();
+
+        URL.revokeObjectURL(
+          url
         );
 
-      const anchor =
-        document.createElement(
-          "a"
+        addToast(
+          "success",
+          "Team exported",
+          "The team directory has been exported."
         );
-
-      anchor.href = url;
-
-      anchor.download =
-        `jewels-music-team-${new Date()
-          .toISOString()
-          .slice(0, 10)}.json`;
-
-      document.body.appendChild(
-        anchor
-      );
-
-      anchor.click();
-
-      anchor.remove();
-
-      URL.revokeObjectURL(url);
-
-      addToast(
-        "success",
-        "Team exported",
-        "The team directory has been exported."
-      );
-    } catch {
-      addToast(
-        "error",
-        "Export failed",
-        "Unable to export the team directory."
-      );
-    }
-  };
+      } catch {
+        addToast(
+          "error",
+          "Export failed",
+          "Unable to export the team directory."
+        );
+      }
+    };
 
   /* ==========================================================
      KEYBOARD
@@ -2994,13 +3573,16 @@ export const MusicTeamView: React.FC<
       event: KeyboardEvent
     ) => {
       if (
-        event.key === "Escape"
+        event.key ===
+        "Escape"
       ) {
         setSelectedMember(
           null
         );
 
-        setModalMode(null);
+        setModalMode(
+          null
+        );
 
         setMemberToDelete(
           null
@@ -3008,10 +3590,13 @@ export const MusicTeamView: React.FC<
       }
 
       if (
-        event.key === "/" &&
-        document.activeElement?.tagName !==
+        event.key ===
+          "/" &&
+        document.activeElement
+          ?.tagName !==
           "INPUT" &&
-        document.activeElement?.tagName !==
+        document.activeElement
+          ?.tagName !==
           "TEXTAREA"
       ) {
         event.preventDefault();
@@ -3043,15 +3628,17 @@ export const MusicTeamView: React.FC<
   return (
     <div className="min-h-full bg-[#050506] text-white">
       <div className="mx-auto max-w-[1600px] px-4 py-5 sm:px-6 lg:px-8">
+
         {/* ====================================================
             HEADER
             ==================================================== */}
 
-        <header className="rounded-[28px] border border-white/[0.07] bg-[#0c0d0f]/95 p-5 shadow-xl sm:p-6">
+        <header className="rounded-[28px] border border-white/[0.07] bg-[#0c0d0f]/95 p-5 shadow-xl backdrop-blur-xl sm:p-6">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+
             <div>
               <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.04]">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.04] text-white/60">
                   <Icon
                     name="users"
                     size={20}
@@ -3070,49 +3657,36 @@ export const MusicTeamView: React.FC<
               </div>
 
               <p className="mt-4 max-w-2xl text-xs leading-5 text-white/30">
-                Your music ministry team
-                directory — organized,
-                searchable and controlled by the
+                Your music ministry
+                team directory —
+                organized,
+                searchable and
+                controlled by the
                 Music Director.
               </p>
 
-              <div className="mt-4 flex flex-wrap gap-2">
-                <span className="rounded-full border border-white/[0.07] bg-white/[0.025] px-3 py-1.5 text-[10px] text-white/40">
-                  {members.length}{" "}
-                  members
-                </span>
+              <div className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-white/[0.07] bg-white/[0.025] px-3 py-1.5 text-[10px] text-white/40">
+                <Icon
+                  name={
+                    canEdit
+                      ? "shield"
+                      : "lock"
+                  }
+                  size={11}
+                />
 
-                <span className="rounded-full border border-white/[0.07] bg-white/[0.025] px-3 py-1.5 text-[10px] text-white/40">
-                  {vocalistCount}{" "}
-                  vocalists
-                </span>
-
-                <span className="rounded-full border border-white/[0.07] bg-white/[0.025] px-3 py-1.5 text-[10px] text-white/40">
-                  {instrumentalistCount}{" "}
-                  instrumentalists
-                </span>
-
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.07] bg-white/[0.025] px-3 py-1.5 text-[10px] text-white/40">
-                  <Icon
-                    name={
-                      canEdit
-                        ? "shield"
-                        : "lock"
-                    }
-                    size={11}
-                  />
-
-                  {canEdit
-                    ? "MD Control"
-                    : "View Only"}
-                </span>
+                {canEdit
+                  ? "MD Control"
+                  : "View Only"}
               </div>
             </div>
 
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                onClick={refresh}
+                onClick={
+                  refresh
+                }
                 className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.025] px-3.5 text-xs text-white/40 hover:bg-white/[0.05] hover:text-white"
               >
                 <Icon
@@ -3159,20 +3733,16 @@ export const MusicTeamView: React.FC<
         </header>
 
         {/* ====================================================
-            CLICKABLE VOCALIST / INSTRUMENTALIST SECTIONS
+            THREE MAIN TEAM SECTIONS
             ==================================================== */}
 
         <section className="mt-5">
           <CategorySelector
-            vocalistCount={
-              vocalistCount
+            selected={
+              section
             }
-            instrumentalistCount={
-              instrumentalistCount
-            }
-            selected={category}
             onSelect={
-              setCategory
+              setSection
             }
           />
         </section>
@@ -3183,6 +3753,7 @@ export const MusicTeamView: React.FC<
 
         <section className="mt-5 rounded-[24px] border border-white/[0.07] bg-[#0c0d0f] p-3">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+
             <div className="relative flex-1">
               <div className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-white/25">
                 <Icon
@@ -3212,6 +3783,7 @@ export const MusicTeamView: React.FC<
             </div>
 
             <div className="flex flex-wrap gap-2">
+
               <button
                 type="button"
                 onClick={() =>
@@ -3279,7 +3851,9 @@ export const MusicTeamView: React.FC<
               </div>
 
               <select
-                value={sortMode}
+                value={
+                  sortMode
+                }
                 onChange={(
                   event
                 ) =>
@@ -3317,6 +3891,7 @@ export const MusicTeamView: React.FC<
 
           {showFilters && (
             <div className="mt-3 grid grid-cols-1 gap-3 border-t border-white/[0.06] pt-3 md:grid-cols-4">
+
               <select
                 value={
                   roleFilter
@@ -3439,7 +4014,7 @@ export const MusicTeamView: React.FC<
                 onClick={
                   clearFilters
                 }
-                className="h-10 rounded-xl border border-white/[0.07] bg-white/[0.025] text-xs text-white/35 hover:text-white"
+                className="h-10 rounded-xl border border-white/[0.07] bg-white/[0.025] text-xs text-white/35 hover:bg-white/[0.05] hover:text-white"
               >
                 Clear Filters
               </button>
@@ -3448,34 +4023,38 @@ export const MusicTeamView: React.FC<
         </section>
 
         {/* ====================================================
-            RESULTS HEADER
+            DIRECTORY HEADING
             ==================================================== */}
 
-        <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="text-sm font-medium text-white/75">
-              {category ===
+              {section ===
               "vocalists"
                 ? "Vocal Team"
-                : category ===
+                : section ===
                   "instrumentalists"
                 ? "Instrumental Team"
                 : "Music Team Directory"}
             </div>
 
             <div className="mt-1 text-[10px] text-white/25">
-              {filteredMembers.length}{" "}
-              member
-              {filteredMembers.length !==
-              1
-                ? "s"
-                : ""}
-              {" "}shown
+              {search ||
+              section !==
+                "all" ||
+              roleFilter !==
+                "all" ||
+              statusFilter !==
+                "all" ||
+              categoryFilter !==
+                "all"
+                ? "Filtered team view"
+                : "Team directory"}
             </div>
           </div>
 
           {(search ||
-            category !==
+            section !==
               "all" ||
             roleFilter !==
               "all" ||
@@ -3502,14 +4081,14 @@ export const MusicTeamView: React.FC<
         <section className="mt-4">
           {filteredMembers.length ===
           0 ? (
-            <div className="flex min-h-[340px] flex-col items-center justify-center rounded-[26px] border border-dashed border-white/[0.08] bg-white/[0.015] text-center">
+            <div className="flex min-h-[340px] flex-col items-center justify-center rounded-[26px] border border-dashed border-white/[0.08] bg-white/[0.015] px-6 text-center">
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-white/[0.07] bg-white/[0.03] text-white/25">
                 <Icon
                   name={
-                    category ===
+                    section ===
                     "vocalists"
                       ? "mic"
-                      : category ===
+                      : section ===
                         "instrumentalists"
                       ? "music"
                       : "users"
@@ -3522,10 +4101,10 @@ export const MusicTeamView: React.FC<
                 No team members found
               </div>
 
-              <div className="mt-2 text-xs text-white/25">
+              <div className="mt-2 max-w-sm text-xs leading-5 text-white/25">
                 Try changing the
                 search or selected
-                category.
+                team section.
               </div>
 
               {canEdit && (
@@ -3586,6 +4165,7 @@ export const MusicTeamView: React.FC<
             </div>
           ) : (
             <div className="overflow-hidden rounded-[24px] border border-white/[0.07] bg-[#111214]">
+
               <div className="hidden grid-cols-[1.8fr_1fr_1fr_1fr_auto] gap-4 border-b border-white/[0.06] bg-white/[0.02] px-5 py-3 text-[9px] uppercase tracking-[0.14em] text-white/20 md:grid">
                 <div>
                   Member
@@ -3750,7 +4330,7 @@ export const MusicTeamView: React.FC<
               <div className="mt-1 text-[10px] leading-5 text-white/25">
                 {canEdit
                   ? "You can add, edit, feature and remove music team members."
-                  : "Only the Music Director can add, edit or remove team members."}
+                  : "Team information is read-only. Only the Music Director can make changes."}
               </div>
             </div>
           </div>
@@ -3765,8 +4345,12 @@ export const MusicTeamView: React.FC<
         {toasts.map(
           (toast) => (
             <ToastItem
-              key={toast.id}
-              toast={toast}
+              key={
+                toast.id
+              }
+              toast={
+                toast
+              }
               onClose={() =>
                 removeToast(
                   toast.id
@@ -3784,7 +4368,9 @@ export const MusicTeamView: React.FC<
       {selectedMember &&
         modalMode && (
           <MemberModal
-            mode={modalMode}
+            mode={
+              modalMode
+            }
             member={
               selectedMember
             }
@@ -3836,7 +4422,7 @@ export const MusicTeamView: React.FC<
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/10 border-t-white/70" />
 
             <span className="text-xs text-white/50">
-              Refreshing team...
+              Loading team...
             </span>
           </div>
         </div>
@@ -3846,7 +4432,7 @@ export const MusicTeamView: React.FC<
 };
 
 /* ============================================================
-   DEFAULT EXPORT TOO
+   DEFAULT EXPORT
    ============================================================ */
 
 export default MusicTeamView;
